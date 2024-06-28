@@ -317,7 +317,6 @@ class EloApp(QWidget):
             "background-color: #F5F5F5; "  # Light grey background
             "color: black; "  # Black text color
             "gridline-color: black;"  # Black grid lines
-            "border: 1px solid black;"  # Black border for clarity
         )
         self.leaderboard_table.setAlternatingRowColors(True)
         self.leaderboard_table.setStyleSheet(
@@ -348,7 +347,7 @@ class EloApp(QWidget):
             "color: black; "  # Black text for contrast
             "border: 1px solid black; "  # Black border
             "padding: 8px; "  # Padding
-            "font-size: 40px; "  # Font size
+            "font-size: 20px; "  # Font size
             "font-family: Arial; "  # Font family
         )
         right_layout.addWidget(self.history_display)
@@ -388,11 +387,11 @@ class EloApp(QWidget):
         self.admin_controls_button.clicked.connect(self.open_admin_controls_dialog)
         bottom_layout.addWidget(self.admin_controls_button)
 
-        self.start_game_button.setStyleSheet("background-color: #a6ffae; color: black; font-size: 46px;")  # Green
-        self.remove_selection_button.setStyleSheet("background-color: #ffa6a6; color: black; font-size: 46px;")  # Red
-        self.add_player_button.setStyleSheet("background-color: #9c9cff; color: black; font-size: 46px;")  # Blue
+        self.start_game_button.setStyleSheet("background-color: #a6ffae; color: black; font-size: 26px;")  # Green
+        self.remove_selection_button.setStyleSheet("background-color: #ffa6a6; color: black; font-size: 26px;")  # Red
+        self.add_player_button.setStyleSheet("background-color: #9c9cff; color: black; font-size: 26px;")  # Blue
         self.admin_controls_button.setStyleSheet(
-            "background-color: #FFC107; color: black; font-size: 46px;")  # Amber for admin controls
+            "background-color: #FFC107; color: black; font-size: 26px;")  # Amber for admin controls
 
         # Combine top and bottom layouts
         top_bottom_layout = QVBoxLayout()
