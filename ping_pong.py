@@ -150,6 +150,7 @@ class EloApp(QWidget):
         super().__init__()
         self.players = {}
         self.load_players()  # Load players at startup
+        self.init_timers()
         self.init_ui()
         self.update_dropdowns()
         self.game_history_path = 'game_history.txt'
@@ -405,6 +406,25 @@ class EloApp(QWidget):
 
         self.player1_dropdown.currentIndexChanged.connect(self.on_player1_selection)
         self.player2_dropdown.currentIndexChanged.connect(self.on_player2_selection)
+
+    def init_timers(self):
+        # Timer to clear selections after 7 minutes of inactivity
+        self.clear_selection_timer = QTimer(self)
+        self.clear_selection_timer.setInterval(7 * 60 * 1000)  # 7 minutes in milliseconds
+        self.clear_selection_timer.setSingleShot(True)
+        self.clear_selection_timer.timeout.connect(self.clear_player_selections)
+
+    def reset_timers(self):
+        self.clear_selection_timer.start()
+
+    def clear_player_selections(self):
+        self.player1_dropdown.setCurrentIndex(0)
+        self.player2_dropdown.setCurrentIndex(0)
+
+    # Override keyPressEvent to reset timers on any key press
+    def keyPressEvent(self, event):
+        super().keyPressEvent(event)
+        self.reset_timers()
 
     def open_admin_controls_dialog(self):
         password, ok = QInputDialog.getText(self, 'Admin Login', 'Enter admin password:', QLineEdit.Password)
