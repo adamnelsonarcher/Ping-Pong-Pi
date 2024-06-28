@@ -152,9 +152,28 @@ class EloApp(QWidget):
         self.load_players()  # Load players at startup
         self.init_ui()
         self.update_dropdowns()
+        self.game_history_path = 'game_history.txt'
         self.update_leaderboard()
+        self.load_game_history()
         self.showFullScreen()
         self.game_in_progress = False
+
+    def load_game_history(self):
+        # Optionally clear existing content
+        self.history_display.clear()
+
+        # Set a title for the history display using HTML
+        self.history_display.setHtml("<h2>Game History</h2>")
+
+        # Load existing history from a file
+        try:
+            with open('game_history.txt', 'r') as file:
+                entries = file.readlines()
+
+            for entry in entries:
+                self.update_history_from_file(entry.strip())
+        except FileNotFoundError:
+            print("History file not found. Starting with an empty history.")
 
     def keyPressEvent(self, event):
         key = event.key()
@@ -294,6 +313,18 @@ class EloApp(QWidget):
         # smaller font for the header
         header_font = self.leaderboard_table.horizontalHeader().font()
         header_font.setPointSize(18)  # Adjust the size as needed
+        self.leaderboard_table.setStyleSheet(
+            "background-color: #F5F5F5; "  # Light grey background
+            "color: black; "  # Black text color
+            "gridline-color: black;"  # Black grid lines
+            "border: 1px solid black;"  # Black border for clarity
+        )
+        self.leaderboard_table.setAlternatingRowColors(True)
+        self.leaderboard_table.setStyleSheet(
+            self.leaderboard_table.styleSheet() +
+            "alternate-background-color: #e8fdff; "  # Light cyan for alternate rows
+            "background-color: #FFFFFF; "  # White for regular rows
+        )
         self.leaderboard_table.horizontalHeader().setFont(header_font)
 
         self.leaderboard_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -312,6 +343,14 @@ class EloApp(QWidget):
         right_layout = QVBoxLayout()
         self.history_display = QTextEdit()
         self.history_display.setReadOnly(True)
+        self.history_display.setStyleSheet(
+            "background-color: #fffce6; "  # Bright yellow background
+            "color: black; "  # Black text for contrast
+            "border: 1px solid black; "  # Black border
+            "padding: 8px; "  # Padding
+            "font-size: 40px; "  # Font size
+            "font-family: Arial; "  # Font family
+        )
         right_layout.addWidget(self.history_display)
         main_layout.addLayout(right_layout, 4)  # 30% of the screen
 
@@ -335,7 +374,7 @@ class EloApp(QWidget):
         bottom_layout.addSpacing(150)
 
 
-        self.remove_selection_button = QPushButton("Remove Selection")
+        self.remove_selection_button = QPushButton("Clear Player Selections")
         self.remove_selection_button.clicked.connect(self.remove_player_selection)
         bottom_layout.addWidget(self.remove_selection_button)
 
@@ -348,6 +387,12 @@ class EloApp(QWidget):
         self.admin_controls_button = QPushButton("Admin Controls")
         self.admin_controls_button.clicked.connect(self.open_admin_controls_dialog)
         bottom_layout.addWidget(self.admin_controls_button)
+
+        self.start_game_button.setStyleSheet("background-color: #a6ffae; color: black; font-size: 46px;")  # Green
+        self.remove_selection_button.setStyleSheet("background-color: #ffa6a6; color: black; font-size: 46px;")  # Red
+        self.add_player_button.setStyleSheet("background-color: #9c9cff; color: black; font-size: 46px;")  # Blue
+        self.admin_controls_button.setStyleSheet(
+            "background-color: #FFC107; color: black; font-size: 46px;")  # Amber for admin controls
 
         # Combine top and bottom layouts
         top_bottom_layout = QVBoxLayout()
@@ -413,6 +458,19 @@ class EloApp(QWidget):
             # Save updated player information
             self.save_players()
 
+    def update_history_from_file(self, history_entry):
+        # Check if this is the first entry
+        is_first_entry = not bool(self.history_display.toPlainText().strip())
+
+        # Prepare the entry with or without a leading line
+        message = f"<div>{history_entry}</div>"
+        #if not is_first_entry:
+        #    message = f"<hr/>{message}"  # Add a horizontal line before the message if it's not the first entry
+
+        # Append formatted entry
+        self.history_display.append(message)
+
+
     def update_leaderboard(self):
         self.leaderboard_table.clearContents()
         active_players = {name: player for name, player in self.players.items() if player.games_played > 0}
@@ -434,8 +492,8 @@ class EloApp(QWidget):
             ratio_item = QTableWidgetItem(player.win_loss_ratio())
 
             # Align text in the score and ratio columns
-            score_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-            ratio_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            score_item.setTextAlignment(Qt.AlignCenter)
+            ratio_item.setTextAlignment(Qt.AlignCenter)
 
             # Apply styling for inactive players
             if player.games_played == 0:
@@ -471,6 +529,23 @@ class EloApp(QWidget):
         message = f"<b>{winner_name}</b>({winner_rank}) beat <b>{loser_name}</b>({loser_rank}) <b>[{winner_score}-{loser_score}]</b>: {winner_change_text} / {loser_change_text}"
         self.history_display.append(message)
 
+        with open(self.game_history_path, 'a') as file:
+            file.write(f"{message}\n")
+        self.limit_game_history()
+
+    def limit_game_history(self):
+        try:
+            with open(self.game_history_path, 'r') as file:
+                lines = file.readlines()
+
+            # Keep only the last 30 entries
+            if len(lines) > 30:
+                with open(self.game_history_path, 'w') as file:
+                    file.writelines(lines[-30:])
+
+        except FileNotFoundError:
+            # Create the file if it doesn't exist
+            open(self.game_history_path, 'w').close()
 
 class ScoreboardDialog(QDialog):
     def __init__(self, parent, player1_name, player2_name):
@@ -501,7 +576,8 @@ class ScoreboardDialog(QDialog):
 
         # Player 1 section
         self.player1_group = QGroupBox()
-        self.player1_group.setStyleSheet("border: 2px solid white;")
+        # self.player1_group.setStyleSheet("border: 2px solid white;")
+        self.player1_group.setStyleSheet("border: 2px solid white; background-color: #4CAF50;")  # Green for Player 1
         self.player1_section = QVBoxLayout()
         self.player1_group.setLayout(self.player1_section)
         players_layout.addWidget(self.player1_group)
@@ -534,7 +610,8 @@ class ScoreboardDialog(QDialog):
 
         # Player 2 section
         self.player2_group = QGroupBox()
-        self.player2_group.setStyleSheet("border: 2px solid white;")
+        # self.player2_group.setStyleSheet("border: 2px solid white;")
+        self.player2_group.setStyleSheet("border: 2px solid white; background-color: #2196F3;")  # Blue for Player 2
         self.player2_section = QVBoxLayout()
         self.player2_group.setLayout(self.player2_section)
         players_layout.addWidget(self.player2_group)
