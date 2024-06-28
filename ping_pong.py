@@ -370,7 +370,7 @@ class EloApp(QWidget):
         self.start_game_button = QPushButton("Start Game")
         self.start_game_button.clicked.connect(self.start_game)
         bottom_layout.addWidget(self.start_game_button)
-        bottom_layout.addSpacing(150)
+        bottom_layout.addSpacing(100)
 
 
         self.remove_selection_button = QPushButton("Clear Player Selections")
@@ -387,11 +387,11 @@ class EloApp(QWidget):
         self.admin_controls_button.clicked.connect(self.open_admin_controls_dialog)
         bottom_layout.addWidget(self.admin_controls_button)
 
-        self.start_game_button.setStyleSheet("background-color: #a6ffae; color: black; font-size: 26px;")  # Green
-        self.remove_selection_button.setStyleSheet("background-color: #ffa6a6; color: black; font-size: 26px;")  # Red
-        self.add_player_button.setStyleSheet("background-color: #9c9cff; color: black; font-size: 26px;")  # Blue
+        self.start_game_button.setStyleSheet("background-color: #a6ffae; color: black; font-size: 20px;")  # Green
+        self.remove_selection_button.setStyleSheet("background-color: #ffa6a6; color: black; font-size: 20px;")  # Red
+        self.add_player_button.setStyleSheet("background-color: #9c9cff; color: black; font-size: 20px;")  # Blue
         self.admin_controls_button.setStyleSheet(
-            "background-color: #FFC107; color: black; font-size: 26px;")  # Amber for admin controls
+            "background-color: #FFC107; color: black; font-size: 20px;")  # Amber for admin controls
 
         # Combine top and bottom layouts
         top_bottom_layout = QVBoxLayout()
