@@ -23,7 +23,7 @@ class Player:
 
     def update_score(self, opponent, won, point_difference):
         # Calculate the K factor based on the point difference
-        K = 70 + point_difference*4 # Increase K based on point difference
+        K = 70 + point_difference*6 # Increase K based on point difference
 
         result = 1 if won else 0
         expected_score = 1 / (1 + 10 ** ((opponent.score - self.score) / 400))
