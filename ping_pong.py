@@ -2,155 +2,23 @@ import sys
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+import numpy as np
+import os
 
-class Player:
-    def __init__(self, name, score=1000, password=""):
-        self.name = name
-        self.score = score
-        self.games_played = 0
-        self.wins = 0
-        self.losses = 0
-        self.password = password
-
-    def update_score(self, opponent, won):
-        K = 100  # Maximum change per game
-        result = 1 if won else 0
-        expected_score = 1 / ( 1 + 10 ** ((opponent.score - self.score) / 400) )
-        score_change = K * (result - expected_score)
-        self.score += score_change
-        self.games_played += 1
-        if won:
-            self.wins += 1
-        else:
-            self.losses += 1
-        return score_change  # Return the score change for history update
-
-    def win_loss_ratio(self):
-        if self.games_played == 0:
-            return "0/0"
-        return f"{self.wins}/{self.losses}"
-
-class AdminControlsDialog(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle('Admin Controls')
-
-        self.layout = QVBoxLayout()
-
-        # Edit player password
-        self.layout.addWidget(QLabel('Edit Player Password'))
-        self.player_password_dropdown = QComboBox()
-        self.layout.addWidget(self.player_password_dropdown)
-        self.new_password_input = QLineEdit()
-        self.new_password_input.setPlaceholderText('New Password')
-        self.new_password_input.setEchoMode(QLineEdit.Password)
-        self.layout.addWidget(self.new_password_input)
-        self.edit_password_button = QPushButton('Edit Password')
-        self.edit_password_button.clicked.connect(self.edit_player_password)
-        self.layout.addWidget(self.edit_password_button)
-
-        # Edit player score
-        self.layout.addWidget(QLabel('Edit Player Score'))
-        self.player_score_dropdown = QComboBox()
-        self.layout.addWidget(self.player_score_dropdown)
-        self.new_score_input = QLineEdit()
-        self.new_score_input.setPlaceholderText('New Score')
-        self.layout.addWidget(self.new_score_input)
-        self.edit_score_button = QPushButton('Edit Score')
-        self.edit_score_button.clicked.connect(self.edit_player_score)
-        self.layout.addWidget(self.edit_score_button)
-
-        # Delete player
-        self.layout.addWidget(QLabel('Delete Player'))
-        self.player_delete_dropdown = QComboBox()
-        self.layout.addWidget(self.player_delete_dropdown)
-        self.delete_player_button = QPushButton('Delete Player')
-        self.delete_player_button.clicked.connect(self.delete_player)
-        self.layout.addWidget(self.delete_player_button)
-
-        # Reset all scores
-        self.reset_button = QPushButton('Reset All Scores')
-        self.reset_button.clicked.connect(self.reset_all_scores)
-        self.layout.addWidget(self.reset_button)
-
-        self.setLayout(self.layout)
-
-    def set_players(self, players):
-        player_names = sorted(players.keys())
-        self.player_password_dropdown.addItems(player_names)
-        self.player_score_dropdown.addItems(player_names)
-        self.player_delete_dropdown.addItems(player_names)
-
-    def edit_player_password(self):
-        player_name = self.player_password_dropdown.currentText()
-        new_password = self.new_password_input.text().strip()
-        if player_name and new_password:
-            self.parent().players[player_name].password = new_password
-            self.parent().save_players()
-            self.new_password_input.clear()
-
-    def edit_player_score(self):
-        player_name = self.player_score_dropdown.currentText()
-        try:
-            new_score = float(self.new_score_input.text().strip())
-            if player_name:
-                self.parent().players[player_name].score = new_score
-                self.parent().save_players()
-                self.parent().update_leaderboard()
-                self.new_score_input.clear()
-        except ValueError:
-            pass
-
-    def delete_player(self):
-        player_name = self.player_delete_dropdown.currentText()
-        if player_name:
-            del self.parent().players[player_name]
-            self.parent().save_players()
-            self.parent().update_dropdowns()
-            self.parent().update_leaderboard()
-
-    def reset_all_scores(self):
-        for player in self.parent().players.values():
-            player.score = 1000
-            player.games_played = 0
-            player.wins = 0
-            player.losses = 0
-        self.parent().save_players()
-        self.parent().update_leaderboard()
-
-class AddPlayerDialog(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle('Add New Player')
-
-        self.layout = QVBoxLayout()
-
-        self.name_label = QLabel('Player Name:')
-        self.layout.addWidget(self.name_label)
-        self.name_input = QLineEdit()
-        self.layout.addWidget(self.name_input)
-
-        self.password_label = QLabel('Password:')
-        self.layout.addWidget(self.password_label)
-        self.password_input = QLineEdit()
-        self.password_input.setEchoMode(QLineEdit.Password)
-        self.layout.addWidget(self.password_input)
-
-        self.add_button = QPushButton('Add Player')
-        self.add_button.clicked.connect(self.accept)
-        self.layout.addWidget(self.add_button)
-
-        self.setLayout(self.layout)
-
-    def get_player_data(self):
-        return self.name_input.text().strip(), self.password_input.text()
+# pingpong.py
+from modules.player import Player
+from modules.adminControls import AdminControlsDialog
+from modules.addPlayer import AddPlayerDialog
+from modules.scoreboardDialog import ScoreboardDialog
 
 class EloApp(QWidget):
     def __init__(self):
         super().__init__()
         self.players = {}
         self.load_players()  # Load players at startup
-        self.init_timers()
+        # self.init_timers()
         self.init_ui()
         self.update_dropdowns()
         self.game_history_path = 'game_history.txt'
@@ -199,25 +67,57 @@ class EloApp(QWidget):
                     wins = int(parts[3])
                     losses = int(parts[4])
                     password = parts[5]
+                    lifetime_games_played = int(parts[6])
+                    lifetime_wins = int(parts[7])
+                    lifetime_losses = int(parts[8])
+                    lifetime_score = float(parts[9])
                     if name not in self.players:
                         self.players[name] = Player(name, score, password)
                         self.players[name].games_played = games_played
                         self.players[name].wins = wins
                         self.players[name].losses = losses
+
+                        self.players[name].lifetime_games_played = lifetime_games_played
+                        self.players[name].lifetime_wins = lifetime_wins
+                        self.players[name].lifetime_losses = lifetime_losses
+                        self.players[name].lifetime_score = lifetime_score
         except FileNotFoundError:
             print(f"No existing player data file found at {filepath}. Starting with an empty player list.")
         except Exception as e:
             print(f"Error loading players from {filepath}: {e}")
+        if not os.path.exists('score_history.txt'):
+            print("Score history file does not exist, starting fresh.")
+            return
+        try:
+            with open('score_history.txt', 'r') as file:
+                for line in file:
+                    parts = line.strip().split(',')
+                    name = parts[0]
+                    scores = list(map(float, parts[1:]))
+                    if name in self.players:
+                        self.players[name].score_history = scores
+            print("Score history loaded successfully.")
+        except Exception as e:
+            print(f"Failed to load score history: {e}")
 
     def save_players(self):
         try:
             with open('players.txt', 'w') as file:
                 for player in self.players.values():
                     file.write(
-                        f"{player.name},{player.score},{player.games_played},{player.wins},{player.losses},{player.password}\n")
+                        f"{player.name},{player.score},{player.games_played},{player.wins},{player.losses},{player.password},{player.lifetime_games_played},{player.lifetime_wins},{player.lifetime_losses},{player.lifetime_score:.2f}\n")
             print("Players saved successfully.")  # Debug print
         except Exception as e:
             print(f"Failed to save players: {e}")
+        try:
+            with open('score_history.txt', 'w') as file:
+                for name, player in self.players.items():
+                    # Write the player's name followed by their score history
+                    scores = ','.join(map(str, player.score_history))
+                    file.write(f"{name},{scores}\n")
+            print("Score history saved successfully.")
+        except Exception as e:
+            print(f"Failed to save score history: {e}")
 
     def add_new_player(self):
         new_name = self.new_player_name.text().strip()
@@ -287,7 +187,7 @@ class EloApp(QWidget):
 
     def remove_player_selection(self):
         # Reset the dropdowns to no selection
-        self.player1_dropdown.setCurrentIndex(0)  # Assumes 0 is the 'Select Player' placeholder
+        self.player1_dropdown.setCurrentIndex(0) 
         self.player2_dropdown.setCurrentIndex(0)
 
     def start_game(self):
@@ -311,6 +211,7 @@ class EloApp(QWidget):
         self.leaderboard_table = QTableWidget()
         self.leaderboard_table.setColumnCount(3)
         self.leaderboard_table.setHorizontalHeaderLabels(['Player Name', 'Score', 'W/L Ratio'])
+        self.leaderboard_table.cellDoubleClicked.connect(self.display_lifetime_stats)
         # smaller font for the header
         header_font = self.leaderboard_table.horizontalHeader().font()
         header_font.setPointSize(18)  # Adjust the size as needed
@@ -410,21 +311,67 @@ class EloApp(QWidget):
     def init_timers(self):
         # Timer to clear selections after 7 minutes of inactivity
         self.clear_selection_timer = QTimer(self)
-        self.clear_selection_timer.setInterval(7 * 60 * 1000)  # 7 minutes in milliseconds
+        self.clear_selection_timer.setInterval(5 * 60 * 1000)  # 5 minutes in milliseconds
         self.clear_selection_timer.setSingleShot(True)
-        self.clear_selection_timer.timeout.connect(self.clear_player_selections)
+        self.clear_selection_timer.timeout.connect(self.remove_player_selection)
 
     def reset_timers(self):
-        self.clear_selection_timer.start()
-
-    def clear_player_selections(self):
-        self.player1_dropdown.setCurrentIndex(0)
-        self.player2_dropdown.setCurrentIndex(0)
+        try:
+            self.clear_selection_timer.start()
+        except:
+            pass
 
     # Override keyPressEvent to reset timers on any key press
     def keyPressEvent(self, event):
         super().keyPressEvent(event)
         self.reset_timers()
+
+    def display_lifetime_stats(self, row, column):
+        player_name = self.leaderboard_table.item(row, 0).text().strip()
+        if player_name in self.players:
+            player = self.players[player_name]
+
+            # Create the custom dialog
+            dialog = QDialog(self)
+            dialog.setWindowTitle(f"Lifetime Stats for {player.name}")
+            dialog.setStyleSheet("font-size: 18px;")
+
+            # Create the layout for the dialog
+            layout = QVBoxLayout()
+
+            # Add player data to the layout
+            message = (f"Player: {player.name}\n"
+                    f"Score: {player.lifetime_score:.2f}\n"
+                    f"Games Played: {player.lifetime_games_played}\n"
+                    f"Wins: {player.lifetime_wins}\n"
+                    f"Losses: {player.lifetime_losses}")
+            info_label = QLabel(message)
+            layout.addWidget(info_label)
+
+            # Create a matplotlib figure and add it to the dialog
+            fig = Figure(figsize=(5, 4), dpi=100)
+            ax = fig.add_subplot(111)
+            ax.plot(range(1, len(player.score_history) + 1), player.score_history, marker='o', linestyle='-', color='b')
+
+            # Set x-axis to show only positive integers starting from 1
+            ax.set_xlim(1, len(player.score_history))
+            ax.set_xticks(np.arange(1, len(player.score_history) + 1))
+
+            ax.set_title(f"Score Over Time")
+            ax.set_xlabel("Number of Games Played")
+            ax.set_ylabel("Score")
+            ax.grid(True)
+
+            canvas = FigureCanvas(fig)
+            layout.addWidget(canvas)
+
+            dialog.setLayout(layout)
+
+            # Resize the dialog to a reasonable size
+            dialog.resize(600, 400)
+
+            # Show the dialog
+            dialog.exec_()
 
     def open_admin_controls_dialog(self):
         password, ok = QInputDialog.getText(self, 'Admin Login', 'Enter admin password:', QLineEdit.Password)
@@ -449,34 +396,6 @@ class EloApp(QWidget):
         else:
             self.history_display.append("Invalid name, password or player already exists.")
 
-    def set_winner(self):
-        player1_name = self.player1_dropdown.currentText()
-        player2_name = self.player2_dropdown.currentText()
-        if player1_name != player2_name:
-            # Capture current rankings before updating any scores
-            sorted_players = self.get_sorted_players()
-            player_ranks = {name: rank + 1 for rank, (name, player) in enumerate(sorted_players)}
-
-            # Assume player 1 is winner for example
-            winner_name = self.player1_dropdown.currentText()
-            loser_name = self.player2_dropdown.currentText()
-            player1 = self.players[player1_name]
-            player2 = self.players[player2_name]
-
-            # Perform score updates
-            player1_score_change = player1.update_score(player2, True)
-            player2_score_change = player2.update_score(player1, False)
-
-            # Update leaderboard to reflect new scores
-            self.update_leaderboard()
-
-            # Update history with rankings from before the match
-            self.update_history(player1_name, player2_name, winner_name, player1_score_change, player2_score_change,
-                                player_ranks)
-
-            # Save updated player information
-            self.save_players()
-
     def update_history_from_file(self, history_entry):
         # Check if this is the first entry
         is_first_entry = not bool(self.history_display.toPlainText().strip())
@@ -492,19 +411,24 @@ class EloApp(QWidget):
 
     def update_leaderboard(self):
         self.leaderboard_table.clearContents()
-        active_players = {name: player for name, player in self.players.items() if player.games_played > 0}
-        inactive_players = {name: player for name, player in self.players.items() if player.games_played == 0}
+        # Separate active and inactive players
+        active_players = {name: player for name, player in self.players.items() if player.games_played >= 3}
+        inactive_players = {name: player for name, player in self.players.items() if player.games_played < 3}
 
-        # Sort active players by score
+        # Sort active players by score in descending order
         sorted_active_players = sorted(active_players.items(), key=lambda x: -x[1].score)
-        sorted_inactive_players = sorted(inactive_players.items(), key=lambda x: x[0])  # Alphabetical for inactive
+        
+        # Sort inactive players alphabetically by name
+        sorted_inactive_players = sorted(inactive_players.items(), key=lambda x: x[0])
 
-        # Combine lists
+        # Combine lists: active players at the top, inactive players at the bottom
         sorted_players = sorted_active_players + sorted_inactive_players
 
-        self.leaderboard_table.setRowCount(len(self.players))
+        # Set the number of rows in the leaderboard table
+        self.leaderboard_table.setRowCount(len(sorted_players))
+
         for row, (name, player) in enumerate(sorted_players):
-            # Create table items
+            # Create table items with player details
             name_with_space = f" {name}"
             name_item = QTableWidgetItem(name_with_space)
             score_item = QTableWidgetItem(f"{player.score:.2f}")
@@ -515,7 +439,7 @@ class EloApp(QWidget):
             ratio_item.setTextAlignment(Qt.AlignCenter)
 
             # Apply styling for inactive players
-            if player.games_played == 0:
+            if player.games_played < 3:
                 for item in (name_item, score_item, ratio_item):
                     item.setForeground(QColor('lightGray'))
                     item.setFont(QFont('Arial', 25, QFont.StyleItalic))
@@ -524,6 +448,7 @@ class EloApp(QWidget):
             self.leaderboard_table.setItem(row, 0, name_item)
             self.leaderboard_table.setItem(row, 1, score_item)
             self.leaderboard_table.setItem(row, 2, ratio_item)
+
 
         # Manually set the row height after populating the table
         row_height = 80  # Adjust this value as needed
@@ -565,223 +490,6 @@ class EloApp(QWidget):
         except FileNotFoundError:
             # Create the file if it doesn't exist
             open(self.game_history_path, 'w').close()
-
-class ScoreboardDialog(QDialog):
-    def __init__(self, parent, player1_name, player2_name):
-        super().__init__(parent)
-        self.player1_name = player1_name
-        self.player2_name = player2_name
-        self.player1_score = 0
-        self.player2_score = 0
-
-        self.end_game_confirmation = False
-        self.start_game_confirmation = False
-        self.quit_game_confirmation = False
-
-        self.setWindowTitle('Game Scoreboard')
-        self.setStyleSheet("background-color: #282C34; color: #FFFFFF;")
-
-        screen = QDesktopWidget().screenGeometry()
-        self.showFullScreen()
-        '''self.setGeometry(0, 0, screen.width(), int(screen.height()*0.8))'''
-
-        # Main layout
-        self.layout = QVBoxLayout()
-        self.setLayout(self.layout)
-
-        # Players layout
-        players_layout = QHBoxLayout()
-        self.layout.addLayout(players_layout)
-
-        # Player 1 section
-        self.player1_group = QGroupBox()
-        # self.player1_group.setStyleSheet("border: 2px solid white;")
-        self.player1_group.setStyleSheet("border: 2px solid white; background-color: #4CAF50;")  # Green for Player 1
-        self.player1_section = QVBoxLayout()
-        self.player1_group.setLayout(self.player1_section)
-        players_layout.addWidget(self.player1_group)
-
-        self.player1_label = QLabel(f"{self.player1_name}")
-        self.player1_label.setStyleSheet("font-size: 88px; font-weight: bold;")
-        self.player1_label.setAlignment(Qt.AlignCenter)
-        self.player1_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
-        self.player1_score_label = QLabel(f"{self.player1_score}")
-        self.player1_score_label.setStyleSheet("font-size: 296px; font-weight: bold;")
-        self.player1_score_label.setAlignment(Qt.AlignCenter)
-        self.player1_score_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
-        self.player1_section.addWidget(self.player1_label, 1)  # 20% for name
-        self.player1_section.addWidget(self.player1_score_label, 4)  # 80% for score
-
-        self.player1_button_layout = QHBoxLayout()
-        self.player1_section.addLayout(self.player1_button_layout)
-
-        self.player1_add_button = QPushButton("+1")
-        self.player1_add_button.setStyleSheet("font-size: 32px; background-color: #4CAF50; color: white;")
-        self.player1_add_button.clicked.connect(lambda: self.update_score(self.player1_name, 1))
-        self.player1_button_layout.addWidget(self.player1_add_button)
-
-        self.player1_sub_button = QPushButton("-1")
-        self.player1_sub_button.setStyleSheet("font-size: 32px; background-color: #F44336; color: white;")
-        self.player1_sub_button.clicked.connect(lambda: self.update_score(self.player1_name, -1))
-        self.player1_button_layout.addWidget(self.player1_sub_button)
-
-        # Player 2 section
-        self.player2_group = QGroupBox()
-        # self.player2_group.setStyleSheet("border: 2px solid white;")
-        self.player2_group.setStyleSheet("border: 2px solid white; background-color: #2196F3;")  # Blue for Player 2
-        self.player2_section = QVBoxLayout()
-        self.player2_group.setLayout(self.player2_section)
-        players_layout.addWidget(self.player2_group)
-
-        self.player2_label = QLabel(f"{self.player2_name}")
-        self.player2_label.setStyleSheet("font-size: 88px; font-weight: bold;")
-        self.player2_label.setAlignment(Qt.AlignCenter)
-        self.player2_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
-        self.player2_score_label = QLabel(f"{self.player2_score}")
-        self.player2_score_label.setStyleSheet("font-size: 296px; font-weight: bold;")
-        self.player2_score_label.setAlignment(Qt.AlignCenter)
-        self.player2_score_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
-        self.player2_section.addWidget(self.player2_label, 1)  # 20% for name
-        self.player2_section.addWidget(self.player2_score_label, 4)  # 80% for score
-
-        self.player2_button_layout = QHBoxLayout()
-        self.player2_section.addLayout(self.player2_button_layout)
-
-        self.player2_add_button = QPushButton("+1")
-        self.player2_add_button.setStyleSheet("font-size: 32px; background-color: #4CAF50; color: white;")
-        self.player2_add_button.clicked.connect(lambda: self.update_score(self.player2_name, 1))
-        self.player2_button_layout.addWidget(self.player2_add_button)
-
-        self.player2_sub_button = QPushButton("-1")
-        self.player2_sub_button.setStyleSheet("font-size: 32px; background-color: #F44336; color: white;")
-        self.player2_sub_button.clicked.connect(lambda: self.update_score(self.player2_name, -1))
-        self.player2_button_layout.addWidget(self.player2_sub_button)
-
-        # Control buttons
-        self.control_button_layout = QHBoxLayout()
-        self.layout.addLayout(self.control_button_layout)
-
-        self.control_button_layout.addStretch()
-
-        self.end_game_button = QPushButton("End Game")
-        self.end_game_button.setStyleSheet("font-size: 24px; background-color: #2196F3; color: white;")
-        self.end_game_button.clicked.connect(self.end_game)
-        self.control_button_layout.addWidget(self.end_game_button)
-
-        self.quit_game_button = QPushButton("Quit Game")
-        self.quit_game_button.setStyleSheet("font-size: 24px; background-color: #9E9E9E; color: white;")
-        self.quit_game_button.clicked.connect(self.quit_game)
-        self.control_button_layout.addWidget(self.quit_game_button)
-
-        self.control_button_layout.addStretch()
-
-        # Message label for temporary messages
-        self.message_label = QLabel("")
-        self.message_label.setAlignment(Qt.AlignCenter)
-        self.message_label.setStyleSheet("font-size: 24px; color: yellow;")
-        self.layout.addWidget(self.message_label)
-        
-        self.setFocusPolicy(Qt.StrongFocus)
-        self.activateWindow()
-        self.setFocus()
-
-    def update_score(self, player_name, delta):
-        if player_name == self.player1_name:
-            self.player1_score += delta
-            self.player1_score = max(0, self.player1_score)  # Ensure score doesn't go below 0
-            self.player1_score_label.setText(f"{self.player1_score}")
-        else:
-            self.player2_score += delta
-            self.player2_score = max(0, self.player2_score)  # Ensure score doesn't go below 0
-            self.player2_score_label.setText(f"{self.player2_score}")
-
-    def keyPressEvent(self, event):
-        key = event.key()
-        parent = self.parent()  # Access the parent class instance
-
-        if key == Qt.Key_1:  # End game
-            if self.end_game_confirmation:
-                self.end_game()
-                self.end_game_confirmation = False
-            else:
-                self.show_temp_message('Press End Game (1) again to confirm')
-                self.end_game_confirmation = True
-                QTimer.singleShot(2000, self.reset_end_game_confirmation)
-        elif key == Qt.Key_2:  # Start game
-            if not parent.game_in_progress:  # Only start game if no game is in progress
-                self.show_temp_message('Starting new game')
-                parent.start_game()
-            else:
-                self.show_temp_message('Game already in progress')
-        elif key == Qt.Key_3:  # Quit game
-            if self.quit_game_confirmation:
-                self.quit_game()
-                self.quit_game_confirmation = False
-            else:
-                self.show_temp_message('Press Quit Game (3) again to confirm')
-                self.quit_game_confirmation = True
-                QTimer.singleShot(2000, self.reset_quit_game_confirmation)
-        elif key == Qt.Key_4:  # Player 2, +1
-            self.update_score(self.player2_name, 1)
-        elif key == Qt.Key_5:  # Player 2, -1
-            self.update_score(self.player2_name, -1)
-        elif key == Qt.Key_7:  # Player 1, +1
-            self.update_score(self.player1_name, 1)
-        elif key == Qt.Key_8:  # Player 1, -1
-            self.update_score(self.player1_name, -1)
-
-    def show_temp_message(self, message):
-        self.message_label.setText(message)
-        QTimer.singleShot(2000, self.clear_temp_message)  # Clear message after 2 seconds
-
-    def clear_temp_message(self):
-        self.message_label.setText("")
-
-    def reset_end_game_confirmation(self):
-        self.end_game_confirmation = False
-
-    def reset_start_game_confirmation(self):
-        self.start_game_confirmation = False
-
-    def reset_quit_game_confirmation(self):
-        self.quit_game_confirmation = False
-
-    def start_game(self):
-        QMessageBox.information(self, 'Game Started', 'The game has started.')
-
-    def end_game(self):
-        parent = self.parent()
-        player1 = parent.players[self.player1_name]
-        player2 = parent.players[self.player2_name]
-
-        # Capture current rankings before updating any scores
-        sorted_players = parent.get_sorted_players()
-        player_ranks = {name: rank + 1 for rank, (name, player) in enumerate(sorted_players)}
-
-        if self.player1_score > self.player2_score:
-            player1_score_change = player1.update_score(player2, True)
-            player2_score_change = player2.update_score(player1, False)
-            parent.update_history(self.player1_name, self.player2_name, self.player1_name, player1_score_change, player2_score_change, player_ranks)
-        elif self.player2_score > self.player1_score:
-            player1_score_change = player1.update_score(player2, False)
-            player2_score_change = player2.update_score(player1, True)
-            parent.update_history(self.player1_name, self.player2_name, self.player2_name, player1_score_change, player2_score_change, player_ranks)
-        else:
-            # Handle tie separately if required
-            parent.history_display.append(f"Game between <b>{self.player1_name}</b> and <b>{self.player2_name}</b> ended in a tie with score {self.player1_score} to {self.player2_score}")
-
-        parent.save_players()
-        parent.update_leaderboard()
-        self.close()
-
-    def quit_game(self):
-        self.parent().history_display.append(f"Game between <b>{self.player1_name}</b> and <b>{self.player2_name}</b> was quit without a winner")
-        self.close()
-
 
 def main():
     app = QApplication(sys.argv)
