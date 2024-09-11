@@ -195,8 +195,14 @@ class ScoreboardDialog(QDialog):
         player2 = parent.players[self.player2_name]
 
         # Capture current rankings before updating any scores
-        sorted_players = parent.get_sorted_players()
-        player_ranks = {name: rank + 1 for rank, (name, player) in enumerate(sorted_players)}
+        # sorted_players = parent.get_sorted_players()
+        # player_ranks = {name: rank + 1 for rank, (name, player) in enumerate(sorted_players)}
+        # Capture current rankings before updating any scores
+
+        # Only consider active players for ranking (those with 3 or more games)
+        active_players = {name: player for name, player in parent.players.items() if player.games_played >= 3}
+        sorted_active_players = sorted(active_players.items(), key=lambda x: -x[1].score)
+        player_ranks = {name: rank + 1 for rank, (name, player) in enumerate(sorted_active_players)}
 
         if self.player1_score > self.player2_score:
             player1_score_change = player1.update_score(player2, True, self.player1_score-self.player2_score)

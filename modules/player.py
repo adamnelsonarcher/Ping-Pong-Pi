@@ -22,8 +22,19 @@ class Player:
         self.score_history = [score]
 
     def update_score(self, opponent, won, point_difference):
+        opponent_is_unranked = opponent.games_played < 3
+        player_is_unranked = self.games_played < 3
+
+        K = 70 + point_difference*6
         # Calculate the K factor based on the point difference
-        K = 70 + point_difference*6 # Increase K based on point difference
+        if player_is_unranked and opponent_is_unranked:
+            K = K*1.15 # Both players are unranked, 15% increase in volatility
+        elif player_is_unranked:
+            K = K*1.15 # 15% increase in volatility for unranked player
+        elif opponent_is_unranked:
+            K = 20   # The ranked player only gains/loses a maximum of 20 points
+        else:
+            pass  # Both players are ranked, normal scoring applies
 
         result = 1 if won else 0
         expected_score = 1 / (1 + 10 ** ((opponent.score - self.score) / 400))

@@ -431,8 +431,12 @@ class EloApp(QWidget):
             # Create table items with player details
             name_with_space = f" {name}"
             name_item = QTableWidgetItem(name_with_space)
-            score_item = QTableWidgetItem(f"{player.score:.2f}")
             ratio_item = QTableWidgetItem(player.win_loss_ratio())
+            if player.games_played < 3:
+                score_item = QTableWidgetItem("Unranked")
+            else:
+                score_item = QTableWidgetItem(f"{player.score:.2f}")
+            
 
             # Align text in the score and ratio columns
             score_item.setTextAlignment(Qt.AlignCenter)
@@ -458,19 +462,29 @@ class EloApp(QWidget):
 
     def update_history(self, player1_name, player2_name, winner_name, player1_score_change, player2_score_change, player_ranks):
         # Get pre-match ranks for the players involved
-        winner_rank = player_ranks[winner_name]
+        winner_rank = player_ranks.get(winner_name, "Unranked")
         loser_name = player2_name if winner_name == player1_name else player1_name
-        loser_rank = player_ranks[loser_name]
+        loser_rank = player_ranks.get(loser_name, "Unranked")
+
+        # winner_rank = player_ranks[winner_name]
+        # loser_name = player2_name if winner_name == player1_name else player1_name
+        # loser_rank = player_ranks[loser_name]
 
         winner_change = round(player1_score_change if winner_name == player1_name else player2_score_change, 2)
         loser_change = round(player2_score_change if winner_name == player1_name else player1_score_change, 2)
         winner_change_text = f"+{winner_change}" if winner_change > 0 else f"{winner_change}"
         loser_change_text = f"+{loser_change}" if loser_change > 0 else f"{loser_change}"
-
-        # Ensure names are bold in the history text and include score
         winner_score = self.scoreboard.player1_score if winner_name == self.scoreboard.player1_name else self.scoreboard.player2_score
         loser_score = self.scoreboard.player2_score if loser_name == self.scoreboard.player2_name else self.scoreboard.player1_score
-        message = f"<b>{winner_name}</b>({winner_rank}) beat <b>{loser_name}</b>({loser_rank}) <b>[{winner_score}-{loser_score}]</b>: {winner_change_text} / {loser_change_text}"
+
+        # Ensure names are bold in the history text and include score
+        # Check if either player is unranked
+        if winner_rank == "Unranked" or loser_rank == "Unranked":
+            # Only display the winner, loser, and the final score
+            message = f"<b>{winner_name}</b>({winner_rank}) beat <b>{loser_name}</b>({loser_rank}) <b>[{winner_score}-{loser_score}]</b>"
+        else:
+            message = f"<b>{winner_name}</b>({winner_rank}) beat <b>{loser_name}</b>({loser_rank}) <b>[{winner_score}-{loser_score}]</b>: {winner_change_text} / {loser_change_text}"
+
         self.history_display.append(message)
 
         with open(self.game_history_path, 'a') as file:

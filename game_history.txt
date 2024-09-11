@@ -1,10 +1,3 @@
-<b>Adam</b>(4) beat <b>TestPlayer</b>(3) <b>[1-0]</b>: +58.55 / -50.21
-<b>test1</b>(4) beat <b>Adam</b>(1) <b>[2-0]</b>: +42.85 / -50.0
-<b>Adam</b>(4) beat <b>test1</b>(1) <b>[4-0]</b>: +63.05 / -54.28
-<b>Adam</b>(1) beat <b>test1</b>(4) <b>[2-0]</b>: +46.48 / -39.93
-<b>Adam</b>(1) beat <b>test1</b>(4) <b>[2-0]</b>: +34.56 / -30.21
-<b>Adam</b>(1) beat <b>test1</b>(4) <b>[33-0]</b>: +66.5 / -53.92
-<b>TestPlayer</b>(3) beat <b>adam2</b>(2) <b>[4-0]</b>: +52.0 / -44.27
 <b>Adam</b>(1) beat <b>TestPlayer</b>(2) <b>[1-0]</b>: +36.89 / -32.85
 <b>Adam</b>(1) beat <b>TestPlayer</b>(2) <b>[10-0]</b>: +53.35 / -43.64
 <b>Adam</b>(1) beat <b>TestPlayer</b>(2) <b>[30-0]</b>: +72.95 / -52.63
@@ -28,3 +21,10 @@
 <b>Adam</b>(1) beat <b>TestPlayer</b>(3) <b>[1-0]</b>: +37.0 / -33.07
 <b>Adam</b>(1) beat <b>TestPlayer</b>(4) <b>[1-0]</b>: +29.64 / -26.66
 <b>Adam</b>(1) beat <b>TestPlayer</b>(4) <b>[1-0]</b>: +24.11 / -21.91
+<b>TestPlayer</b>(2) beat <b>test1</b>(Unranked) <b>[3-0]</b>: +12.31 / -79.0
+<b>TestPlayer</b>(2) beat <b>test1</b>(--) <b>[1-0]</b>: +9.72 / -53.82
+<b>test1</b>(Unranked) beat <b>TestPlayer</b>(2) <b>[2-0]</b>
+<b>TestPlayer4</b>(Unranked) beat <b>TestPlayer5</b>(Unranked) <b>[10-0]</b>
+<b>TestPlayer4</b>(Unranked) beat <b>TestPlayer5</b>(Unranked) <b>[2-0]</b>
+<b>TestPlayer4</b>(Unranked) beat <b>TestPlayer5</b>(Unranked) <b>[7-0]</b>
+<b>TestPlayer</b>(4) beat <b>TestPlayer4</b>(1) <b>[2-0]</b>: +59.85 / -65.39
