@@ -344,7 +344,8 @@ class EloApp(QWidget):
                     f"Score: {player.lifetime_score:.2f}\n"
                     f"Games Played: {player.lifetime_games_played}\n"
                     f"Wins: {player.lifetime_wins}\n"
-                    f"Losses: {player.lifetime_losses}")
+                    f"Losses: {player.lifetime_losses}\n"
+                    f"*games before being ranked are not counted")
             info_label = QLabel(message)
             layout.addWidget(info_label)
 
