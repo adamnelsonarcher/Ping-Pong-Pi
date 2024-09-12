@@ -53,15 +53,14 @@ class Player:
             self.lifetime_score = 100
 
         # Update win/loss records
-        if won:
-            self.wins += 1
-            if self.games_played >= 3:
-                self.lifetime_wins += 1
-        else:
-            self.losses += 1
-            if self.games_played >= 3:
-                self.lifetime_losses += 1
-
+        ### CHANGELOG v2.1, only count if the player is active.
+        if self.games_played >= 3:
+                if won:
+                        self.wins += 1
+                        self.lifetime_wins += 1
+                else:
+                        self.losses += 1
+                        self.lifetime_losses += 1
         return score_change
 
     def win_loss_ratio(self):
