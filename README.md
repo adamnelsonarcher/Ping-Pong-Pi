@@ -5,7 +5,7 @@
 <p><span style="text-decoration: underline;"><span style="font-size: 12pt;"><strong>Changelog</strong></span></span></p>
 <p><strong>v2.1 - 9/12/24</strong></p>
 <ul>
-<li>Patched unranked player point farming. You can now only gain 20 points (at most) from defeating an unranked player.</li>
+<li>Removed ability to farm unranked players. You can now only gain 20 points (at most) from defeating an unranked player.</li>
 </ul>
 <p><strong>v2.0 - 9/1/24</strong></p>
 <ul>
