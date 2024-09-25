@@ -2,6 +2,7 @@ import sys
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
+from modules.util import *
 
 class AdminControlsDialog(QDialog):
     def __init__(self, parent=None):
@@ -59,7 +60,7 @@ class AdminControlsDialog(QDialog):
         new_password = self.new_password_input.text().strip()
         if player_name and new_password:
             self.parent().players[player_name].password = new_password
-            self.parent().save_players()
+            Util.save_players(self.parent())
             self.new_password_input.clear()
 
     def edit_player_score(self):
@@ -68,7 +69,7 @@ class AdminControlsDialog(QDialog):
             new_score = float(self.new_score_input.text().strip())
             if player_name:
                 self.parent().players[player_name].score = new_score
-                self.parent().save_players()
+                Util.save_players(self.parent())
                 self.parent().update_leaderboard()
                 self.new_score_input.clear()
         except ValueError:
@@ -78,7 +79,7 @@ class AdminControlsDialog(QDialog):
         player_name = self.player_delete_dropdown.currentText()
         if player_name:
             del self.parent().players[player_name]
-            self.parent().save_players()
+            Util.save_players(self.parent())
             self.parent().update_dropdowns()
             self.parent().update_leaderboard()
 
@@ -88,5 +89,5 @@ class AdminControlsDialog(QDialog):
             player.games_played = 0
             player.wins = 0
             player.losses = 0
-        self.parent().save_players()
+        Util.save_players(self.parent())
         self.parent().update_leaderboard()

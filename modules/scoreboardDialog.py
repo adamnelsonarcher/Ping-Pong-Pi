@@ -2,6 +2,7 @@ import sys
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
+from modules.util import *
 
 class ScoreboardDialog(QDialog):
     def __init__(self, parent, player1_name, player2_name):
@@ -216,7 +217,7 @@ class ScoreboardDialog(QDialog):
             # Handle tie separately if required
             parent.history_display.append(f"Game between <b>{self.player1_name}</b> and <b>{self.player2_name}</b> ended in a tie with score {self.player1_score} to {self.player2_score}")
 
-        parent.save_players()
+        Util.save_players(parent)
         parent.update_leaderboard()
         parent.init_timers()
         self.close()
