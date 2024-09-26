@@ -1,30 +1,30 @@
-<b>TestPlayer4</b>(Unranked) beat <b>TestPlayer5</b>(Unranked) <b>[7-0]</b>
-<b>TestPlayer</b>(4) beat <b>TestPlayer4</b>(1) <b>[2-0]</b>: +59.85 / -65.39
-<b>test1</b> beat <b>test2</b>(Unranked) <b>[1-0]</b>
-<b>test3</b> beat <b>test2</b>(Unranked) <b>[2-0]</b>
-<b>4</b> beat <b>test3</b>(Unranked) <b>[1-0]</b>
-<b>4</b>(Unranked) beat <b>test3</b>(Unranked) <b>[1-0]</b>
-<b>4</b>(Unranked) beat <b>5</b>(Unranked) <b>[1-0]</b>
-<b>1</b>(Unranked) beat <b>2</b>(Unranked) <b>[2-0]</b>
-<b>t</b>(Unranked) beat <b>1</b>(Unranked) <b>[2-0]</b>
-<b>1</b>(Unranked) beat <b>2</b>(Unranked) <b>[2-0]</b>
-<b>2</b>(Unranked) beat <b>1</b> <b>[2-0]</b>
-<b>1</b> beat <b>2</b> <b>[2-0]</b>: +35.74 / -31.66
-<b>1</b>(Unranked) beat <b>t</b>(Unranked) <b>[1-0]</b>
-<b>2</b>(Unranked) beat <b>1</b>(Unranked) <b>[1-0]</b>
-<b>1</b> beat <b>2</b> <b>[1-0]</b>: +36.7 / -32.72
-<b>2</b> beat <b>t</b>(Unranked) <b>[1-0]</b>
-<b>3</b>(Unranked) beat <b>4</b>(Unranked) <b>[2-0]</b>
-<b>1</b> beat <b>4</b>(Unranked) <b>[1-0]</b>
-<b>1</b> beat <b>2</b> <b>[1-0]</b>: +32.4 / -28.99
-<b>1</b> beat <b>3</b>(Unranked) <b>[1-0]</b>
-<b>3</b>(Unranked) beat <b>4</b>(Unranked) <b>[1-0]</b>
-<b>2</b>(Unranked) beat <b>1</b>(Unranked) <b>[1-0]</b>
-<b>1</b>(Unranked) beat <b>3</b>(Unranked) <b>[1-0]</b>
-<b>3</b>(Unranked) beat <b>1</b>(Unranked) <b>[1-0]</b>
-<b>4</b>(Unranked) beat <b>1</b> <b>[2-0]</b>
-<b>1</b> beat <b>4</b>(Unranked) <b>[2-0]</b>
-<b>1</b> beat <b>4</b>(Unranked) <b>[2-0]</b>
-<b>4</b> beat <b>1</b> <b>[1-0]</b>: +37.44 / -42.02
-<b>1</b> beat <b>t</b>(Unranked) <b>[2-0]</b>
-<b>t</b>(Unranked) beat <b>1</b> <b>[1-0]</b>
+<b>2</b> beat <b>t</b> <b>[4-0]</b>: +15.96 / -17.32
+<b>2</b> beat <b>t</b> <b>[1-0]</b>: +11.27 / -11.95
+<b>3</b>(Unranked) beat <b>t</b> <b>[5-0]</b>
+<b>3</b> beat <b>t</b> <b>[5-0]</b>: +19.79 / -21.86
+<b>3</b> beat <b>t</b> <b>[5-0]</b>: +16.56 / -18.04
+<b>t</b> (ranked 6) pulled off an UNDERDOG VICTORY against <b>5</b> (ranked 1) <b>14 / 5</b>
+<b>t</b> (ranked #6) pulled off an <span style='color:gold;'>UNDERDOG VICTORY</span> against <b>2</b> (ranked #1) <b>8 / 0</b>
+<b>4</b> (ranked #6) pulled off an <span style='color:gold;'><b>UNDERDOG VICTORY</b></span> against <b>5</b> (ranked #1) [<b>4 - 0</b>] : +65.4 / -57.42
+<b>1</b> beat <b>2</b> <b>[1-0]</b>: +45.01 / -40.17
+<b>2</b> beat <b>1</b> <b>[1-0]</b>: +35.83 / -40.22
+<b>t</b> (ranked #6) pulled off an <span style='color:gold;'><b>UNDERDOG VICTORY</b></span> against <b>2</b> (ranked #1) [<b>21 - 16</b>] : +94.68 / -91.16
+<b>t</b> (ranked #6) pulled off an <span style='color:gold;'><b>UNDERDOG VICTORY</b></span> against <b>2</b> (ranked #1) [<b>20 - 10</b>] : +117.51 / -137.47
+<span style='color:red;'><b>t</b> SKUNKED <b>3</b> <b>[11-1]</span></b>: +154.05 / -146.29
+<b>t</b> beat <b>3</b> <b>[3-0]</b>: +96.92 / -85.51
+<b>t</b> beat <b>3</b> <b>[5-0]</b>: +80.17 / -65.46
+<span style='color:red;'><b>3</b> SKUNKED <b>5</b> <b>[7-0]</span></b>: +109.89 / -95.64
+<span style='color:red;'><b>t</b> SKUNKED <b>2</b> <b>[11-1]</span></b>: +112.96 / -94.08
+<b>3</b> beat <b>2</b> <b>[5-3]</b>: +62.33 / -54.32
+<b>2</b> beat <b>3</b> <b>[5-2]</b>: +68.08 / -58.9
+<b>2</b> beat <b>5</b> <b>[6-0]</b>: +67.78 / -57.26
+<b>3</b> beat <b>5</b> <b>[11-8]</b>: +59.13 / -51.14
+<b>5</b> beat <b>3</b> <b>[5-2]</b>: +76.98 / -64.48
+<b>t</b> beat <b>1</b> <b>[11-9]</b>: +62.5 / -52.46
+<b>3</b> beat <b>5</b> <b>[5-4]</b>: +41.5 / -36.97
+<b>3</b> beat <b>5</b> <b>[5-3]</b>: +35.56 / -31.51
+<b>5</b> beat <b>3</b> <b>[5-3]</b>: +53.93 / -47.95
+<b>5</b> beat <b>3</b> <b>[7-4]</b>: +45.46 / -39.72
+<b>3</b> (ranked #6) pulled off an <span style='color:gold;'><b>UNDERDOG VICTORY</b></span> against <b>4</b> (ranked #1) [<b>3 - 0</b>] : +78.0 / -51.9
+<b>4</b> beat <b>3</b> <b>[11-10]</b>: +36.15 / -32.67
+<b>3</b> (ranked #6) pulled off an <span style='color:gold;'><b>UNDERDOG VICTORY</b></span> against <b>2</b> (ranked #1) [<b>21 - 2</b>] : +233.0 / -169.18

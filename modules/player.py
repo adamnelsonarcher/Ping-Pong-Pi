@@ -31,25 +31,31 @@ class Player:
         K = 70 + point_difference*6
         # Calculate the K factor based on the point difference
         if player_is_unranked and opponent_is_unranked:
-            K = K*1.15 # Both players are unranked, 15% increase in volatility
+            K = K*1.2 # Both players are unranked, 20% increase in volatility
         elif player_is_unranked:
-            K = K*1.15 # 15% increase in volatility for unranked player
+            K = K*1.2 # 20% increase in volatility for unranked player
         elif opponent_is_unranked:
             K = 20   # The ranked player only gains/loses a maximum of 20 points
         else:
             pass  # Both players are ranked, normal scoring applies
 
         result = 1 if won else 0
-        expected_score = 1 / (1 + 10 ** ((opponent.score - self.score) / 400))
+        expected_score = 1 / (1 + 10 ** ((opponent.score - self.score) / 450))
         score_change = K * (result - expected_score)
+        if expected_score < 0.45 and result == 1:
+            score_change = score_change * 1.3
         self.score += score_change
         self.games_played += 1
 
         # Update lifetime stats only if the player is active (has played at least 3 games)
+        # calculate change in lifetime score seperately from change in current score
         self.lifetime_games_played += 1
-        if self.active:
-            self.lifetime_score += score_change
-            self.score_history.append(self.lifetime_score)
+        expected_score_lifetime = 1 / (1 + 10 ** ((opponent.lifetime_score - self.lifetime_score) / 450))
+        lifetime_score_change = K * (result - expected_score_lifetime)
+        if expected_score_lifetime < 0.45 and result == 1:
+            lifetime_score_change = lifetime_score_change * 1.3
+        self.lifetime_score += lifetime_score_change  # Update the lifetime score
+        self.score_history.append(self.lifetime_score)
 
         # Ensure lifetime score doesn't drop below 100
         if self.lifetime_score < 100:

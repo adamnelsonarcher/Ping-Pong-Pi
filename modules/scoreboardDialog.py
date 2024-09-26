@@ -211,8 +211,8 @@ class ScoreboardDialog(QDialog):
             player2_score_change = player2.update_score(player1, False, self.player1_score-self.player2_score)
             parent.update_history(self.player1_name, self.player2_name, self.player1_name, player1_score_change, player2_score_change, player_ranks)
         elif self.player2_score > self.player1_score:
-            player1_score_change = player1.update_score(player2, False, self.player2_score-self.player1_score)
             player2_score_change = player2.update_score(player1, True, self.player2_score-self.player1_score)
+            player1_score_change = player1.update_score(player2, False, self.player2_score-self.player1_score)
             parent.update_history(self.player1_name, self.player2_name, self.player2_name, player1_score_change, player2_score_change, player_ranks)
         else:
             # Handle tie separately if required

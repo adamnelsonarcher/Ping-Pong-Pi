@@ -327,9 +327,20 @@ class EloApp(QWidget):
         else:
             # message with rank removed v2.2
             # message = f"<b>{winner_name}</b>({winner_rank}) beat <b>{loser_name}</b>({loser_rank}) <b>[{winner_score}-{loser_score}]</b>: {winner_change_text} / {loser_change_text}"
+            
+            # default message
             message = f"<b>{winner_name}</b> beat <b>{loser_name}</b> <b>[{winner_score}-{loser_score}]</b>: {winner_change_text} / {loser_change_text}"
+            # underdog victory
+            if (winner_rank > loser_rank+4):
+                message  = f"<b>{winner_name}</b> (ranked #{winner_rank}) pulled off an <span style='color:gold;'><b>UNDERDOG VICTORY</b></span> against <b>{loser_name}</b> (ranked #{loser_rank}) [<b>{winner_score} - {loser_score}</b>] : {winner_change_text} / {loser_change_text}"
+            # SKUNK
+            if( (winner_score == 7 and loser_score == 0) or (winner_score == 11 and loser_score == 1) ):
+                message = f"<span style='color:red;'><b>{winner_name}</b> SKUNKED <b>{loser_name}</b> <b>[{winner_score}-{loser_score}]</span></b>: {winner_change_text} / {loser_change_text}"
+            
 
         self.history_display.append(message)
+
+        # self.history_display.append("<hr style='border: 1px solid black;'>")   # horizontal rule after each entry
 
         with open(self.game_history_path, 'a') as file:
             file.write(f"{message}\n")
