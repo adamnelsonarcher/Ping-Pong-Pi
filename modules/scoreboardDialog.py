@@ -2,7 +2,8 @@ import sys
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
-from modules.util import *
+from modules.util import Util
+
 
 class ScoreboardDialog(QDialog):
     def __init__(self, parent, player1_name, player2_name):
@@ -201,7 +202,7 @@ class ScoreboardDialog(QDialog):
         # Capture current rankings before updating any scores
 
         # Only consider active players for ranking (those with 3 or more games)
-        active_players = {name: player for name, player in parent.players.items() if player.games_played >= 3}
+        active_players = {name: player for name, player in parent.players.items() if player.active}
         sorted_active_players = sorted(active_players.items(), key=lambda x: -x[1].score)
         player_ranks = {name: rank + 1 for rank, (name, player) in enumerate(sorted_active_players)}
 

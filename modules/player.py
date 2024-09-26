@@ -3,7 +3,7 @@ import sys
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
-from modules.util import *
+
 
 class Player:
     def __init__(self, name, score=1000, password=""):
@@ -20,11 +20,13 @@ class Player:
         self.lifetime_losses = 0
         self.lifetime_score = score
 
+        self.active = self.games_played >= 3
+
         self.score_history = [score]
 
     def update_score(self, opponent, won, point_difference):
-        opponent_is_unranked = opponent.games_played < 3
-        player_is_unranked = self.games_played < 3
+        opponent_is_unranked = (not opponent.active)
+        player_is_unranked = (not self.active)
 
         K = 70 + point_difference*6
         # Calculate the K factor based on the point difference
@@ -45,7 +47,7 @@ class Player:
 
         # Update lifetime stats only if the player is active (has played at least 3 games)
         self.lifetime_games_played += 1
-        if self.games_played >= 3:
+        if self.active:
             self.lifetime_score += score_change
             self.score_history.append(self.lifetime_score)
 
@@ -53,14 +55,16 @@ class Player:
         if self.lifetime_score < 100:
             self.lifetime_score = 100
 
+        self.update_active_status()
+
         # Update win/loss records
         if won:
            self.wins += 1
-           if self.games_played >= 3:
+           if self.active:
               self.lifetime_wins += 1
         else:
            self.losses += 1
-           if self.games_played >= 3:
+           if self.active:
               self.lifetime_losses += 1
               
         return score_change
@@ -69,3 +73,6 @@ class Player:
         if self.games_played == 0:
             return "0/0"
         return f"{self.wins}/{self.losses}"
+    
+    def update_active_status(self):  # a player is "active" if they have played 3 games since the last reset
+        self.active = self.games_played >= 3 

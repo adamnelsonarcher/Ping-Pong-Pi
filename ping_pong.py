@@ -7,10 +7,10 @@ from matplotlib.figure import Figure
 import numpy as np
 
 # pingpong.py
-from modules.adminControls import *
+from modules.adminControls import AdminControlsDialog
+from modules.scoreboardDialog import ScoreboardDialog
+from modules.util import Util
 from modules.addPlayer import *
-from modules.scoreboardDialog import *
-from modules.util import *
 
 class EloApp(QWidget):
     # init stuff
@@ -21,7 +21,7 @@ class EloApp(QWidget):
         self.init_timers()
         self.init_ui()
         self.update_dropdowns()
-        self.game_history_path = 'game_history.txt'
+        self.game_history_path = r'game_data\game_history.txt'
         self.update_leaderboard()
         Util.load_game_history(self)
         self.showFullScreen()
@@ -197,6 +197,17 @@ class EloApp(QWidget):
             # Set x-axis to show only positive integers starting from 1
             ax.set_xlim(1, len(player.score_history))
             ax.set_xticks(np.arange(1, len(player.score_history) + 1))
+            ax.set_xlim(1, len(player.score_history))
+
+            # Calculate the tick positions
+            num_ticks = 4
+            tick_positions = np.linspace(1, len(player.score_history), num_ticks).astype(int)
+
+            # Set the ticks at calculated positions
+            ax.set_xticks(tick_positions)
+
+            # Optionally set the x-tick labels (if needed)
+            ax.set_xticklabels(tick_positions)
 
             ax.set_title(f"Score Over Time")
             ax.set_xlabel("Number of Games Played")
@@ -240,8 +251,8 @@ class EloApp(QWidget):
     def update_leaderboard(self):
         self.leaderboard_table.clearContents()
         # Separate active and inactive players
-        active_players = {name: player for name, player in self.players.items() if player.games_played >= 3}
-        inactive_players = {name: player for name, player in self.players.items() if player.games_played < 3}
+        active_players = {name: player for name, player in self.players.items() if player.active}
+        inactive_players = {name: player for name, player in self.players.items() if not player.active}
 
         # Sort active players by score in descending order
         sorted_active_players = sorted(active_players.items(), key=lambda x: -x[1].score)
@@ -260,7 +271,7 @@ class EloApp(QWidget):
             name_with_space = f" {name}"
             name_item = QTableWidgetItem(name_with_space)
             ratio_item = QTableWidgetItem(player.win_loss_ratio())
-            if player.games_played < 3:
+            if (not player.active):
                 score_item = QTableWidgetItem("Unranked")
             else:
                 score_item = QTableWidgetItem(f"{player.score:.2f}")
@@ -271,7 +282,7 @@ class EloApp(QWidget):
             ratio_item.setTextAlignment(Qt.AlignCenter)
 
             # Apply styling for inactive players
-            if player.games_played < 3:
+            if (not player.active):
                 for item in (name_item, score_item, ratio_item):
                     item.setForeground(QColor('lightGray'))
                     item.setFont(QFont('Arial', 25, QFont.StyleItalic))
@@ -307,12 +318,12 @@ class EloApp(QWidget):
 
         # Ensure names are bold in the history text and include score
         # Check if either player is unranked
-        if ( winner_rank == "Unranked" and loser_rank == "Unranked" ):
+        if ( winner_rank == "Unranked" or loser_rank == "Unranked" ):
             message = f"<b>{winner_name}</b>(Unranked) beat <b>{loser_name}</b>(Unranked) <b>[{winner_score}-{loser_score}]</b>"
-        elif winner_rank == "Unranked": 
-             message = f"<b>{winner_name}</b>(Unranked) beat <b>{loser_name}</b> <b>[{winner_score}-{loser_score}]</b>"
-        elif loser_rank == "Unranked":
-            message = f"<b>{winner_name}</b> beat <b>{loser_name}</b>(Unranked) <b>[{winner_score}-{loser_score}]</b>"
+            if loser_rank != "Unranked":
+                message = f"<b>{winner_name}</b>(Unranked) beat <b>{loser_name}</b> <b>[{winner_score}-{loser_score}]</b>"
+            if winner_rank != "Unranked":
+                message = f"<b>{winner_name}</b> beat <b>{loser_name}</b>(Unranked) <b>[{winner_score}-{loser_score}]</b>"
         else:
             # message with rank removed v2.2
             # message = f"<b>{winner_name}</b>({winner_rank}) beat <b>{loser_name}</b>({loser_rank}) <b>[{winner_score}-{loser_score}]</b>: {winner_change_text} / {loser_change_text}"
@@ -354,10 +365,11 @@ class EloApp(QWidget):
     def validate_selections(self):
         player1_name = self.player1_dropdown.currentText()
         player2_name = self.player2_dropdown.currentText()
-        if player1_name and player2_name and player1_name != player2_name:
+        if (player1_name and player2_name) and (player1_name != player2_name) and (player1_name and player2_name != "Select Player"):
             self.start_game_button.setEnabled(True)
         else:
             self.start_game_button.setEnabled(False)
+
 
 def main():
     app = QApplication(sys.argv)

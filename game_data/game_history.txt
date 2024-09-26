@@ -1,0 +1,30 @@
+<b>TestPlayer4</b>(Unranked) beat <b>TestPlayer5</b>(Unranked) <b>[7-0]</b>
+<b>TestPlayer</b>(4) beat <b>TestPlayer4</b>(1) <b>[2-0]</b>: +59.85 / -65.39
+<b>test1</b> beat <b>test2</b>(Unranked) <b>[1-0]</b>
+<b>test3</b> beat <b>test2</b>(Unranked) <b>[2-0]</b>
+<b>4</b> beat <b>test3</b>(Unranked) <b>[1-0]</b>
+<b>4</b>(Unranked) beat <b>test3</b>(Unranked) <b>[1-0]</b>
+<b>4</b>(Unranked) beat <b>5</b>(Unranked) <b>[1-0]</b>
+<b>1</b>(Unranked) beat <b>2</b>(Unranked) <b>[2-0]</b>
+<b>t</b>(Unranked) beat <b>1</b>(Unranked) <b>[2-0]</b>
+<b>1</b>(Unranked) beat <b>2</b>(Unranked) <b>[2-0]</b>
+<b>2</b>(Unranked) beat <b>1</b> <b>[2-0]</b>
+<b>1</b> beat <b>2</b> <b>[2-0]</b>: +35.74 / -31.66
+<b>1</b>(Unranked) beat <b>t</b>(Unranked) <b>[1-0]</b>
+<b>2</b>(Unranked) beat <b>1</b>(Unranked) <b>[1-0]</b>
+<b>1</b> beat <b>2</b> <b>[1-0]</b>: +36.7 / -32.72
+<b>2</b> beat <b>t</b>(Unranked) <b>[1-0]</b>
+<b>3</b>(Unranked) beat <b>4</b>(Unranked) <b>[2-0]</b>
+<b>1</b> beat <b>4</b>(Unranked) <b>[1-0]</b>
+<b>1</b> beat <b>2</b> <b>[1-0]</b>: +32.4 / -28.99
+<b>1</b> beat <b>3</b>(Unranked) <b>[1-0]</b>
+<b>3</b>(Unranked) beat <b>4</b>(Unranked) <b>[1-0]</b>
+<b>2</b>(Unranked) beat <b>1</b>(Unranked) <b>[1-0]</b>
+<b>1</b>(Unranked) beat <b>3</b>(Unranked) <b>[1-0]</b>
+<b>3</b>(Unranked) beat <b>1</b>(Unranked) <b>[1-0]</b>
+<b>4</b>(Unranked) beat <b>1</b> <b>[2-0]</b>
+<b>1</b> beat <b>4</b>(Unranked) <b>[2-0]</b>
+<b>1</b> beat <b>4</b>(Unranked) <b>[2-0]</b>
+<b>4</b> beat <b>1</b> <b>[1-0]</b>: +37.44 / -42.02
+<b>1</b> beat <b>t</b>(Unranked) <b>[2-0]</b>
+<b>t</b>(Unranked) beat <b>1</b> <b>[1-0]</b>

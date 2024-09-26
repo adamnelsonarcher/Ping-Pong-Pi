@@ -5,12 +5,14 @@ from PyQt5.QtCore import *
 import os
 
 from modules.player import Player
+
+
 class Util:
     def reset_timers(parent):
-            try:
-                parent.clear_selection_timer.start()
-            except:
-                pass
+        try:
+            parent.clear_selection_timer.start()
+        except:
+            pass
 
     # file loading and saving
     def load_game_history(parent):
@@ -22,7 +24,7 @@ class Util:
 
         # Load existing history from a file
         try:
-            with open('game_history.txt', 'r') as file:
+            with open(r'game_data\game_history.txt', 'r') as file:
                 entries = file.readlines()
 
             for entry in entries:
@@ -33,7 +35,7 @@ class Util:
             print("History file not found. Starting with an empty history.")
 
     def load_players(parent):
-        filepath = 'players.txt'  # Ensure this is the correct path
+        filepath = r'./game_data/players.txt'  # Ensure this is the correct path
         try:
             with open(filepath, 'r') as file:
                 for line in file:
@@ -58,15 +60,18 @@ class Util:
                         parent.players[name].lifetime_wins = lifetime_wins
                         parent.players[name].lifetime_losses = lifetime_losses
                         parent.players[name].lifetime_score = lifetime_score
+
+                        parent.players[name].update_active_status()
+
         except FileNotFoundError:
             print(f"No existing player data file found at {filepath}. Starting with an empty player list.")
         except Exception as e:
             print(f"Error loading players from {filepath}: {e}")
-        if not os.path.exists('score_history.txt'):
+        if not os.path.exists(r'.\game_data\score_history.txt'):
             print("Score history file does not exist, starting fresh.")
             return
         try:
-            with open('score_history.txt', 'r') as file:
+            with open(r'.\game_data\score_history.txt', 'r') as file:
                 for line in file:
                     parts = line.strip().split(',')
                     name = parts[0]
@@ -109,9 +114,3 @@ class Util:
         except FileNotFoundError:
             # Create the file if it doesn't exist
             open(parent.game_history_path, 'w').close()
-
-    # player data constant changes
-    # def get_sorted_players(parent):
-    #    # Return a list of players sorted by score in descending order
-    #    sorted_players = sorted(parent.players.items(), key=lambda x: -x[1].score)
-    #    return sorted_players
