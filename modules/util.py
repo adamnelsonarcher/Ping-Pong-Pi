@@ -24,7 +24,7 @@ class Util:
 
         # Load existing history from a file
         try:
-            with open(r'game_data\game_history.txt', 'r') as file:
+            with open(r'./game_data/game_history.txt', 'r') as file:
                 entries = file.readlines()
 
             for entry in entries:
@@ -67,11 +67,11 @@ class Util:
             print(f"No existing player data file found at {filepath}. Starting with an empty player list.")
         except Exception as e:
             print(f"Error loading players from {filepath}: {e}")
-        if not os.path.exists(r'.\game_data\score_history.txt'):
+        if not os.path.exists(r'./game_data/score_history.txt'):
             print("Score history file does not exist, starting fresh.")
             return
         try:
-            with open(r'.\game_data\score_history.txt', 'r') as file:
+            with open(r'./game_data/score_history.txt', 'r') as file:
                 for line in file:
                     parts = line.strip().split(',')
                     name = parts[0]

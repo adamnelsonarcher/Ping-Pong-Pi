@@ -21,7 +21,7 @@ class EloApp(QWidget):
         self.init_timers()
         self.init_ui()
         self.update_dropdowns()
-        self.game_history_path = r'game_data\game_history.txt'
+        self.game_history_path = r'game_data/game_history.txt'
         self.update_leaderboard()
         Util.load_game_history(self)
         self.showFullScreen()
