@@ -8,6 +8,12 @@ from modules.player import Player
 
 
 class Util:
+
+    global player_path, score_hist_path, game_hist_path
+    player_path = r'./game_data/players.txt'
+    score_hist_path = r'./game_data/score_history.txt'
+    game_hist_path = r'./game_data/game_history.txt'
+
     def reset_timers(parent):
         try:
             parent.clear_selection_timer.start()
@@ -24,7 +30,7 @@ class Util:
 
         # Load existing history from a file
         try:
-            with open(r'./game_data/game_history.txt', 'r') as file:
+            with open(game_hist_path, 'r') as file:
                 entries = file.readlines()
 
             for entry in entries:
@@ -35,7 +41,7 @@ class Util:
             print("History file not found. Starting with an empty history.")
 
     def load_players(parent):
-        filepath = r'./game_data/players.txt'  # Ensure this is the correct path
+        filepath = player_path  # Ensure this is the correct path
         try:
             with open(filepath, 'r') as file:
                 for line in file:
@@ -67,11 +73,11 @@ class Util:
             print(f"No existing player data file found at {filepath}. Starting with an empty player list.")
         except Exception as e:
             print(f"Error loading players from {filepath}: {e}")
-        if not os.path.exists(r'./game_data/score_history.txt'):
+        if not os.path.exists(score_hist_path):
             print("Score history file does not exist, starting fresh.")
             return
         try:
-            with open(r'./game_data/score_history.txt', 'r') as file:
+            with open(score_hist_path, 'r') as file:
                 for line in file:
                     parts = line.strip().split(',')
                     name = parts[0]
@@ -84,7 +90,7 @@ class Util:
 
     def save_players(parent):
         try:
-            with open('players.txt', 'w') as file:
+            with open(player_path, 'w') as file:
                 for player in parent.players.values():
                     file.write(
                         f"{player.name},{player.score},{player.games_played},{player.wins},{player.losses},{player.password},{player.lifetime_games_played},{player.lifetime_wins},{player.lifetime_losses},{player.lifetime_score:.2f}\n")
@@ -92,7 +98,7 @@ class Util:
         except Exception as e:
             print(f"Failed to save players: {e}")
         try:
-            with open('score_history.txt', 'w') as file:
+            with open(score_hist_path, 'w') as file:
                 for name, player in parent.players.items():
                     # Write the player's name followed by their score history
                     scores = ','.join(map(str, player.score_history))
