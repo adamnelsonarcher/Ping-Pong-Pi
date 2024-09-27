@@ -14,7 +14,9 @@ class Player:
         self.losses = 0
         self.password = password
 
-        # New attributes for lifetime stats
+        self.current_streak = 0
+
+        # attributes for lifetime stats
         self.lifetime_games_played = 0
         self.lifetime_wins = 0
         self.lifetime_losses = 0
@@ -64,13 +66,15 @@ class Player:
 
         # Update win/loss records
         if won:
-           self.wins += 1
-           if self.active:
-              self.lifetime_wins += 1
+            self.wins += 1
+            self.current_streak += 1
+            if self.active:
+                self.lifetime_wins += 1
         else:
-           self.losses += 1
-           if self.active:
-              self.lifetime_losses += 1
+            self.losses += 1
+            self.current_streak = 0
+            if self.active:
+                self.lifetime_losses += 1
               
         return score_change
 

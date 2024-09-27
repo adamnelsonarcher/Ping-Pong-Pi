@@ -56,16 +56,19 @@ class Util:
                     lifetime_wins = int(parts[7])
                     lifetime_losses = int(parts[8])
                     lifetime_score = float(parts[9])
+                    current_streak = int(parts[10])
                     if name not in parent.players:
                         parent.players[name] = Player(name, score, password)
                         parent.players[name].games_played = games_played
                         parent.players[name].wins = wins
                         parent.players[name].losses = losses
-
+                        # added in v2.0
                         parent.players[name].lifetime_games_played = lifetime_games_played
                         parent.players[name].lifetime_wins = lifetime_wins
                         parent.players[name].lifetime_losses = lifetime_losses
                         parent.players[name].lifetime_score = lifetime_score
+                        # added in v2.3
+                        parent.players[name].current_streak = current_streak 
 
                         parent.players[name].update_active_status()
 
@@ -93,7 +96,9 @@ class Util:
             with open(player_path, 'w') as file:
                 for player in parent.players.values():
                     file.write(
-                        f"{player.name},{player.score},{player.games_played},{player.wins},{player.losses},{player.password},{player.lifetime_games_played},{player.lifetime_wins},{player.lifetime_losses},{player.lifetime_score:.2f}\n")
+                        f"{player.name},{player.score},{player.games_played},{player.wins},{player.losses},"
+                        f"{player.password},{player.lifetime_games_played},{player.lifetime_wins},{player.lifetime_losses},"
+                        f"{player.lifetime_score:.2f},{player.current_streak}\n")
             print("Players saved successfully.")  # Debug print
         except Exception as e:
             print(f"Failed to save players: {e}")

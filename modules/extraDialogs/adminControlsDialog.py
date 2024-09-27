@@ -89,5 +89,6 @@ class AdminControlsDialog(QDialog):
             player.games_played = 0
             player.wins = 0
             player.losses = 0
+            player.current_streak = 0
         Util.save_players(self.parent())
         self.parent().update_leaderboard()

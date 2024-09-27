@@ -198,6 +198,10 @@ class EloApp(QWidget):
         for row, (name, player) in enumerate(sorted_players):
             # Create table items with player details
             name_with_space = f" {name}"
+
+            if player.current_streak >= 3:
+                name_with_space += f" 🔥{player.current_streak}"
+
             name_item = QTableWidgetItem(name_with_space)
             ratio_item = QTableWidgetItem(player.win_loss_ratio())
             if (not player.active):
