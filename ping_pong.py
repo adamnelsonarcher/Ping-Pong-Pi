@@ -2,15 +2,11 @@ import sys
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
-import numpy as np
 
 # pingpong.py
-from modules.adminControls import AdminControlsDialog
 from modules.scoreboardDialog import ScoreboardDialog
 from modules.util import Util
-from modules.addPlayer import *
+from modules.extraDialogs import exDiag
 
 class EloApp(QWidget):
     # init stuff
@@ -38,7 +34,7 @@ class EloApp(QWidget):
         self.leaderboard_table = QTableWidget()
         self.leaderboard_table.setColumnCount(3)
         self.leaderboard_table.setHorizontalHeaderLabels(['Player Name', 'Score', 'W/L Ratio'])
-        self.leaderboard_table.cellDoubleClicked.connect(self.display_lifetime_stats)
+        self.leaderboard_table.cellDoubleClicked.connect(lambda row, column: exDiag.open_lifetime_stats_dialog(row, column, self))
         # smaller font for the header
         header_font = self.leaderboard_table.horizontalHeader().font()
         header_font.setPointSize(18)  # Adjust the size as needed
@@ -109,11 +105,11 @@ class EloApp(QWidget):
         # Add Player button
         bottom_layout.addStretch()
         self.add_player_button = QPushButton("Add Player")
-        self.add_player_button.clicked.connect(lambda: open_add_player_dialog(self))
+        self.add_player_button.clicked.connect(lambda: exDiag.open_add_player_dialog(self))
         bottom_layout.addWidget(self.add_player_button)
 
         self.admin_controls_button = QPushButton("Admin Controls")
-        self.admin_controls_button.clicked.connect(self.open_admin_controls_dialog)
+        self.admin_controls_button.clicked.connect(lambda: exDiag.open_admin_controls_dialog(self))
         bottom_layout.addWidget(self.admin_controls_button)
 
         self.start_game_button.setStyleSheet("background-color: #a6ffae; color: black; font-size: 20px;")  # Green
@@ -138,7 +134,7 @@ class EloApp(QWidget):
     def init_timers(self):
         # Timer to clear selections after 7 minutes of inactivity
         self.clear_selection_timer = QTimer(self)
-        self.clear_selection_timer.setInterval(5 * 60 * 1000)  # 5 minutes in milliseconds
+        self.clear_selection_timer.setInterval(10 * 60 * 1000)  # 10 minutes in milliseconds
         self.clear_selection_timer.setSingleShot(True)
         self.clear_selection_timer.timeout.connect(self.remove_player_selection)
     
@@ -165,74 +161,7 @@ class EloApp(QWidget):
         # Reset the dropdowns to no selection
         self.player1_dropdown.setCurrentIndex(0) 
         self.player2_dropdown.setCurrentIndex(0)
-
-    def display_lifetime_stats(self, row, column):
-        player_name = self.leaderboard_table.item(row, 0).text().strip()
-        if player_name in self.players:
-            player = self.players[player_name]
-
-            # Create the custom dialog
-            dialog = QDialog(self)
-            dialog.setWindowTitle(f"Lifetime Stats for {player.name}")
-            dialog.setStyleSheet("font-size: 18px;")
-
-            # Create the layout for the dialog
-            layout = QVBoxLayout()
-
-            # Add player data to the layout
-            message = (f"Player: {player.name}\n"
-                    f"Score: {player.lifetime_score:.2f}\n"
-                    f"Games Played: {player.lifetime_games_played}\n"
-                    f"Wins: {player.lifetime_wins}\n"
-                    f"Losses: {player.lifetime_losses}\n"
-                    f"*games before being ranked are not counted")
-            info_label = QLabel(message)
-            layout.addWidget(info_label)
-
-            # Create a matplotlib figure and add it to the dialog
-            fig = Figure(figsize=(5, 4), dpi=100)
-            ax = fig.add_subplot(111)
-            ax.plot(range(1, len(player.score_history) + 1), player.score_history, marker='o', linestyle='-', color='b')
-
-            # Set x-axis to show only positive integers starting from 1
-            ax.set_xlim(1, len(player.score_history))
-            ax.set_xticks(np.arange(1, len(player.score_history) + 1))
-            ax.set_xlim(1, len(player.score_history))
-
-            # Calculate the tick positions
-            num_ticks = 4
-            tick_positions = np.linspace(1, len(player.score_history), num_ticks).astype(int)
-
-            # Set the ticks at calculated positions
-            ax.set_xticks(tick_positions)
-
-            # Optionally set the x-tick labels (if needed)
-            ax.set_xticklabels(tick_positions)
-
-            ax.set_title(f"Score Over Time")
-            ax.set_xlabel("Number of Games Played")
-            ax.set_ylabel("Score")
-            ax.grid(True)
-
-            canvas = FigureCanvas(fig)
-            layout.addWidget(canvas)
-
-            dialog.setLayout(layout)
-
-            # Resize the dialog to a reasonable size
-            dialog.resize(600, 400)
-
-            # Show the dialog
-            dialog.exec_()
-
-    # dialogs
-    def open_admin_controls_dialog(self):
-        password, ok = QInputDialog.getText(self, 'Admin Login', 'Enter admin password:', QLineEdit.Password)
-        if ok and password == '613668':
-            dialog = AdminControlsDialog(self)
-            dialog.set_players(self.players)
-            dialog.exec_()
-
+    
     # events and game end calls
     def start_game(self):
         player1_name = self.player1_dropdown.currentText()
@@ -380,7 +309,6 @@ class EloApp(QWidget):
             self.start_game_button.setEnabled(True)
         else:
             self.start_game_button.setEnabled(False)
-
 
 def main():
     app = QApplication(sys.argv)

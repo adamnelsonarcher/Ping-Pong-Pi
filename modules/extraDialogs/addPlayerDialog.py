@@ -1,9 +1,7 @@
-import sys
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from modules.util import Util
-
 from modules.player import Player
 
 class AddPlayerDialog(QDialog):
@@ -33,17 +31,9 @@ class AddPlayerDialog(QDialog):
     def get_player_data(self):
         return self.name_input.text().strip(), self.password_input.text()
     
-def add_new_player(parent, name, password):
-    if name not in parent.players:
-        parent.players[name] = Player(name, password=password)
-        parent.update_dropdowns()
-        parent.update_leaderboard()
-        Util.save_players(parent)
-
-def open_add_player_dialog(parent):
-    dialog = AddPlayerDialog(parent)
-    if dialog.exec_() == QDialog.Accepted:
-        new_name, new_password = dialog.get_player_data()
-        if new_name and new_password:
-            add_new_player(parent, new_name, new_password)
-
+    def add_new_player(parent, name, password):
+        if name not in parent.players:
+            parent.players[name] = Player(name, password=password)
+            parent.update_dropdowns()
+            parent.update_leaderboard()
+            Util.save_players(parent)

@@ -24,6 +24,13 @@ class Player:
 
         self.score_history = [score]
 
+    def calculate_score_change(self, current_score, opponent_score, result, K):
+        expected_score = 1 / (1 + 10 ** ((opponent_score - current_score) / 450))
+        score_change = K * (result - expected_score)
+        if (expected_score < 0.45 and result == 1) or (expected_score > 0.65 and result == 0):
+            score_change *= 1.3
+        return score_change
+
     def update_score(self, opponent, won, point_difference):
         opponent_is_unranked = (not opponent.active)
         player_is_unranked = (not self.active)
@@ -40,22 +47,14 @@ class Player:
             pass  # Both players are ranked, normal scoring applies
 
         result = 1 if won else 0
-        expected_score = 1 / (1 + 10 ** ((opponent.score - self.score) / 450))
-        score_change = K * (result - expected_score)
-        if expected_score < 0.45 and result == 1:
-            score_change = score_change * 1.3
+       # Update current score
+        score_change = self.calculate_score_change(self.score, opponent.score, result, K)
         self.score += score_change
         self.games_played += 1
 
-        # Update lifetime stats only if the player is active (has played at least 3 games)
-        # calculate change in lifetime score seperately from change in current score
-        self.lifetime_games_played += 1
-        expected_score_lifetime = 1 / (1 + 10 ** ((opponent.lifetime_score - self.lifetime_score) / 450))
-        lifetime_score_change = K * (result - expected_score_lifetime)
-        if expected_score_lifetime < 0.45 and result == 1:
-            lifetime_score_change = lifetime_score_change * 1.3
-        self.lifetime_score += lifetime_score_change  # Update the lifetime score
-        self.score_history.append(self.lifetime_score)
+        # Update lifetime score
+        lifetime_score_change = self.calculate_score_change(self.lifetime_score, opponent.lifetime_score, result, K)
+        self.lifetime_score += lifetime_score_change
 
         # Ensure lifetime score doesn't drop below 100
         if self.lifetime_score < 100:
