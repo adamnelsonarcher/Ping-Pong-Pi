@@ -10,6 +10,9 @@ from .lifetimeStatsDialog import LifetimeStatsDialog
 class exDiag:
     def open_lifetime_stats_dialog(row, column, parent):
         player_name = parent.leaderboard_table.item(row, 0).text().strip()  # Get player name from leaderboard table
+        if "🔥" in player_name:
+            player_name = player_name.split("🔥")[0].strip()
+            
         if player_name in parent.players:
             player = parent.players[player_name]
             dialog = LifetimeStatsDialog(parent, player)

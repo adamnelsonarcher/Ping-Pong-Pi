@@ -57,6 +57,7 @@ class Util:
                     lifetime_losses = int(parts[8])
                     lifetime_score = float(parts[9])
                     current_streak = int(parts[10])
+                    max_win_streak = int(parts[11])
                     if name not in parent.players:
                         parent.players[name] = Player(name, score, password)
                         parent.players[name].games_played = games_played
@@ -69,6 +70,7 @@ class Util:
                         parent.players[name].lifetime_score = lifetime_score
                         # added in v2.3
                         parent.players[name].current_streak = current_streak 
+                        parent.players[name].max_win_streak = max_win_streak
 
                         parent.players[name].update_active_status()
 
@@ -98,7 +100,7 @@ class Util:
                     file.write(
                         f"{player.name},{player.score},{player.games_played},{player.wins},{player.losses},"
                         f"{player.password},{player.lifetime_games_played},{player.lifetime_wins},{player.lifetime_losses},"
-                        f"{player.lifetime_score:.2f},{player.current_streak}\n")
+                        f"{player.lifetime_score:.2f},{player.current_streak},{player.max_win_streak}\n")
             print("Players saved successfully.")  # Debug print
         except Exception as e:
             print(f"Failed to save players: {e}")

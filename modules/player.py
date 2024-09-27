@@ -15,6 +15,7 @@ class Player:
         self.password = password
 
         self.current_streak = 0
+        self.max_win_streak = 0
 
         # attributes for lifetime stats
         self.lifetime_games_played = 0
@@ -68,6 +69,8 @@ class Player:
         if won:
             self.wins += 1
             self.current_streak += 1
+            if self.current_streak > self.max_win_streak:
+                self.max_win_streak = self.current_streak
             if self.active:
                 self.lifetime_wins += 1
         else:

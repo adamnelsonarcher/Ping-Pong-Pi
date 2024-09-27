@@ -20,7 +20,7 @@ class LifetimeStatsDialog(QDialog):
                    f"Games Played: {player.lifetime_games_played}\n"
                    f"Wins: {player.lifetime_wins}\n"
                    f"Losses: {player.lifetime_losses}\n"
-                   f"*games before being ranked are not counted")
+                   f"Highest W Streak: {player.max_win_streak}")
         info_label = QLabel(message)
         self.layout.addWidget(info_label)
 
