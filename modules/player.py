@@ -63,6 +63,7 @@ class Player:
         if self.lifetime_score < 100:
             self.lifetime_score = 100
 
+        self.score_history.append(self.lifetime_score)
         self.update_active_status()
 
         # Update win/loss records
