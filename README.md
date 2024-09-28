@@ -5,9 +5,11 @@
 <p><span style="text-decoration: underline;"><span style="font-size: 12pt;"><strong>Changelog</strong></span></span></p>
 <p><span style="text-decoration: underline;"><span style="font-size: 12pt;"><strong>v2.2 - 9/27/24</strong></span></span></p>
 <ul>
-<li>There were no real changes to game mechanics, but this was an overhaul of code and data design</li>
+<li>Overhaul of code and data design</li>
 <li>400 lines of code were removed</li>
 <li>Code was properly broken into files and packages</li>
+<li>Added win streak counter (emoji font needs to be installed for this to work on rpi)</li>
+<li>Added lifetime best win streak counter</li>
 </ul>
 <p><strong>v2.1 - 9/12/24</strong></p>
 <ul>
