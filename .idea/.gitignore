@@ -1,3 +1,5 @@
 # Default ignored files
 /shelf/
 /workspace.xml
+modules/__pycache__/
+modules/extraDialogs/__pycache__/

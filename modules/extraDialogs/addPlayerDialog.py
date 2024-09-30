@@ -1,6 +1,7 @@
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
+from PyQt5.QtWidgets import (QWidget, QTableWidget, QVBoxLayout, QHBoxLayout,
+                             QTableWidgetItem, QComboBox, QLabel, QPushButton, 
+                             QDialog, QInputDialog, QMessageBox, QLineEdit, 
+                             QApplication, QHeaderView, QAbstractItemView, QTextEdit)
 from modules.util import Util
 from modules.player import Player
 

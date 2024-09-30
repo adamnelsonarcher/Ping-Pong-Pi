@@ -1,9 +1,4 @@
 # player.py
-import sys
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
-
 
 class Player:
     def __init__(self, name, score=1000, password=""):

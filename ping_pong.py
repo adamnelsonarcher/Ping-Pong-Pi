@@ -1,12 +1,17 @@
 import sys
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
+# pyqt_imports.py
+from PyQt5.QtGui import QFont, QColor
+from PyQt5.QtWidgets import (QWidget, QTableWidget, QVBoxLayout, QHBoxLayout,
+                             QTableWidgetItem, QComboBox, QLabel, QPushButton, 
+                             QDialog, QInputDialog, QMessageBox, QLineEdit, 
+                             QApplication, QHeaderView, QAbstractItemView, QTextEdit)
+from PyQt5.QtCore import Qt, QTimer
+
 
 # pingpong.py
 from modules.scoreboardDialog import ScoreboardDialog
 from modules.util import Util
-from modules.extraDialogs import exDiag
+from modules.extraDialogs import ExtraDiag
 
 class EloApp(QWidget):
     # init stuff
@@ -34,7 +39,7 @@ class EloApp(QWidget):
         self.leaderboard_table = QTableWidget()
         self.leaderboard_table.setColumnCount(3)
         self.leaderboard_table.setHorizontalHeaderLabels(['Player Name', 'Score', 'W/L Ratio'])
-        self.leaderboard_table.cellDoubleClicked.connect(lambda row, column: exDiag.open_lifetime_stats_dialog(row, column, self))
+        self.leaderboard_table.cellDoubleClicked.connect(lambda row, column: ExtraDiag.open_lifetime_stats_dialog(row, column, self))
         # smaller font for the header
         header_font = self.leaderboard_table.horizontalHeader().font()
         header_font.setPointSize(18)  # Adjust the size as needed
@@ -105,11 +110,11 @@ class EloApp(QWidget):
         # Add Player button
         bottom_layout.addStretch()
         self.add_player_button = QPushButton("Add Player")
-        self.add_player_button.clicked.connect(lambda: exDiag.open_add_player_dialog(self))
+        self.add_player_button.clicked.connect(lambda: ExtraDiag.open_add_player_dialog(self))
         bottom_layout.addWidget(self.add_player_button)
 
         self.admin_controls_button = QPushButton("Admin Controls")
-        self.admin_controls_button.clicked.connect(lambda: exDiag.open_admin_controls_dialog(self))
+        self.admin_controls_button.clicked.connect(lambda: ExtraDiag.open_admin_controls_dialog(self))
         bottom_layout.addWidget(self.admin_controls_button)
 
         self.start_game_button.setStyleSheet("background-color: #a6ffae; color: black; font-size: 20px;")  # Green
@@ -143,8 +148,9 @@ class EloApp(QWidget):
         self.player2_dropdown.clear()
 
         # Add placeholder as the first item which is not selectable
-        self.player1_dropdown.addItem("Select Player")
-        self.player2_dropdown.addItem("Select Player")
+        dropdown_default = "Select Player"
+        self.player1_dropdown.addItem(dropdown_default)
+        self.player2_dropdown.addItem(dropdown_default)
         self.player1_dropdown.model().item(0).setEnabled(False)
         self.player2_dropdown.model().item(0).setEnabled(False)
 

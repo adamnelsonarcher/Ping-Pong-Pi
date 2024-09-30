@@ -1,9 +1,11 @@
 from matplotlib.figure import Figure
 import numpy as np
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
+from PyQt5.QtWidgets import (QWidget, QTableWidget, QVBoxLayout, QHBoxLayout,
+                             QTableWidgetItem, QComboBox, QLabel, QPushButton, 
+                             QDialog, QInputDialog, QMessageBox, QLineEdit, 
+                             QApplication, QHeaderView, QAbstractItemView, QTextEdit)
+from PyQt5.QtCore import Qt, QTimer
 
 
 class LifetimeStatsDialog(QDialog):
@@ -42,7 +44,7 @@ class LifetimeStatsDialog(QDialog):
         ax.set_xticks(tick_positions)
         ax.set_xticklabels(tick_positions)
 
-        ax.set_title(f"Score Over Time")
+        ax.set_title("Score Over Time")
         ax.set_xlabel("Number of Games Played")
         ax.set_ylabel("Score")
         ax.grid(True)

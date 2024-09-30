@@ -1,7 +1,9 @@
-import sys
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
+from PyQt5.QtWidgets import (QWidget, QTableWidget, QVBoxLayout, QHBoxLayout,
+                             QTableWidgetItem, QComboBox, QLabel, QPushButton, 
+                             QDialog, QInputDialog, QMessageBox, QLineEdit, 
+                             QApplication, QHeaderView, QAbstractItemView, QTextEdit, QGroupBox,
+                             QSizePolicy)
+from PyQt5.QtCore import Qt, QTimer
 from modules.util import Util
 
 

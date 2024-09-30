@@ -1,13 +1,14 @@
 # __init__.py
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
+from PyQt5.QtWidgets import (QWidget, QTableWidget, QVBoxLayout, QHBoxLayout,
+                             QTableWidgetItem, QComboBox, QLabel, QPushButton, 
+                             QDialog, QInputDialog, QMessageBox, QLineEdit, 
+                             QApplication, QHeaderView, QAbstractItemView, QTextEdit)
 
 from .addPlayerDialog import AddPlayerDialog
 from .adminControlsDialog import AdminControlsDialog
 from .lifetimeStatsDialog import LifetimeStatsDialog
 
-class exDiag:
+class ExtraDiag:
     def open_lifetime_stats_dialog(row, column, parent):
         player_name = parent.leaderboard_table.item(row, 0).text().strip()  # Get player name from leaderboard table
         if "🔥" in player_name:

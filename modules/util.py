@@ -1,11 +1,5 @@
-import sys
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
 import os
-
 from modules.player import Player
-
 
 class Util:
 
@@ -17,7 +11,7 @@ class Util:
     def reset_timers(parent):
         try:
             parent.clear_selection_timer.start()
-        except:
+        except RuntimeError("failed to reset parent timer"):
             pass
 
     # file loading and saving
