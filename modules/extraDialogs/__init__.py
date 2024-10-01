@@ -1,12 +1,10 @@
 # __init__.py
-from PyQt5.QtWidgets import (QWidget, QTableWidget, QVBoxLayout, QHBoxLayout,
-                             QTableWidgetItem, QComboBox, QLabel, QPushButton, 
-                             QDialog, QInputDialog, QMessageBox, QLineEdit, 
-                             QApplication, QHeaderView, QAbstractItemView, QTextEdit)
+from PyQt5.QtWidgets import (QDialog, QInputDialog, QLineEdit)
 
 from .addPlayerDialog import AddPlayerDialog
 from .adminControlsDialog import AdminControlsDialog
 from .lifetimeStatsDialog import LifetimeStatsDialog
+
 
 class ExtraDiag:
     def open_lifetime_stats_dialog(row, column, parent):
@@ -27,8 +25,8 @@ class ExtraDiag:
                 AddPlayerDialog.add_new_player(parent, new_name, new_password)
 
     def open_admin_controls_dialog(parent):
-            password, ok = QInputDialog.getText(parent, 'Admin Login', 'Enter admin password:', QLineEdit.Password)
-            if ok and password == '613668':
-                dialog = AdminControlsDialog(parent)
-                dialog.set_players(parent.players)
-                dialog.exec_()
+        password, ok = QInputDialog.getText(parent, 'Admin Login', 'Enter admin password:', QLineEdit.Password)
+        if ok and password == '613668':
+            dialog = AdminControlsDialog(parent)
+            dialog.set_players(parent.players)
+            dialog.exec_()

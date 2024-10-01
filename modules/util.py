@@ -9,11 +9,15 @@ class Util:
     score_hist_path = r'./game_data/score_history.txt'
     game_hist_path = r'./game_data/game_history.txt'
 
-    def reset_timers(parent):
+    def reset_timers(parent, end=True):
         try:
-            parent.clear_selection_timer.start()
-        except RuntimeError:
-            print("failed to reset parent timer")
+            if parent.clear_selection_timer.isActive():
+                parent.clear_selection_timer.stop()
+            if end:
+                # Restart the timer
+                parent.clear_selection_timer.start()
+        except Exception as e:
+            print(f"Error resetting timer: {e}")
 
     # file loading and saving
     def load_game_history(parent):
@@ -93,7 +97,7 @@ class Util:
             with open(player_path, 'w') as file:
                 for player in parent.players.values():
                     file.write(
-                        f"{player.name},{player.score},{player.games_played},{player.wins},{player.losses},"
+                        f"{player.name},{player.score:.2f},{player.games_played},{player.wins},{player.losses},"
                         f"{player.password},{player.lifetime_games_played},{player.lifetime_wins},{player.lifetime_losses},"
                         f"{player.lifetime_score:.2f},{player.current_streak},{player.max_win_streak}\n")
             print("Players saved successfully.")  # Debug print

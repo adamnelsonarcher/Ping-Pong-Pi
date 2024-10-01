@@ -10,6 +10,7 @@ from modules.util import Util
 class ScoreboardDialog(QDialog):
     def __init__(self, parent, player1_name, player2_name):
         super().__init__(parent)
+        Util.reset_timers(parent, end=False)  # disable dropdown clear timer if it has started
         self.player1_name = player1_name
         self.player2_name = player2_name
         self.player1_score = 0
@@ -219,10 +220,14 @@ class ScoreboardDialog(QDialog):
         else:
             # Handle tie separately if required
             parent.history_display.append(f"Game between <b>{self.player1_name}</b> and <b>{self.player2_name}</b> ended in a tie with score {self.player1_score} to {self.player2_score}")
-
+        
         Util.save_players(parent)
         parent.update_leaderboard()
         parent.init_timers()
+        
+        Util.reset_timers(parent)  # This will start/reset the timer
+        # print("Dropdown Reset timer started after game end")
+        
         self.close()
 
     def quit_game(self):

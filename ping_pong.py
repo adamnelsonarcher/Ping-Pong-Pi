@@ -136,9 +136,8 @@ class EloApp(QWidget):
         self.player2_dropdown.currentIndexChanged.connect(self.on_player2_selection)
 
     def init_timers(self):
-        # Timer to clear selections after 7 minutes of inactivity
         self.clear_selection_timer = QTimer(self)
-        self.clear_selection_timer.setInterval(10 * 60 * 1000)  # 10 minutes in milliseconds
+        self.clear_selection_timer.setInterval(7 * 60 * 1000)  # 7 minutes in milliseconds
         self.clear_selection_timer.setSingleShot(True)
         self.clear_selection_timer.timeout.connect(self.remove_player_selection)
 
@@ -178,10 +177,6 @@ class EloApp(QWidget):
             self.game_in_progress = False
             self.update_leaderboard()
 
-    def keyPressEvent(self, event):
-        super().keyPressEvent(event)
-        Util.reset_timers(self)
-
     def update_leaderboard(self):
         self.leaderboard_table.clearContents()
         # Separate active and inactive players
@@ -190,10 +185,8 @@ class EloApp(QWidget):
 
         # Sort active players by score in descending order
         sorted_active_players = sorted(active_players.items(), key=lambda x: -x[1].score)
-
         # Sort inactive players alphabetically by name
         sorted_inactive_players = sorted(inactive_players.items(), key=lambda x: x[0])
-
         # Combine lists: active players at the top, inactive players at the bottom
         sorted_players = sorted_active_players + sorted_inactive_players
 
@@ -209,10 +202,10 @@ class EloApp(QWidget):
 
             name_item = QTableWidgetItem(name_with_space)
             ratio_item = QTableWidgetItem(player.win_loss_ratio())
-            if (not player.active):
-                score_item = QTableWidgetItem("Unranked")
-            else:
+            if player.active:
                 score_item = QTableWidgetItem(f"{player.score:.2f}")
+            else: 
+                score_item = QTableWidgetItem("Unranked")
   
             # Align text in the score and ratio columns
             score_item.setTextAlignment(Qt.AlignCenter)

@@ -58,7 +58,7 @@ class Player:
         if self.lifetime_score < 100:
             self.lifetime_score = 100
 
-        self.score_history.append(self.lifetime_score)
+        self.score_history.append(round(self.lifetime_score, 2))
         self.update_active_status()
 
         # Update win/loss records
@@ -78,9 +78,7 @@ class Player:
         return score_change
 
     def win_loss_ratio(self):
-        if self.games_played == 0:
-            return "0/0"
-        return f"{self.wins}/{self.losses}"
+        return "0/0" if (self.games_played == 0) else f"{self.wins}/{self.losses}"
     
     def update_active_status(self):  # a player is "active" if they have played 3 games since the last reset
         self.active = self.games_played >= 3
