@@ -10,6 +10,7 @@ from PyQt5.QtCore import Qt, QTimer
 # pingpong.py
 from modules.scoreboardDialog import ScoreboardDialog
 from modules.util import Util
+from modules.gameResult import GameResult
 from modules.extraDialogs import ExtraDiag
 
 
@@ -103,7 +104,7 @@ class EloApp(QWidget):
         bottom_layout.addSpacing(100)
 
         self.remove_selection_button = QPushButton("Clear Player Selections")
-        self.remove_selection_button.clicked.connect(self.remove_player_selection)
+        self.remove_selection_button.clicked.connect(self.update_dropdowns)
         bottom_layout.addWidget(self.remove_selection_button)
 
         # Add Player button
@@ -128,7 +129,7 @@ class EloApp(QWidget):
         top_bottom_layout.addLayout(bottom_layout)
 
         self.setLayout(top_bottom_layout)
-        self.setWindowTitle('ELO Ranking System')
+        self.setWindowTitle('Ping Pong Pi')
         self.update_dropdowns()
         self.update_leaderboard()
 
@@ -139,7 +140,7 @@ class EloApp(QWidget):
         self.clear_selection_timer = QTimer(self)
         self.clear_selection_timer.setInterval(7 * 60 * 1000)  # 7 minutes in milliseconds
         self.clear_selection_timer.setSingleShot(True)
-        self.clear_selection_timer.timeout.connect(self.remove_player_selection)
+        self.clear_selection_timer.timeout.connect(self.update_dropdowns)
 
     def update_dropdowns(self):
         self.player1_dropdown.clear()
@@ -158,12 +159,8 @@ class EloApp(QWidget):
         self.player2_dropdown.addItems(player_names)
 
         # Set the current index to the placeholder
+        # this also allows the function to be used as a 'reset' on the dropdowns
         self.player1_dropdown.setCurrentIndex(0)
-        self.player2_dropdown.setCurrentIndex(0)
-
-    def remove_player_selection(self):
-        # Reset the dropdowns to no selection
-        self.player1_dropdown.setCurrentIndex(0) 
         self.player2_dropdown.setCurrentIndex(0)
 
     # events and game end calls
@@ -234,10 +231,6 @@ class EloApp(QWidget):
         loser_name = player2_name if winner_name == player1_name else player1_name
         loser_rank = player_ranks.get(loser_name, "Unranked")
 
-        # winner_rank = player_ranks[winner_name]
-        # loser_name = player2_name if winner_name == player1_name else player1_name
-        # loser_rank = player_ranks[loser_name]
-
         winner_change = round(player1_score_change if winner_name == player1_name else player2_score_change, 2)
         loser_change = round(player2_score_change if winner_name == player1_name else player1_score_change, 2)
         winner_change_text = f"+{winner_change}" if winner_change > 0 else f"{winner_change}"
@@ -245,8 +238,8 @@ class EloApp(QWidget):
         winner_score = self.scoreboard.player1_score if winner_name == self.scoreboard.player1_name else self.scoreboard.player2_score
         loser_score = self.scoreboard.player2_score if loser_name == self.scoreboard.player2_name else self.scoreboard.player1_score
 
-        # Ensure names are bold in the history text and include score
-        # Check if either player is unranked
+        # Create game history message
+        
         if (winner_rank == "Unranked" or loser_rank == "Unranked"):
             message = f"<b>{winner_name}</b>(Unranked) beat <b>{loser_name}</b>(Unranked) <b>[{winner_score}-{loser_score}]</b>"
             if loser_rank != "Unranked":
