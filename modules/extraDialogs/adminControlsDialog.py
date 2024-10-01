@@ -1,7 +1,5 @@
-from PyQt5.QtWidgets import (QWidget, QTableWidget, QVBoxLayout, QHBoxLayout,
-                             QTableWidgetItem, QComboBox, QLabel, QPushButton, 
-                             QDialog, QInputDialog, QMessageBox, QLineEdit, 
-                             QApplication, QHeaderView, QAbstractItemView, QTextEdit)
+from PyQt5.QtWidgets import (QVBoxLayout, QComboBox, QLabel, QPushButton, 
+                             QDialog, QLineEdit)
 from modules.util import Util
 
 

@@ -1,9 +1,7 @@
-from PyQt5.QtWidgets import (QWidget, QTableWidget, QVBoxLayout, QHBoxLayout,
-                             QTableWidgetItem, QComboBox, QLabel, QPushButton, 
-                             QDialog, QInputDialog, QMessageBox, QLineEdit, 
-                             QApplication, QHeaderView, QAbstractItemView, QTextEdit)
+from PyQt5.QtWidgets import (QVBoxLayout, QLabel, QPushButton, QDialog, QLineEdit, )
 from modules.util import Util
 from modules.player import Player
+
 
 class AddPlayerDialog(QDialog):
     def __init__(self, parent=None):

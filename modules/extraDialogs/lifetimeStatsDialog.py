@@ -1,11 +1,7 @@
 from matplotlib.figure import Figure
 import numpy as np
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from PyQt5.QtWidgets import (QWidget, QTableWidget, QVBoxLayout, QHBoxLayout,
-                             QTableWidgetItem, QComboBox, QLabel, QPushButton, 
-                             QDialog, QInputDialog, QMessageBox, QLineEdit, 
-                             QApplication, QHeaderView, QAbstractItemView, QTextEdit)
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtWidgets import (QVBoxLayout, QLabel, QDialog)
 
 
 class LifetimeStatsDialog(QDialog):

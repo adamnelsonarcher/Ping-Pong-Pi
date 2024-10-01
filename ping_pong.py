@@ -3,8 +3,8 @@ import sys
 from PyQt5.QtGui import QFont, QColor
 from PyQt5.QtWidgets import (QWidget, QTableWidget, QVBoxLayout, QHBoxLayout,
                              QTableWidgetItem, QComboBox, QLabel, QPushButton, 
-                             QDialog, QInputDialog, QMessageBox, QLineEdit, 
-                             QApplication, QHeaderView, QAbstractItemView, QTextEdit)
+                             QInputDialog, QMessageBox, QLineEdit, QApplication,
+                             QHeaderView, QAbstractItemView, QTextEdit)
 from PyQt5.QtCore import Qt, QTimer
 
 # pingpong.py
@@ -315,6 +315,7 @@ class EloApp(QWidget):
             self.start_game_button.setEnabled(True)
         else:
             self.start_game_button.setEnabled(False)
+
 
 def main():
     app = QApplication(sys.argv)
