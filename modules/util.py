@@ -1,6 +1,7 @@
 import os
 from modules.player import Player
 
+
 class Util:
 
     global player_path, score_hist_path, game_hist_path
@@ -11,8 +12,8 @@ class Util:
     def reset_timers(parent):
         try:
             parent.clear_selection_timer.start()
-        except RuntimeError("failed to reset parent timer"):
-            pass
+        except RuntimeError:
+            print("failed to reset parent timer")
 
     # file loading and saving
     def load_game_history(parent):

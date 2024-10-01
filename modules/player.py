@@ -33,19 +33,19 @@ class Player:
         opponent_is_unranked = (not opponent.active)
         player_is_unranked = (not self.active)
 
-        K = 70 + point_difference*6
+        K = 70 + point_difference * 6
         # Calculate the K factor based on the point difference
         if player_is_unranked and opponent_is_unranked:
-            K = K*1.2 # Both players are unranked, 20% increase in volatility
+            K = K * 1.2  # Both players are unranked, 20% increase in volatility
         elif player_is_unranked:
-            K = K*1.2 # 20% increase in volatility for unranked player
+            K = K * 1.2  # 20% increase in volatility for unranked player
         elif opponent_is_unranked:
             K = 20   # The ranked player only gains/loses a maximum of 20 points
         else:
             pass  # Both players are ranked, normal scoring applies
 
         result = 1 if won else 0
-       # Update current score
+        # Update current score
         score_change = self.calculate_score_change(self.score, opponent.score, result, K)
         self.score += score_change
         self.games_played += 1
@@ -83,4 +83,4 @@ class Player:
         return f"{self.wins}/{self.losses}"
     
     def update_active_status(self):  # a player is "active" if they have played 3 games since the last reset
-        self.active = self.games_played >= 3 
+        self.active = self.games_played >= 3
