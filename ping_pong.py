@@ -10,7 +10,6 @@ from PyQt5.QtCore import Qt, QTimer
 # pingpong.py
 from modules.scoreboardDialog import ScoreboardDialog
 from modules.util import Util
-from modules.gameResult import GameResult
 from modules.extraDialogs import ExtraDiag
 
 
@@ -180,18 +179,13 @@ class EloApp(QWidget):
         active_players = {name: player for name, player in self.players.items() if player.active}
         inactive_players = {name: player for name, player in self.players.items() if not player.active}
 
-        # Sort active players by score in descending order
+        # Sort active players by score, inactive players alphabetically
         sorted_active_players = sorted(active_players.items(), key=lambda x: -x[1].score)
-        # Sort inactive players alphabetically by name
         sorted_inactive_players = sorted(inactive_players.items(), key=lambda x: x[0])
-        # Combine lists: active players at the top, inactive players at the bottom
         sorted_players = sorted_active_players + sorted_inactive_players
 
-        # Set the number of rows in the leaderboard table
         self.leaderboard_table.setRowCount(len(sorted_players))
-
         for row, (name, player) in enumerate(sorted_players):
-            # Create table items with player details
             name_with_space = f" {name}"
 
             if player.current_streak >= 3:
@@ -204,70 +198,60 @@ class EloApp(QWidget):
             else: 
                 score_item = QTableWidgetItem("Unranked")
   
-            # Align text in the score and ratio columns
             score_item.setTextAlignment(Qt.AlignCenter)
             ratio_item.setTextAlignment(Qt.AlignCenter)
-
-            # Apply styling for inactive players
+            
+            # style (gray) for inactive players
             if (not player.active):
                 for item in (name_item, score_item, ratio_item):
                     item.setForeground(QColor('lightGray'))
                     item.setFont(QFont('Arial', 25, QFont.StyleItalic))
 
-            # Set items in the table
             self.leaderboard_table.setItem(row, 0, name_item)
             self.leaderboard_table.setItem(row, 1, score_item)
             self.leaderboard_table.setItem(row, 2, ratio_item)
 
         # Manually set the row height after populating the table
-        row_height = 80  # Adjust this value as needed
+        row_height = 80 
         for row in range(self.leaderboard_table.rowCount()):
-            # print(f"setting row height for row {row}")
             self.leaderboard_table.setRowHeight(row, row_height)
 
-    def update_history(self, player1_name, player2_name, winner_name, player1_score_change, player2_score_change, player_ranks):
-        # Get pre-match ranks for the players involved
-        winner_rank = player_ranks.get(winner_name, "Unranked")
-        loser_name = player2_name if winner_name == player1_name else player1_name
-        loser_rank = player_ranks.get(loser_name, "Unranked")
+    def update_history(self, game_result):
+        winner_name = game_result.winner_name
+        loser_name = game_result.loser_name
+        winner_score = game_result.winner_score
+        loser_score = game_result.loser_score
+        winner_rank = game_result.winner_rank
+        loser_rank = game_result.loser_rank
 
-        winner_change = round(player1_score_change if winner_name == player1_name else player2_score_change, 2)
-        loser_change = round(player2_score_change if winner_name == player1_name else player1_score_change, 2)
-        winner_change_text = f"+{winner_change}" if winner_change > 0 else f"{winner_change}"
-        loser_change_text = f"+{loser_change}" if loser_change > 0 else f"{loser_change}"
-        winner_score = self.scoreboard.player1_score if winner_name == self.scoreboard.player1_name else self.scoreboard.player2_score
-        loser_score = self.scoreboard.player2_score if loser_name == self.scoreboard.player2_name else self.scoreboard.player1_score
+        winner_change_text = f"+{game_result.winner_score_change:.2f}" if game_result.winner_score_change > 0 else f"{game_result.winner_score_change:.2f}"
+        loser_change_text = f"+{game_result.loser_score_change:.2f}" if game_result.loser_score_change > 0 else f"{game_result.loser_score_change:.2f}"
 
-        # Create game history message
-        
-        if (winner_rank == "Unranked" or loser_rank == "Unranked"):
+        # Create game end history message
+        if winner_rank == "Unranked" or loser_rank == "Unranked":  # in the case of unranked players, don't show score change
             message = f"<b>{winner_name}</b>(Unranked) beat <b>{loser_name}</b>(Unranked) <b>[{winner_score}-{loser_score}]</b>"
             if loser_rank != "Unranked":
                 message = f"<b>{winner_name}</b>(Unranked) beat <b>{loser_name}</b> <b>[{winner_score}-{loser_score}]</b>"
             if winner_rank != "Unranked":
                 message = f"<b>{winner_name}</b> beat <b>{loser_name}</b>(Unranked) <b>[{winner_score}-{loser_score}]</b>"
         else:
-            # message with rank removed v2.2
-            # message = f"<b>{winner_name}</b>({winner_rank}) beat <b>{loser_name}</b>({loser_rank}) <b>[{winner_score}-{loser_score}]</b>: {winner_change_text} / {loser_change_text}"
-            
             # default message
             message = f"<b>{winner_name}</b> beat <b>{loser_name}</b> <b>[{winner_score}-{loser_score}]</b>: {winner_change_text} / {loser_change_text}"
-            # underdog victory
-            if (winner_rank > loser_rank + 4):
+
+            # Underdog victory case
+            if game_result.winner_rank > game_result.loser_rank + 4:
                 message = f"<b>{winner_name}</b> (ranked #{winner_rank}) pulled off an <span style='color:gold;'><b>UNDERDOG VICTORY</b></span> against <b>{loser_name}</b> (ranked #{loser_rank}) [<b>{winner_score} - {loser_score}</b>] : {winner_change_text} / {loser_change_text}"
             # SKUNK
-            if ( (winner_score == 7 and loser_score == 0) or (winner_score == 11 and loser_score == 1) ):
+            if (winner_score == 7 and loser_score == 0) or (winner_score == 11 and loser_score == 1):
                 message = f"<span style='color:red;'><b>{winner_name}</b> SKUNKED <b>{loser_name}</b> <b>[{winner_score}-{loser_score}]</span></b>: {winner_change_text} / {loser_change_text}"
-            
+
+        # Append message to history display and save to file
         self.history_display.append(message)
-
-        # self.history_display.append("<hr style='border: 1px solid black;'>")   # horizontal rule after each entry
-
         with open(self.game_history_path, 'a') as file:
             file.write(f"{message}\n")
+            
         Util.limit_game_history(self)
 
-    # validation
     def validate_player(self, player_name):
         if player_name in self.players:
             password, ok = QInputDialog.getText(self, 'Password Check', 'Enter password for ' + player_name,
@@ -279,16 +263,16 @@ class EloApp(QWidget):
         return False
 
     def on_player1_selection(self, index):
-        if index <= 0:  # Adjust according to your index for 'Select Player'
-            return  # Ignore when no player is selected or placeholder is selected
+        if index <= 0: 
+            return  
         player_name = self.player1_dropdown.currentText()
         if player_name and not self.validate_player(player_name):
             self.player1_dropdown.setCurrentIndex(-1)  # Reset selection if password fails
         self.validate_selections()
 
     def on_player2_selection(self, index):
-        if index <= 0:  # Adjust according to your index for 'Select Player'
-            return  # Ignore when no player is selected or placeholder is selected
+        if index <= 0: 
+            return  
         player_name = self.player2_dropdown.currentText()
         if player_name and not self.validate_player(player_name):
             self.player2_dropdown.setCurrentIndex(-1)  # Reset selection if password fails

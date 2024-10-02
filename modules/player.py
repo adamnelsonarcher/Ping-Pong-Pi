@@ -1,5 +1,6 @@
 # player.py
 
+
 class Player:
     def __init__(self, name, score=1000, password=""):
         self.name = name

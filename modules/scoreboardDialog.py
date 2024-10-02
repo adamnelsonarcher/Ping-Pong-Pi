@@ -1,10 +1,8 @@
-from PyQt5.QtWidgets import (QWidget, QTableWidget, QVBoxLayout, QHBoxLayout,
-                             QTableWidgetItem, QComboBox, QLabel, QPushButton, 
-                             QDialog, QInputDialog, QMessageBox, QLineEdit, 
-                             QApplication, QHeaderView, QAbstractItemView, QTextEdit, QGroupBox,
-                             QSizePolicy)
+from PyQt5.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
+                             QDialog, QMessageBox, QGroupBox, QSizePolicy)
 from PyQt5.QtCore import Qt, QTimer
 from modules.util import Util
+from modules.gameResult import GameResult
 
 
 class ScoreboardDialog(QDialog):
@@ -199,35 +197,22 @@ class ScoreboardDialog(QDialog):
         player1 = parent.players[self.player1_name]
         player2 = parent.players[self.player2_name]
 
-        # Capture current rankings before updating any scores
-        # sorted_players = parent.get_sorted_players()
-        # player_ranks = {name: rank + 1 for rank, (name, player) in enumerate(sorted_players)}
-        # Capture current rankings before updating any scores
+        # Create GameResult object
+        game_result = GameResult(
+            player1, 
+            player2, 
+            self.player1_name, 
+            self.player2_name, 
+            self.player1_score, 
+            self.player2_score, 
+            parent.players
+        )
+        parent.update_history(game_result)
 
-        # Only consider active players for ranking (those with 3 or more games)
-        active_players = {name: player for name, player in parent.players.items() if player.active}
-        sorted_active_players = sorted(active_players.items(), key=lambda x: -x[1].score)
-        player_ranks = {name: rank + 1 for rank, (name, player) in enumerate(sorted_active_players)}
-
-        if self.player1_score > self.player2_score:
-            player1_score_change = player1.update_score(player2, True, self.player1_score - self.player2_score)
-            player2_score_change = player2.update_score(player1, False, self.player1_score - self.player2_score)
-            parent.update_history(self.player1_name, self.player2_name, self.player1_name, player1_score_change, player2_score_change, player_ranks)
-        elif self.player2_score > self.player1_score:
-            player2_score_change = player2.update_score(player1, True, self.player2_score - self.player1_score)
-            player1_score_change = player1.update_score(player2, False, self.player2_score - self.player1_score)
-            parent.update_history(self.player1_name, self.player2_name, self.player2_name, player1_score_change, player2_score_change, player_ranks)
-        else:
-            # Handle tie separately if required
-            parent.history_display.append(f"Game between <b>{self.player1_name}</b> and <b>{self.player2_name}</b> ended in a tie with score {self.player1_score} to {self.player2_score}")
-        
         Util.save_players(parent)
         parent.update_leaderboard()
-        parent.init_timers()
-        
-        Util.reset_timers(parent)  # This will start/reset the timer
-        # print("Dropdown Reset timer started after game end")
-        
+
+        Util.reset_timers(parent)
         self.close()
 
     def quit_game(self):
