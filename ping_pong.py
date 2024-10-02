@@ -2,7 +2,7 @@ import sys
 # pyqt_imports.py
 from PyQt5.QtGui import QFont, QColor
 from PyQt5.QtWidgets import (QWidget, QTableWidget, QVBoxLayout, QHBoxLayout,
-                             QTableWidgetItem, QComboBox, QLabel, QPushButton, 
+                             QTableWidgetItem, QComboBox, QLabel, QPushButton,
                              QInputDialog, QMessageBox, QLineEdit, QApplication,
                              QHeaderView, QAbstractItemView, QTextEdit)
 from PyQt5.QtCore import Qt, QTimer
@@ -229,22 +229,28 @@ class EloApp(QWidget):
 
         # Create game end history message
         if winner_rank == "Unranked" or loser_rank == "Unranked":  # in the case of unranked players, don't show score change
-            message = f"<b>{winner_name}</b>(Unranked) beat <b>{loser_name}</b>(Unranked) <b>[{winner_score}-{loser_score}]</b>"
-            if loser_rank != "Unranked":
-                message = f"<b>{winner_name}</b>(Unranked) beat <b>{loser_name}</b> <b>[{winner_score}-{loser_score}]</b>"
-            if winner_rank != "Unranked":
-                message = f"<b>{winner_name}</b> beat <b>{loser_name}</b>(Unranked) <b>[{winner_score}-{loser_score}]</b>"
+            winner_rank_text = "(Unranked)" if winner_rank == "Unranked" else ""
+            loser_rank_text = "(Unranked)" if loser_rank == "Unranked" else ""
+            message = f"<b>{winner_name}</b>{winner_rank_text} beat <b>{loser_name}</b>{loser_rank_text} <b>[{winner_score}-{loser_score}]</b>"
         else:
             # default message
             message = f"<b>{winner_name}</b> beat <b>{loser_name}</b> <b>[{winner_score}-{loser_score}]</b>: {winner_change_text} / {loser_change_text}"
 
             # Underdog victory case
             if game_result.winner_rank > game_result.loser_rank + 4:
-                message = f"<b>{winner_name}</b> (ranked #{winner_rank}) pulled off an <span style='color:gold;'><b>UNDERDOG VICTORY</b></span> against <b>{loser_name}</b> (ranked #{loser_rank}) [<b>{winner_score} - {loser_score}</b>] : {winner_change_text} / {loser_change_text}"
+                message = (
+                    f"<b>{winner_name}</b> (ranked #{winner_rank}) pulled off an "
+                    f"<span style='color:gold;'><b>UNDERDOG VICTORY</b></span> against"
+                    f"<b>{loser_name}</b> (ranked #{loser_rank}) "
+                    f"[<b>{winner_score} - {loser_score}</b>] : {winner_change_text} / {loser_change_text}"
+                )
             # SKUNK
             if (winner_score == 7 and loser_score == 0) or (winner_score == 11 and loser_score == 1):
-                message = f"<span style='color:red;'><b>{winner_name}</b> SKUNKED <b>{loser_name}</b> <b>[{winner_score}-{loser_score}]</span></b>: {winner_change_text} / {loser_change_text}"
-
+                message = (
+                    f"<span style='color:red;'><b>{winner_name}</b> SKUNKED "
+                    f"<b>{loser_name}</b> <b>[{winner_score}-{loser_score}]</span></b>"
+                    f": {winner_change_text} / {loser_change_text}"
+                )
         # Append message to history display and save to file
         self.history_display.append(message)
         with open(self.game_history_path, 'a') as file:
@@ -263,8 +269,8 @@ class EloApp(QWidget):
         return False
 
     def on_player1_selection(self, index):
-        if index <= 0: 
-            return  
+        if index <= 0:
+            return
         player_name = self.player1_dropdown.currentText()
         if player_name and not self.validate_player(player_name):
             self.player1_dropdown.setCurrentIndex(-1)  # Reset selection if password fails
