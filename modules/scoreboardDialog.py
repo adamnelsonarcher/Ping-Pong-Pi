@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
 from PyQt5.QtCore import Qt, QTimer
 from modules.util import Util
 from modules.gameResult import GameResult
+import settings
 
 
 class ScoreboardDialog(QDialog):
@@ -34,8 +35,7 @@ class ScoreboardDialog(QDialog):
 
         # Player 1 section
         self.player1_group = QGroupBox()
-        # self.player1_group.setStyleSheet("border: 2px solid white;")
-        self.player1_group.setStyleSheet("border: 2px solid white; background-color: #4CAF50;")  # Green for Player 1
+        self.player1_group.setStyleSheet(f"border: 2px solid white; background-color: {settings.PLAYER1_SCOREBOARD_COLOR};")  # Green for Player 1
         self.player1_section = QVBoxLayout()
         self.player1_group.setLayout(self.player1_section)
         players_layout.addWidget(self.player1_group)
@@ -57,7 +57,7 @@ class ScoreboardDialog(QDialog):
         self.player1_section.addLayout(self.player1_button_layout)
 
         self.player1_add_button = QPushButton("+1")
-        self.player1_add_button.setStyleSheet("font-size: 32px; background-color: #4CAF50; color: white;")
+        self.player1_add_button.setStyleSheet(f"font-size: 32px; background-color: {settings.PLAYER1_SCOREBOARD_COLOR}; color: white;")
         self.player1_add_button.clicked.connect(lambda: self.update_score(self.player1_name, 1))
         self.player1_button_layout.addWidget(self.player1_add_button)
 
@@ -69,7 +69,7 @@ class ScoreboardDialog(QDialog):
         # Player 2 section
         self.player2_group = QGroupBox()
         # self.player2_group.setStyleSheet("border: 2px solid white;")
-        self.player2_group.setStyleSheet("border: 2px solid white; background-color: #2196F3;")  # Blue for Player 2
+        self.player2_group.setStyleSheet(f"border: 2px solid white; background-color: {settings.PLAYER2_SCOREBOARD_COLOR};")  # Blue for Player 2
         self.player2_section = QVBoxLayout()
         self.player2_group.setLayout(self.player2_section)
         players_layout.addWidget(self.player2_group)
@@ -91,7 +91,7 @@ class ScoreboardDialog(QDialog):
         self.player2_section.addLayout(self.player2_button_layout)
 
         self.player2_add_button = QPushButton("+1")
-        self.player2_add_button.setStyleSheet("font-size: 32px; background-color: #4CAF50; color: white;")
+        self.player2_add_button.setStyleSheet(f"font-size: 32px; background-color: {settings.PLAYER1_SCOREBOARD_COLOR}; color: white;")
         self.player2_add_button.clicked.connect(lambda: self.update_score(self.player2_name, 1))
         self.player2_button_layout.addWidget(self.player2_add_button)
 
@@ -107,7 +107,7 @@ class ScoreboardDialog(QDialog):
         self.control_button_layout.addStretch()
 
         self.end_game_button = QPushButton("End Game")
-        self.end_game_button.setStyleSheet("font-size: 24px; background-color: #2196F3; color: white;")
+        self.end_game_button.setStyleSheet(f"font-size: 24px; background-color: {settings.PLAYER2_SCOREBOARD_COLOR}; color: white;")
         self.end_game_button.clicked.connect(self.end_game)
         self.control_button_layout.addWidget(self.end_game_button)
 

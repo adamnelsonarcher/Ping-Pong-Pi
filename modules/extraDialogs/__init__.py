@@ -5,6 +5,8 @@ from .addPlayerDialog import AddPlayerDialog
 from .adminControlsDialog import AdminControlsDialog
 from .lifetimeStatsDialog import LifetimeStatsDialog
 
+import settings
+
 
 class ExtraDiag:
     def open_lifetime_stats_dialog(row, column, parent):
@@ -26,7 +28,7 @@ class ExtraDiag:
 
     def open_admin_controls_dialog(parent):
         password, ok = QInputDialog.getText(parent, 'Admin Login', 'Enter admin password:', QLineEdit.Password)
-        if ok and password == '613668':
+        if ok and password == settings.ADMIN_PASSWORD:
             dialog = AdminControlsDialog(parent)
             dialog.set_players(parent.players)
             dialog.exec_()

@@ -1,5 +1,5 @@
 # player.py
-
+import settings
 
 class Player:
     def __init__(self, name, score=1000, password=""):
@@ -19,7 +19,7 @@ class Player:
         self.lifetime_losses = 0
         self.lifetime_score = score
 
-        self.active = self.games_played >= 3
+        self.active = self.games_played >= settings.ACTIVITY_THRESHOLD
 
         self.score_history = [score]
 
@@ -34,7 +34,10 @@ class Player:
         opponent_is_unranked = (not opponent.active)
         player_is_unranked = (not self.active)
 
-        K = 70 + point_difference * 6
+        # using settings.py for settings
+        # default is K = 70 + point_difference * 6
+        K = settings.SCORE_CHANGE_K_FACTOR + point_difference * settings.POINT_DIFFERENCE_WEIGHT
+        
         # Calculate the K factor based on the point difference
         if player_is_unranked and opponent_is_unranked:
             K = K * 1.2  # Both players are unranked, 20% increase in volatility
@@ -82,4 +85,4 @@ class Player:
         return "0/0" if (self.games_played == 0) else f"{self.wins}/{self.losses}"
     
     def update_active_status(self):  # a player is "active" if they have played 3 games since the last reset
-        self.active = self.games_played >= 3
+        self.active = self.games_played >= settings.ACTIVITY_THRESHOLD

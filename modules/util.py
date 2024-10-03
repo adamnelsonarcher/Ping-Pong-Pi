@@ -1,14 +1,22 @@
 import os
+import settings
 from modules.player import Player
 
 
 class Util:
 
     global player_path, score_hist_path, game_hist_path
-    player_path = r'./game_data/players.txt'
-    score_hist_path = r'./game_data/score_history.txt'
-    game_hist_path = r'./game_data/game_history.txt'
+    player_path = settings.PLAYER_PATH
+    score_hist_path = settings.SCORE_HIST_PATH
+    game_hist_path = settings.GAME_HIST_PATH
 
+    def load_global_settings():
+        try:
+            globals().update(vars(settings))
+            print("Settings loaded successfully.")
+        except Exception as e:
+            print(f"Error loading settings: {e}")
+    
     def reset_timers(parent, end=True):
         try:
             if parent.clear_selection_timer.isActive():
@@ -21,26 +29,23 @@ class Util:
 
     # file loading and saving
     def load_game_history(parent):
-        # Optionally clear existing content
+        # clear existing content
         parent.history_display.clear()
-
-        # Set a title for the history display using HTML
         parent.history_display.setHtml("<h2>Game History</h2>")
 
-        # Load existing history from a file
+        # Load history from a file
         try:
             with open(game_hist_path, 'r') as file:
                 entries = file.readlines()
 
             for entry in entries:
-                # update_history_from_file(entry.strip())
                 message = f"<div>{entry.strip()}</div>"
                 parent.history_display.append(message)
         except FileNotFoundError:
             print("History file not found. Starting with an empty history.")
 
     def load_players(parent):
-        filepath = player_path  # Ensure this is the correct path
+        filepath = player_path
         try:
             with open(filepath, 'r') as file:
                 for line in file:
@@ -115,14 +120,13 @@ class Util:
 
     def limit_game_history(parent):
         try:
-            with open(parent.game_history_path, 'r') as file:
+            with open(game_hist_path, 'r') as file:
                 lines = file.readlines()
 
-            # Keep only the last 30 entries
-            if len(lines) > 30:
-                with open(parent.game_history_path, 'w') as file:
-                    file.writelines(lines[-30:])
+            # Keep only the last [settings.GAME_HISTORY_KEEP] entries (default = 30)
+            if len(lines) > settings.GAME_HISTORY_KEEP:
+                with open(game_hist_path, 'w') as file:
+                    file.writelines(lines[-settings.GAME_HISTORY_KEEP:])
 
         except FileNotFoundError:
-            # Create the file if it doesn't exist
-            open(parent.game_history_path, 'w').close()
+            open(game_hist_path, 'w').close()

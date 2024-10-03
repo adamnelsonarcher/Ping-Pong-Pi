@@ -11,6 +11,7 @@ from PyQt5.QtCore import Qt, QTimer
 from modules.scoreboardDialog import ScoreboardDialog
 from modules.util import Util
 from modules.extraDialogs import ExtraDiag
+import settings
 
 
 class EloApp(QWidget):
@@ -22,7 +23,6 @@ class EloApp(QWidget):
         self.init_timers()
         self.init_ui()
         self.update_dropdowns()
-        self.game_history_path = r'game_data/game_history.txt'
         self.update_leaderboard()
         Util.load_game_history(self)
         self.showFullScreen()
@@ -137,7 +137,7 @@ class EloApp(QWidget):
 
     def init_timers(self):
         self.clear_selection_timer = QTimer(self)
-        self.clear_selection_timer.setInterval(7 * 60 * 1000)  # 7 minutes in milliseconds
+        self.clear_selection_timer.setInterval(settings.TIMER_INTERVAL * 60 * 1000)  # default = 5 minutes in milliseconds
         self.clear_selection_timer.setSingleShot(True)
         self.clear_selection_timer.timeout.connect(self.update_dropdowns)
 
@@ -196,7 +196,7 @@ class EloApp(QWidget):
             if player.active:
                 score_item = QTableWidgetItem(f"{player.score:.2f}")
             else: 
-                score_item = QTableWidgetItem("Unranked")
+                score_item = QTableWidgetItem(settings.DEFAULT_RANK)
   
             score_item.setTextAlignment(Qt.AlignCenter)
             ratio_item.setTextAlignment(Qt.AlignCenter)
@@ -228,9 +228,9 @@ class EloApp(QWidget):
         loser_change_text = f"+{game_result.loser_score_change:.2f}" if game_result.loser_score_change > 0 else f"{game_result.loser_score_change:.2f}"
 
         # Create game end history message
-        if winner_rank == "Unranked" or loser_rank == "Unranked":  # in the case of unranked players, don't show score change
-            winner_rank_text = "(Unranked)" if winner_rank == "Unranked" else ""
-            loser_rank_text = "(Unranked)" if loser_rank == "Unranked" else ""
+        if winner_rank == settings.DEFAULT_RANK or loser_rank == settings.DEFAULT_RANK:  # in the case of unranked players, don't show score change
+            winner_rank_text = f"({settings.DEFAULT_RANK})" if winner_rank == settings.DEFAULT_RANK else ""
+            loser_rank_text = f"({settings.DEFAULT_RANK})" if loser_rank == settings.DEFAULT_RANK else ""
             message = f"<b>{winner_name}</b>{winner_rank_text} beat <b>{loser_name}</b>{loser_rank_text} <b>[{winner_score}-{loser_score}]</b>"
         else:
             # default message
@@ -253,7 +253,7 @@ class EloApp(QWidget):
                 )
         # Append message to history display and save to file
         self.history_display.append(message)
-        with open(self.game_history_path, 'a') as file:
+        with open(settings.GAME_HIST_PATH, 'a') as file:
             file.write(f"{message}\n")
             
         Util.limit_game_history(self)

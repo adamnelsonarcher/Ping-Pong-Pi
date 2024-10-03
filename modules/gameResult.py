@@ -1,4 +1,5 @@
 # gameResult.py
+import settings
 
 
 class GameResult:
@@ -33,8 +34,8 @@ class GameResult:
             self.loser_score = player1_score
         
         # Set rank information
-        self.winner_rank = player_ranks.get(self.winner_name, "Unranked")
-        self.loser_rank = player_ranks.get(self.loser_name, "Unranked")
+        self.winner_rank = player_ranks.get(self.winner_name, settings.DEFAULT_RANK)
+        self.loser_rank = player_ranks.get(self.loser_name, settings.DEFAULT_RANK)
         
         # Calculate score changes and update scores
         self.winner_score_change = self.winner.update_score(self.loser, True, abs(self.winner_score - self.loser_score))
