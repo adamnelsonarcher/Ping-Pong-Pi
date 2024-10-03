@@ -37,3 +37,7 @@ GAME_HIST_PATH = r'./game_data/game_history.txt'
 GAME_HISTORY_KEEP = 30
 # password for deleting players and resetting scores
 ADMIN_PASSWORD = '613668'
+# this determines if anyone can create a new player, or if the admin needs to do it
+# if this is true, the "Add Player" button will only be in the admin menu
+# This is currently a WIP, still pretty buggy. Just here to save progress
+ADDPLAYER_ADMINONLY = False

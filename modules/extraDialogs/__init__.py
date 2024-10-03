@@ -26,9 +26,9 @@ class ExtraDiag:
             if new_name and new_password:
                 AddPlayerDialog.add_new_player(parent, new_name, new_password)
 
-    def open_admin_controls_dialog(parent):
+    def open_admin_controls_dialog(parent, add_player_button):
         password, ok = QInputDialog.getText(parent, 'Admin Login', 'Enter admin password:', QLineEdit.Password)
         if ok and password == settings.ADMIN_PASSWORD:
-            dialog = AdminControlsDialog(parent)
+            dialog = AdminControlsDialog(parent, add_player_button)
             dialog.set_players(parent.players)
             dialog.exec_()

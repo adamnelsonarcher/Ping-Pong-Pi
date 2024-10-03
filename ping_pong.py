@@ -110,10 +110,11 @@ class EloApp(QWidget):
         bottom_layout.addStretch()
         self.add_player_button = QPushButton("Add Player")
         self.add_player_button.clicked.connect(lambda: ExtraDiag.open_add_player_dialog(self))
-        bottom_layout.addWidget(self.add_player_button)
+        if not settings.ADDPLAYER_ADMINONLY:
+            bottom_layout.addWidget(self.add_player_button)
 
         self.admin_controls_button = QPushButton("Admin Controls")
-        self.admin_controls_button.clicked.connect(lambda: ExtraDiag.open_admin_controls_dialog(self))
+        self.admin_controls_button.clicked.connect(lambda: ExtraDiag.open_admin_controls_dialog(self, add_player_button=self.add_player_button))
         bottom_layout.addWidget(self.admin_controls_button)
 
         self.start_game_button.setStyleSheet("background-color: #a6ffae; color: black; font-size: 20px;")  # Green

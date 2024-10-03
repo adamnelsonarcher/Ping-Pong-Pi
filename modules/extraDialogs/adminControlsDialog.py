@@ -1,14 +1,18 @@
 from PyQt5.QtWidgets import (QVBoxLayout, QComboBox, QLabel, QPushButton, 
                              QDialog, QLineEdit)
 from modules.util import Util
+import settings
 
 
 class AdminControlsDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, add_player_button=None):
         super().__init__(parent)
         self.setWindowTitle('Admin Controls')
 
         self.layout = QVBoxLayout()
+        
+        if settings.ADDPLAYER_ADMINONLY:
+            self.layout.addWidget(add_player_button)
 
         # Edit player password
         self.layout.addWidget(QLabel('Edit Player Password'))
