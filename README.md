@@ -1,6 +1,6 @@
 <p><span style="text-decoration: underline;"><span style="font-size: 12pt;"><strong>Ping Pong Pi</strong></span></span></p>
 <p>This is a score tracking system developed for a group ping pong environment. It is written in python, and runs on a raspberry pi.</p>
-<p>To read more, see my project post on<br />https://adamnelsonarcher.com/view/adamnelsonarcher/projects/ping-pong-pi</p>
+<p>To read more, see my project post on<br />https://nelsonarcher.com/projects/ping-pong-pi</p>
 <p>&nbsp;</p>
 <p><span style="text-decoration: underline;"><span style="font-size: 12pt;"><strong>Changelog</strong></span></span></p>
 <p><span style="text-decoration: underline;"><span style="font-size: 12pt;"><strong>v2.2 - 9/27/24</strong></span></span></p>
