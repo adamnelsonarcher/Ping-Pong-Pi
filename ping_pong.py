@@ -288,10 +288,11 @@ class EloApp(QWidget):
     def validate_selections(self):
         player1_name = self.player1_dropdown.currentText()
         player2_name = self.player2_dropdown.currentText()
-        if (player1_name and player2_name) and (player1_name != player2_name) and (player1_name and player2_name != "Select Player"):
-            self.start_game_button.setEnabled(True)
-        else:
-            self.start_game_button.setEnabled(False)
+        valid_selection = (player1_name and player2_name and 
+                        player1_name != player2_name and 
+                        player1_name != "Select Player" and 
+                        player2_name != "Select Player")
+        self.start_game_button.setEnabled(valid_selection)
 
 
 def main():

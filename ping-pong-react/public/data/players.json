@@ -1,0 +1,34 @@
+[
+  {
+    "name": "555",
+    "score": 1276.05,
+    "gamesPlayed": 25,
+    "wins": 17,
+    "losses": 8,
+    "password": "password555"
+  },
+  {
+    "name": "1",
+    "score": 1222.26,
+    "gamesPlayed": 27,
+    "wins": 16,
+    "losses": 11,
+    "password": "password1"
+  },
+  {
+    "name": "4",
+    "score": 1208.69,
+    "gamesPlayed": 15,
+    "wins": 6,
+    "losses": 9,
+    "password": "password4"
+  },
+  {
+    "name": "5",
+    "score": 1182.93,
+    "gamesPlayed": 15,
+    "wins": 3,
+    "losses": 12,
+    "password": "password5"
+  }
+]

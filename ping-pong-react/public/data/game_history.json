@@ -1,0 +1,27 @@
+[
+  {
+    "winner": "555",
+    "loser": "1",
+    "winnerScore": 11,
+    "loserScore": 9,
+    "winnerScoreChange": 14.42,
+    "loserScoreChange": -13.58
+  },
+  {
+    "winner": "1",
+    "loser": "4",
+    "winnerScore": 11,
+    "loserScore": 7,
+    "winnerScoreChange": 27.74,
+    "loserScoreChange": -25.29
+  },
+  {
+    "winner": "4",
+    "loser": "5",
+    "winnerScore": 11,
+    "loserScore": 0,
+    "winnerScoreChange": 18.48,
+    "loserScoreChange": -17.16,
+    "isSkunk": true
+  }
+]
