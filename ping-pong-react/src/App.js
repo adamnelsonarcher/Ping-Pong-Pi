@@ -16,6 +16,7 @@ function App() {
   const [players, setPlayers] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalConfig, setModalConfig] = useState({});
+  const [gameInProgress, setGameInProgress] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -36,10 +37,14 @@ function App() {
   };
 
   const handleGameEnd = (player1, player2, player1Score, player2Score) => {
-    dataService.recordGame(player1, player2, player1Score, player2Score);
+    const gameResult = dataService.recordGame(player1, player2, player1Score, player2Score);
     updateLeaderboard();
     updateGameHistory();
     setCurrentScreen('main');
+    setGameInProgress(false);
+    
+    // Optionally, you can display a game result message here
+    console.log(`Game ended: ${gameResult.winner} beat ${gameResult.loser} [${gameResult.winnerScore}-${gameResult.loserScore}]`);
   };
 
   const handleAddPlayer = () => {
@@ -65,9 +70,30 @@ function App() {
   const handleStartGame = () => {
     if (selectedPlayers.player1 && selectedPlayers.player2) {
       setCurrentScreen('game');
+      setGameInProgress(true);
     } else {
       alert("Please select two players before starting a game.");
     }
+  };
+
+  const handlePlayerSelect = (player, index) => {
+    setModalConfig({
+      title: `Enter Password for ${player.name}`,
+      fields: [
+        { name: 'password', label: 'Password', type: 'password' }
+      ],
+      onSubmit: (values) => {
+        if (values.password === dataService.players[player.name].password) {
+          const newSelectedPlayers = { ...selectedPlayers };
+          newSelectedPlayers[`player${index + 1}`] = player.name;
+          setSelectedPlayers(newSelectedPlayers);
+          setIsModalOpen(false);
+        } else {
+          alert('Incorrect password');
+        }
+      }
+    });
+    setIsModalOpen(true);
   };
 
   return (
@@ -86,7 +112,8 @@ function App() {
             <div className="player-controls">
               <PlayerSelection 
                 players={players}
-                onPlayersSelected={setSelectedPlayers}
+                selectedPlayers={selectedPlayers}
+                onPlayerSelect={handlePlayerSelect}
               />
               <button className="btn clear-selections" onClick={handleClearSelections}>Clear Selections</button>
               <button className="btn start-game" onClick={handleStartGame}>Start Game</button>

@@ -158,3 +158,145 @@ body {
 h2 {
   font-size: 36px;
 }
+
+/* Updated Scoreboard styles */
+.Scoreboard {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background-color: #1a1a1a;
+  overflow: hidden;
+  padding: 2vh;
+  box-sizing: border-box;
+}
+
+.score-container {
+  display: flex;
+  flex: 1;
+  gap: 2vw;
+  margin-bottom: 2vh;
+}
+
+.player-score {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2vh 2vw;
+  border-radius: 2vh;
+}
+
+.player-score.green {
+  background-color: #4CAF50;
+}
+
+.player-score.blue {
+  background-color: #2196F3;
+}
+
+.player-name {
+  font-size: 5vh;
+  color: white;
+  padding: 1vh 1vw;
+  border: 2px solid white;
+  border-radius: 1vh;
+  margin-bottom: 2vh;
+}
+
+.score {
+  font-size: 35vh; /* Increased font size */
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  margin: 2vh 0;
+}
+
+.score-buttons {
+  display: flex;
+  width: 100%;
+  justify-content: space-around;
+  margin-top: 2vh;
+}
+
+.score-btn {
+  padding: 2vh 4vw;
+  font-size: 3vh;
+  border: 2px solid white;
+  color: white;
+  cursor: pointer;
+  border-radius: 1vh;
+  width: 45%;
+}
+
+.score-btn.plus {
+  background-color: #45a049;
+}
+
+.score-btn.minus {
+  background-color: #f44336;
+}
+
+.game-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1vh 2vw;
+  background-color: #333;
+  border-radius: 1vh;
+}
+
+.center-buttons {
+  display: flex;
+  gap: 1vw;
+}
+
+.game-btn {
+  padding: 1vh 2vw;
+  font-size: 2vh;
+  border: 2px solid white;
+  color: white;
+  cursor: pointer;
+  border-radius: 1vh;
+}
+
+.end-game {
+  background-color: #2196F3;
+}
+
+.quit-game {
+  background-color: #f44336;
+}
+
+.controls, .fullscreen {
+  background-color: transparent;
+  border: 1px solid white;
+}
+
+.controls-popup {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  padding: 2vh;
+  border-radius: 1vh;
+  z-index: 1000;
+}
+
+.controls-popup h3 {
+  margin-top: 0;
+}
+
+.controls-popup button {
+  margin-top: 1vh;
+  padding: 1vh 2vw;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 0.5vh;
+  cursor: pointer;
+}

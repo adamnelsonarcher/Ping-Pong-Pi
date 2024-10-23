@@ -1,27 +1,21 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 function Leaderboard({ players }) {
-  const [selectedPlayer, setSelectedPlayer] = useState(null);
-
   return (
     <div className="Leaderboard">
       <table>
         <thead>
           <tr>
-            <th>Player</th>
+            <th>Player Name</th>
             <th>Score</th>
-            <th>W/L</th>
+            <th>W/L Ratio</th>
           </tr>
         </thead>
         <tbody>
           {players.map((player, index) => (
-            <tr 
-              key={index} 
-              onClick={() => setSelectedPlayer(player.name)}
-              className={`${selectedPlayer === player.name ? 'selected' : ''} ${player.gamesPlayed < 3 ? 'unranked' : ''}`}
-            >
-              <td>{player.name}</td>
-              <td>{player.gamesPlayed < 3 ? 'Unranked' : player.score}</td>
+            <tr key={index} className={player.active ? '' : 'unranked'}>
+              <td>{player.name}{player.currentStreak >= 3 ? ` 🔥${player.currentStreak}` : ''}</td>
+              <td>{player.active ? player.score : 'Unranked'}</td>
               <td>{player.ratio}</td>
             </tr>
           ))}
