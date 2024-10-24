@@ -110,7 +110,7 @@
 .setting-item label {
   margin-bottom: 5px;
   font-weight: bold;
-  color: black;
+  color: #555;
 }
 
 .setting-item.checkbox {

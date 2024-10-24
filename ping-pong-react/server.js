@@ -7,6 +7,7 @@ app.use(express.json());
 
 const playersPath = path.join(__dirname, 'public', 'data', 'players.json');
 const gameHistoryPath = path.join(__dirname, 'public', 'data', 'game_history.json');
+const settingsPath = path.join(__dirname, 'public', 'data', 'gameSettings.json');
 
 // API routes
 app.post('/api/savePlayers', async (req, res) => {
@@ -84,6 +85,27 @@ app.get('/api/getGameHistory', async (req, res) => {
   } catch (error) {
     console.error('Error reading game history:', error);
     res.status(500).json({ error: 'Failed to read game history', details: error.message });
+  }
+});
+
+app.get('/api/getSettings', async (req, res) => {
+  try {
+    const data = await fs.readFile(settingsPath, 'utf8');
+    const settings = JSON.parse(data);
+    res.json(settings);
+  } catch (error) {
+    console.error('Error reading settings:', error);
+    res.status(500).json({ error: 'Failed to read settings', details: error.message });
+  }
+});
+
+app.post('/api/saveSettings', async (req, res) => {
+  try {
+    await fs.writeFile(settingsPath, JSON.stringify(req.body, null, 2));
+    res.status(200).json({ message: 'Settings saved successfully' });
+  } catch (error) {
+    console.error('Error saving settings:', error);
+    res.status(500).json({ error: 'Failed to save settings', details: error.message });
   }
 });
 

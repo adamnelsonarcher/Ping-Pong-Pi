@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import dataService, { getPlayers, editPlayerPassword, editPlayerScore, deletePlayer, resetAllScores, updateSettings } from '../services/dataService';
-import settings from '../settings';
+import dataService, { getPlayers, editPlayerPassword, editPlayerScore, deletePlayer, resetAllScores, updateSettings, getSettings } from '../services/dataService';
 import './AdminControls.css';
 
 function AdminControls({ onExit }) {
@@ -8,15 +7,26 @@ function AdminControls({ onExit }) {
   const [selectedPlayer, setSelectedPlayer] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newScore, setNewScore] = useState('');
-  const [adminSettings, setAdminSettings] = useState({ ...settings });
+  const [gameSettings, setGameSettings] = useState(null);
 
   useEffect(() => {
-    const loadPlayers = async () => {
+    const loadData = async () => {
       const playerList = await getPlayers();
       setPlayers(playerList);
+      const settings = getSettings();
+      setGameSettings(settings);
     };
-    loadPlayers();
+    loadData();
   }, []);
+
+  useEffect(() => {
+    if (selectedPlayer) {
+      const settings = getSettings(selectedPlayer);
+      setGameSettings(settings);
+    } else {
+      setGameSettings(null);
+    }
+  }, [selectedPlayer]);
 
   const handleEditPassword = async () => {
     if (selectedPlayer && newPassword) {
@@ -52,12 +62,21 @@ function AdminControls({ onExit }) {
   };
 
   const handleSettingChange = (setting, value) => {
-    setAdminSettings({ ...adminSettings, [setting]: value });
+    setGameSettings({ ...gameSettings, [setting]: value });
   };
 
   const saveSettings = async () => {
-    await updateSettings(adminSettings);
-    alert('Settings updated successfully');
+    if (gameSettings) {
+      await updateSettings(gameSettings);
+      alert('Settings updated successfully');
+    }
+  };
+
+  const formatSettingName = (name) => {
+    return name
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
   };
 
   return (
@@ -93,65 +112,27 @@ function AdminControls({ onExit }) {
 
       <div className="admin-section">
         <h3>Game Settings</h3>
-        <div className="settings-list">
-          <div className="setting-item">
-            <label htmlFor="timerInterval">Timer Interval (minutes):</label>
-            <input
-              id="timerInterval"
-              type="number"
-              value={adminSettings.TIMER_INTERVAL}
-              onChange={(e) => handleSettingChange('TIMER_INTERVAL', parseFloat(e.target.value))}
-            />
+        {gameSettings && (
+          <div className="settings-list">
+            {Object.entries(gameSettings).map(([key, value]) => (
+              <div key={key} className="setting-item">
+                <label htmlFor={key}>{formatSettingName(key)}:</label>
+                <input
+                  id={key}
+                  type={typeof value === 'boolean' ? 'checkbox' : 'number'}
+                  checked={typeof value === 'boolean' ? value : undefined}
+                  value={typeof value === 'boolean' ? undefined : value}
+                  onChange={(e) => handleSettingChange(key, 
+                    typeof value === 'boolean' ? e.target.checked : 
+                    typeof value === 'number' ? parseFloat(e.target.value) : 
+                    e.target.value
+                  )}
+                />
+              </div>
+            ))}
+            <button onClick={saveSettings} className="save-btn">Save Settings</button>
           </div>
-          <div className="setting-item">
-            <label htmlFor="scoreChangeKFactor">Score Change K Factor:</label>
-            <input
-              id="scoreChangeKFactor"
-              type="number"
-              value={adminSettings.SCORE_CHANGE_K_FACTOR}
-              onChange={(e) => handleSettingChange('SCORE_CHANGE_K_FACTOR', parseFloat(e.target.value))}
-            />
-          </div>
-          <div className="setting-item">
-            <label htmlFor="pointDifferenceWeight">Point Difference Weight:</label>
-            <input
-              id="pointDifferenceWeight"
-              type="number"
-              value={adminSettings.POINT_DIFFERENCE_WEIGHT}
-              onChange={(e) => handleSettingChange('POINT_DIFFERENCE_WEIGHT', parseFloat(e.target.value))}
-            />
-          </div>
-          <div className="setting-item">
-            <label htmlFor="activityThreshold">Activity Threshold:</label>
-            <input
-              id="activityThreshold"
-              type="number"
-              value={adminSettings.ACTIVITY_THRESHOLD}
-              onChange={(e) => handleSettingChange('ACTIVITY_THRESHOLD', parseInt(e.target.value))}
-            />
-          </div>
-          <div className="setting-item">
-            <label htmlFor="gameHistoryKeep">Game History Keep:</label>
-            <input
-              id="gameHistoryKeep"
-              type="number"
-              value={adminSettings.GAME_HISTORY_KEEP}
-              onChange={(e) => handleSettingChange('GAME_HISTORY_KEEP', parseInt(e.target.value))}
-            />
-          </div>
-          <div className="setting-item checkbox">
-            <label htmlFor="addPlayerAdminOnly">
-              <input
-                id="addPlayerAdminOnly"
-                type="checkbox"
-                checked={adminSettings.ADDPLAYER_ADMINONLY}
-                onChange={(e) => handleSettingChange('ADDPLAYER_ADMINONLY', e.target.checked)}
-              />
-              Add Player Admin Only
-            </label>
-          </div>
-        </div>
-        <button onClick={saveSettings} className="save-btn">Save Settings</button>
+        )}
       </div>
 
       <button onClick={onExit} className="exit-btn">Exit Admin Controls</button>

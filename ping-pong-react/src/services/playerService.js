@@ -25,11 +25,6 @@ class Player {
     return scoreChange;
   }
 
-  updateScore(opponent, won, pointDifference) {
-    // Implement the score update logic here
-    // This should mirror the logic in the Python version
-  }
-
   winLossRatio() {
     return this.gamesPlayed === 0 ? "0/0" : `${this.wins}/${this.losses}`;
   }

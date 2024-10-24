@@ -1,8 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
+import './Leaderboard.css';
+import LifetimeStatsDialog from './LifetimeStatsDialog';
+import dataService from '../services/dataService';
 
 function Leaderboard({ players }) {
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const activePlayers = players.filter(player => player.active);
+  const inactivePlayers = players.filter(player => !player.active);
+
+  const handlePlayerDoubleClick = (playerName) => {
+    const fullPlayerData = dataService.players[playerName];
+    setSelectedPlayer(fullPlayerData);
+  };
+
   return (
     <div className="Leaderboard">
+      <h2>Leaderboard</h2>
       <table>
         <thead>
           <tr>
@@ -12,15 +25,28 @@ function Leaderboard({ players }) {
           </tr>
         </thead>
         <tbody>
-          {players.map((player, index) => (
-            <tr key={index} className={player.active ? '' : 'unranked'}>
-              <td>{player.name}{player.currentStreak >= 3 ? ` 🔥${player.currentStreak}` : ''}</td>
-              <td>{player.active ? player.score : 'Unranked'}</td>
+          {activePlayers.map((player) => (
+            <tr key={player.name} onDoubleClick={() => handlePlayerDoubleClick(player.name)}>
+              <td>{player.name}</td>
+              <td>{player.score}</td>
+              <td>{player.ratio}</td>
+            </tr>
+          ))}
+          {inactivePlayers.map((player) => (
+            <tr key={player.name} className="inactive" onDoubleClick={() => handlePlayerDoubleClick(player.name)}>
+              <td>{player.name}</td>
+              <td>{player.score}</td>
               <td>{player.ratio}</td>
             </tr>
           ))}
         </tbody>
       </table>
+      {selectedPlayer && (
+        <LifetimeStatsDialog 
+          player={selectedPlayer} 
+          onClose={() => setSelectedPlayer(null)} 
+        />
+      )}
     </div>
   );
 }

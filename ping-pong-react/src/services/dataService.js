@@ -27,11 +27,11 @@ class Player {
     return scoreChange;
   }
 
-  updateScore(opponent, won, pointDifference) {
+  updateScore(opponent, won, pointDifference, gameSettings) {
     const opponentIsUnranked = !opponent.active;
     const playerIsUnranked = !this.active;
 
-    let K = settings.SCORE_CHANGE_K_FACTOR + pointDifference * settings.POINT_DIFFERENCE_WEIGHT;
+    let K = gameSettings.SCORE_CHANGE_K_FACTOR + pointDifference * gameSettings.POINT_DIFFERENCE_WEIGHT;
 
     if (playerIsUnranked && opponentIsUnranked) {
       K *= 1.2;
@@ -45,6 +45,7 @@ class Player {
     const scoreChange = this.calculateScoreChange(this.score, opponent.score, result, K);
     this.score += scoreChange;
     this.gamesPlayed += 1;
+    this.lifetimeGamesPlayed += 1; // Increment lifetime games played
 
     const lifetimeScoreChange = this.calculateScoreChange(this.lifetimeScore, opponent.lifetimeScore, result, K);
     this.lifetimeScore += lifetimeScoreChange;
@@ -63,19 +64,15 @@ class Player {
 
     if (won) {
       this.wins += 1;
+      this.lifetimeWins += 1;
       this.currentStreak += 1;
       if (this.currentStreak > this.maxWinStreak) {
         this.maxWinStreak = this.currentStreak;
       }
-      if (this.active) {
-        this.lifetimeWins += 1;
-      }
     } else {
       this.losses += 1;
+      this.lifetimeLosses += 1;
       this.currentStreak = 0;
-      if (this.active) {
-        this.lifetimeLosses += 1;
-      }
     }
 
     return scoreChange;
@@ -85,8 +82,8 @@ class Player {
     return this.gamesPlayed === 0 ? "0/0" : `${this.wins}/${this.losses}`;
   }
 
-  updateActiveStatus() {
-    this.active = this.gamesPlayed >= settings.ACTIVITY_THRESHOLD;
+  updateActiveStatus(activityThreshold = 3) {
+    this.active = this.gamesPlayed >= activityThreshold;
   }
 }
 
@@ -94,11 +91,27 @@ class DataService {
   constructor() {
     this.players = {};
     this.gameHistory = [];
+    this.settings = { ...settings };
   }
 
   async loadData() {
+    await this.loadSettings();
     await this.loadPlayers();
     await this.loadGameHistory();
+  }
+
+  async loadSettings() {
+    try {
+      const response = await fetch('/api/getSettings');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      this.settings = await response.json();
+      console.log('Loaded settings:', this.settings);
+    } catch (error) {
+      console.error('Error loading settings:', error);
+      // Keep using default settings if loading fails
+    }
   }
 
   async loadPlayers() {
@@ -108,6 +121,7 @@ class DataService {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const playerData = await response.json();
+      console.log('Loaded player data:', playerData);
       this.players = {};
       playerData.forEach(data => {
         const player = new Player(data.name, data.score, data.password);
@@ -121,10 +135,10 @@ class DataService {
         player.currentStreak = data.currentStreak || 0;
         player.maxWinStreak = data.maxWinStreak || 0;
         player.scoreHistory = Array.isArray(data.scoreHistory) ? data.scoreHistory : [data.score];
-        player.updateActiveStatus();
+        player.updateActiveStatus(this.settings.ACTIVITY_THRESHOLD);
         this.players[data.name] = player;
       });
-      // Removed console.log for full player data
+      console.log('Processed players:', this.players);
     } catch (error) {
       console.error('Error loading players:', error);
     }
@@ -158,7 +172,7 @@ class DataService {
       lifetimeScore: player.lifetimeScore,
       currentStreak: player.currentStreak,
       maxWinStreak: player.maxWinStreak,
-      scoreHistory: player.scoreHistory
+      scoreHistory: player.scoreHistory,
     }));
     
     try {
@@ -223,8 +237,8 @@ class DataService {
 
     // Calculate score changes
     const pointDifference = Math.abs(player1Score - player2Score);
-    const winnerScoreChange = winner.updateScore(loser, true, pointDifference);
-    const loserScoreChange = loser.updateScore(winner, false, pointDifference);
+    const winnerScoreChange = winner.updateScore(loser, true, pointDifference, this.settings);
+    const loserScoreChange = loser.updateScore(winner, false, pointDifference, this.settings);
 
     // Create game history entry
     const gameResult = {
@@ -251,35 +265,51 @@ class DataService {
   }
 
   getGameHistoryMessage(gameResult) {
-    let message = '';
-    if (gameResult.winnerRank === settings.DEFAULT_RANK || gameResult.loserRank === settings.DEFAULT_RANK) {
-      const winnerRankText = gameResult.winnerRank === settings.DEFAULT_RANK ? `(${settings.DEFAULT_RANK})` : '';
-      const loserRankText = gameResult.loserRank === settings.DEFAULT_RANK ? `(${settings.DEFAULT_RANK})` : '';
-      message = `<b>${gameResult.winner}</b>${winnerRankText} beat <b>${gameResult.loser}</b>${loserRankText} <b>[${gameResult.winnerScore}-${gameResult.loserScore}]</b>`;
-    } else {
-      const winnerChangeText = gameResult.winnerScoreChange > 0 ? `+${gameResult.winnerScoreChange.toFixed(2)}` : gameResult.winnerScoreChange.toFixed(2);
-      const loserChangeText = gameResult.loserScoreChange > 0 ? `+${gameResult.loserScoreChange.toFixed(2)}` : gameResult.loserScoreChange.toFixed(2);
-      
-      if (gameResult.isUnderdogVictory) {
-        message = `<b>${gameResult.winner}</b> (ranked #${gameResult.winnerRank}) pulled off an <span style='color:gold;'><b>UNDERDOG VICTORY</b></span> against <b>${gameResult.loser}</b> (ranked #${gameResult.loserRank}) [<b>${gameResult.winnerScore} - ${gameResult.loserScore}</b>] : ${winnerChangeText} / ${loserChangeText}`;
-      } else if (gameResult.isSkunk) {
-        message = `<span style='color:red;'><b>${gameResult.winner}</b> SKUNKED <b>${gameResult.loser}</b> <b>[${gameResult.winnerScore}-${gameResult.loserScore}]</span></b>: ${winnerChangeText} / ${loserChangeText}`;
-      } else {
-        message = `<b>${gameResult.winner}</b> beat <b>${gameResult.loser}</b> <b>[${gameResult.winnerScore}-${gameResult.loserScore}]</b>: ${winnerChangeText} / ${loserChangeText}`;
-      }
+    const player1IsUnranked = !this.players[gameResult.player1].active;
+    const player2IsUnranked = !this.players[gameResult.player2].active;
+
+    const player1Name = player1IsUnranked ? `${gameResult.player1} (unranked)` : gameResult.player1;
+    const player2Name = player2IsUnranked ? `${gameResult.player2} (unranked)` : gameResult.player2;
+
+    if (player1IsUnranked || player2IsUnranked) {
+      return `<b>${player1Name}</b> vs <b>${player2Name}</b>: ${gameResult.score}`;
     }
-    return message;
+
+    const [winner, loser] = gameResult.score.split('-')[0] > gameResult.score.split('-')[1] 
+      ? [gameResult.player1, gameResult.player2] 
+      : [gameResult.player2, gameResult.player1];
+    
+    const winnerChange = gameResult.player1 === winner ? gameResult.pointChange1 : gameResult.pointChange2;
+    const loserChange = gameResult.player1 === loser ? gameResult.pointChange1 : gameResult.pointChange2;
+
+    const winnerChangeText = winnerChange > 0 ? `+${winnerChange.toFixed(2)}` : winnerChange.toFixed(2);
+    const loserChangeText = loserChange > 0 ? `+${loserChange.toFixed(2)}` : loserChange.toFixed(2);
+
+    return `<b>${winner}</b> beat <b>${loser}</b> <b>[${gameResult.score}]</b>: ${winnerChangeText} / ${loserChangeText}`;
   }
 
   getLeaderboard() {
-    return Object.values(this.players)
+    const activePlayers = Object.values(this.players)
+      .filter(player => player.active)
       .sort((a, b) => b.score - a.score)
       .map(player => ({
         name: player.name,
         score: player.score.toFixed(2),
         ratio: player.winLossRatio(),
-        active: player.active
+        active: true
       }));
+
+    const inactivePlayers = Object.values(this.players)
+      .filter(player => !player.active)
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map(player => ({
+        name: player.name,
+        score: this.settings.DEFAULT_RANK,
+        ratio: player.winLossRatio(),
+        active: false
+      }));
+
+    return [...activePlayers, ...inactivePlayers];
   }
 
   getGameHistory() {
@@ -335,11 +365,31 @@ class DataService {
     await this.savePlayers();
   }
 
+  async saveSettings() {
+    try {
+      const response = await fetch('/api/saveSettings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(this.settings),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to save settings');
+      }
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      throw error;
+    }
+  }
+
+  getSettings() {
+    return this.settings;
+  }
+
   async updateSettings(newSettings) {
-    // In a real application, you would send this to the server
-    // For now, we'll just update the local settings
-    Object.assign(settings, newSettings);
-    console.log('Settings updated:', settings);
+    this.settings = { ...this.settings, ...newSettings };
+    await this.saveSettings();
   }
 }
 
@@ -447,4 +497,8 @@ export const resetAllScores = async () => {
 
 export const updateSettings = async (newSettings) => {
   await dataService.updateSettings(newSettings);
+};
+
+export const getSettings = () => {
+  return dataService.getSettings();
 };

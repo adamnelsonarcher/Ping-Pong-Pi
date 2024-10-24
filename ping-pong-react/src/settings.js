@@ -1,7 +1,7 @@
 // settings.js
 
 // Timer for player dropdown reset after game end, in minutes.
-export const TIMER_INTERVAL = 5;
+export const TIMER_INTERVAL = 5; // 5 minutes, adjust as needed
 
 // SCORE SETTINGS
 // the k factor is the most points that can be won or lost in a game

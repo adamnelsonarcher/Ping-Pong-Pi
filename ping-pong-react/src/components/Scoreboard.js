@@ -36,8 +36,11 @@ function Scoreboard({ player1, player2, onGameEnd, onQuitGame }) {
     }
   };
 
-  const handleQuitGame = () => {
-    onQuitGame();
+  const handleQuitGame = async () => {
+    const result = await quitGame(player1, player2);
+    if (result) {
+      onQuitGame(result);
+    }
   };
 
   const toggleFullscreen = () => {

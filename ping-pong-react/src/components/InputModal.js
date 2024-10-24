@@ -1,17 +1,19 @@
-import React, { useState } from 'react';
-import '../styles/InputModal.css';
+import React, { useState, useEffect } from 'react';
+import './InputModal.css';
 
-function InputModal({ isOpen, onClose, onSubmit, title, fields }) {
+function InputModal({ isOpen, onClose, title, fields, onSubmit }) {
   const [values, setValues] = useState({});
 
-  const handleChange = (e) => {
-    setValues({ ...values, [e.target.name]: e.target.value });
-  };
+  useEffect(() => {
+    if (isOpen) {
+      // Clear the values when the modal opens
+      setValues({});
+    }
+  }, [isOpen]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(values);
-    setValues({});
   };
 
   if (!isOpen) return null;
@@ -19,17 +21,16 @@ function InputModal({ isOpen, onClose, onSubmit, title, fields }) {
   return (
     <div className="modal-overlay">
       <div className="modal-content">
-        <h2>{title}</h2>
+        <h3 className="modal-title">{title}</h3>
         <form onSubmit={handleSubmit}>
           {fields.map((field) => (
-            <div key={field.name} className="form-group">
-              <label htmlFor={field.name}>{field.label}</label>
+            <div key={field.name} className="input-group">
               <input
                 type={field.type || 'text'}
                 id={field.name}
-                name={field.name}
                 value={values[field.name] || ''}
-                onChange={handleChange}
+                onChange={(e) => setValues({ ...values, [field.name]: e.target.value })}
+                placeholder={field.label}
                 required
               />
             </div>

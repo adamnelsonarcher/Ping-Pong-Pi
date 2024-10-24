@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 import Leaderboard from './components/Leaderboard';
 import GameHistory from './components/GameHistory';
@@ -6,7 +6,8 @@ import Scoreboard from './components/Scoreboard';
 import PlayerSelection from './components/PlayerSelection';
 import AdminControls from './components/AdminControls';
 import InputModal from './components/InputModal';
-import dataService, { endGame, quitGame } from './services/dataService';
+import dataService, { getPlayers, endGame, quitGame } from './services/dataService';
+import settings from './settings';
 
 function App() {
   const [currentScreen, setCurrentScreen] = useState('main');
@@ -17,6 +18,8 @@ function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalConfig, setModalConfig] = useState({});
   const [gameInProgress, setGameInProgress] = useState(false);
+  const [timerDuration, setTimerDuration] = useState(settings.TIMER_INTERVAL * 60 * 1000);
+  const clearSelectionTimerRef = useRef(null);
 
   useEffect(() => {
     const testConnection = async () => {
@@ -35,36 +38,46 @@ function App() {
       await dataService.loadData();
       updateLeaderboard();
       updateGameHistory();
-      setPlayers(Object.values(dataService.players));
+      const playerList = await getPlayers();
+      console.log('Loaded players:', playerList); // Add this line for debugging
+      setPlayers(playerList);
+      setTimerDuration(settings.TIMER_INTERVAL * 60 * 1000);
     };
     loadData();
   }, []);
 
   const updateLeaderboard = () => {
-    setLeaderboard(dataService.getLeaderboard());
+    const leaderboardData = dataService.getLeaderboard();
+    console.log('Updating leaderboard:', leaderboardData); // Add this line for debugging
+    setLeaderboard(leaderboardData);
   };
 
   const updateGameHistory = () => {
     setGameHistory(dataService.getGameHistory());
   };
 
-  const handleGameEnd = async (player1, player2, player1Score, player2Score) => {
-    const result = await endGame(player1, player2, player1Score, player2Score);
-    if (result) {
-      setGameHistory(prevHistory => [...prevHistory, result.gameResult].slice(-40));
-      updateLeaderboard();
-      setCurrentScreen('main');
-      setGameInProgress(false);
+  const startClearSelectionTimer = () => {
+    if (clearSelectionTimerRef.current) {
+      clearTimeout(clearSelectionTimerRef.current);
     }
+    clearSelectionTimerRef.current = setTimeout(() => {
+      handleClearSelections();
+    }, timerDuration);
   };
 
-  const handleQuitGame = async () => {
-    const quitResult = await quitGame(selectedPlayers.player1, selectedPlayers.player2);
-    if (quitResult) {
-      setGameHistory(prevHistory => [...prevHistory, quitResult].slice(-40));
-      setCurrentScreen('main');
-      setGameInProgress(false);
-    }
+  const handleGameEnd = async (historyMessage) => {
+    setGameHistory(prevHistory => [historyMessage, ...prevHistory].slice(0, 40));
+    updateLeaderboard();
+    setCurrentScreen('main');
+    setGameInProgress(false);
+    startClearSelectionTimer();
+  };
+
+  const handleQuitGame = async (quitResult) => {
+    setGameHistory(prevHistory => [quitResult, ...prevHistory].slice(0, 40));
+    setCurrentScreen('main');
+    setGameInProgress(false);
+    startClearSelectionTimer();
   };
 
   const handleAddPlayer = () => {
@@ -85,12 +98,18 @@ function App() {
 
   const handleClearSelections = () => {
     setSelectedPlayers({ player1: null, player2: null });
+    if (clearSelectionTimerRef.current) {
+      clearTimeout(clearSelectionTimerRef.current);
+    }
   };
 
   const handleStartGame = () => {
     if (selectedPlayers.player1 && selectedPlayers.player2) {
       setCurrentScreen('game');
       setGameInProgress(true);
+      if (clearSelectionTimerRef.current) {
+        clearTimeout(clearSelectionTimerRef.current);
+      }
     } else {
       alert("Please select two players before starting a game.");
     }
@@ -105,7 +124,7 @@ function App() {
       setModalConfig({
         title: `Enter Password for ${playerName}`,
         fields: [
-          { name: 'password', label: 'Password', type: 'password' }
+          { name: 'password', label: '', type: 'password' }
         ],
         onSubmit: (values) => {
           if (values.password === dataService.players[playerName].password) {

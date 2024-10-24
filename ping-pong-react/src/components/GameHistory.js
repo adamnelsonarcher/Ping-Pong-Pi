@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './GameHistory.css';
 
 const formatGameResult = (game) => {
@@ -22,22 +22,23 @@ const formatGameResult = (game) => {
 };
 
 function GameHistory({ gameHistory }) {
-  const [selectedIndex, setSelectedIndex] = useState(null);
+  const historyListRef = useRef(null);
 
-  const handleItemClick = (index) => {
-    setSelectedIndex(index === selectedIndex ? null : index);
-  };
+  useEffect(() => {
+    if (historyListRef.current) {
+      historyListRef.current.scrollTop = historyListRef.current.scrollHeight;
+    }
+  }, [gameHistory]);
 
   return (
     <div className="game-history">
       <h2>Game History</h2>
-      <div className="game-history-list">
+      <div className="game-history-list" ref={historyListRef}>
         {gameHistory && gameHistory.length > 0 ? (
           gameHistory.map((game, index) => (
             <div
               key={index}
-              className={`game-history-item ${index === selectedIndex ? 'selected' : ''}`}
-              onClick={() => handleItemClick(index)}
+              className="game-history-item"
             >
               <span dangerouslySetInnerHTML={{ __html: formatGameResult(game) }} />
             </div>
