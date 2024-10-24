@@ -1,0 +1,46 @@
+.game-history {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.game-history h2 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.game-history-list {
+  flex-grow: 1;
+  overflow-y: auto;
+  max-height: calc(100vh - 200px); /* Adjust this value as needed */
+  padding-right: 10px;
+}
+
+.game-history-item {
+  padding: 10px 15px;
+  border-bottom: 1px solid #eee;
+  background-color: #fff;
+  transition: background-color 0.3s ease;
+  cursor: pointer;
+}
+
+.game-history-item:last-child {
+  border-bottom: none;
+}
+
+.game-history-item:hover {
+  background-color: #f0f0f0;
+}
+
+.game-history-item.selected {
+  background-color: #e0e0e0;
+}
+
+.game-history-item .underdog {
+  color: #ffd700;
+}
+
+.game-history-item .skunk {
+  color: #ff4500;
+}

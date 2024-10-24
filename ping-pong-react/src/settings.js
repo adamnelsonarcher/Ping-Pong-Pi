@@ -30,7 +30,7 @@ export const ADMIN_PASSWORD = '613668';
 // this determines if anyone can create a new player, or if the admin needs to do it
 export const ADDPLAYER_ADMINONLY = false;
 
-export default {
+const settings = {
   TIMER_INTERVAL,
   SCORE_CHANGE_K_FACTOR,
   POINT_DIFFERENCE_WEIGHT,
@@ -39,6 +39,7 @@ export default {
   PLAYER1_SCOREBOARD_COLOR,
   PLAYER2_SCOREBOARD_COLOR,
   GAME_HISTORY_KEEP,
-  ADMIN_PASSWORD,
   ADDPLAYER_ADMINONLY
 };
+
+export default settings;

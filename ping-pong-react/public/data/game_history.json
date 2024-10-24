@@ -1,27 +1,122 @@
 [
   {
-    "winner": "555",
-    "loser": "1",
-    "winnerScore": 11,
-    "loserScore": 9,
-    "winnerScoreChange": 14.42,
-    "loserScoreChange": -13.58
+    "player1": "1",
+    "player2": "123",
+    "score": "1-0",
+    "pointChange1": 27.237234123554003,
+    "pointChange2": -24.85256986923955,
+    "date": "2024-10-24T02:28:52.762Z"
   },
   {
-    "winner": "1",
-    "loser": "4",
-    "winnerScore": 11,
-    "loserScore": 7,
-    "winnerScoreChange": 27.74,
-    "loserScoreChange": -25.29
+    "player1": "123",
+    "player2": "234",
+    "score": "1-0",
+    "pointChange1": 6.139618809755262,
+    "pointChange2": -27.390853793321096,
+    "date": "2024-10-24T02:33:44.219Z"
   },
   {
-    "winner": "4",
-    "loser": "5",
-    "winnerScore": 11,
-    "loserScore": 0,
-    "winnerScoreChange": 18.48,
-    "loserScoreChange": -17.16,
-    "isSkunk": true
+    "player1": "123",
+    "player2": "234",
+    "score": "5-0",
+    "pointChange1": -59.97729299666099,
+    "pointChange2": 113.60948709829219,
+    "date": "2024-10-24T02:33:58.725Z"
+  },
+  {
+    "player1": "1",
+    "player2": "123",
+    "score": "1-0",
+    "pointChange1": 27.237234123554003,
+    "pointChange2": -24.85256986923955,
+    "date": "2024-10-24T02:28:52.762Z"
+  },
+  {
+    "player1": "123",
+    "player2": "234",
+    "score": "1-0",
+    "pointChange1": 6.139618809755262,
+    "pointChange2": -27.390853793321096,
+    "date": "2024-10-24T02:33:44.219Z"
+  },
+  {
+    "player1": "123",
+    "player2": "234",
+    "score": "5-0",
+    "pointChange1": -59.97729299666099,
+    "pointChange2": 113.60948709829219,
+    "date": "2024-10-24T02:33:58.725Z"
+  },
+  {
+    "player1": "123",
+    "player2": "555",
+    "score": "1-0",
+    "pointChange1": -21.18777731530951,
+    "pointChange2": 23.034904768306973,
+    "date": "2024-10-24T02:37:50.392Z"
+  },
+  {
+    "player1": "1",
+    "player2": "123",
+    "score": "1-0",
+    "pointChange1": 27.237234123554003,
+    "pointChange2": -24.85256986923955,
+    "date": "2024-10-24T02:28:52.762Z"
+  },
+  {
+    "player1": "123",
+    "player2": "234",
+    "score": "1-0",
+    "pointChange1": 6.139618809755262,
+    "pointChange2": -27.390853793321096,
+    "date": "2024-10-24T02:33:44.219Z"
+  },
+  {
+    "player1": "123",
+    "player2": "234",
+    "score": "5-0",
+    "pointChange1": -59.97729299666099,
+    "pointChange2": 113.60948709829219,
+    "date": "2024-10-24T02:33:58.725Z"
+  },
+  {
+    "player1": "1",
+    "player2": "123",
+    "score": "1-0",
+    "pointChange1": 27.237234123554003,
+    "pointChange2": -24.85256986923955,
+    "date": "2024-10-24T02:28:52.762Z"
+  },
+  {
+    "player1": "123",
+    "player2": "234",
+    "score": "1-0",
+    "pointChange1": 6.139618809755262,
+    "pointChange2": -27.390853793321096,
+    "date": "2024-10-24T02:33:44.219Z"
+  },
+  {
+    "player1": "123",
+    "player2": "234",
+    "score": "5-0",
+    "pointChange1": -59.97729299666099,
+    "pointChange2": 113.60948709829219,
+    "date": "2024-10-24T02:33:58.725Z"
+  },
+  {
+    "player1": "123",
+    "player2": "555",
+    "score": "1-0",
+    "pointChange1": -21.18777731530951,
+    "pointChange2": 23.034904768306973,
+    "date": "2024-10-24T02:37:50.392Z"
+  },
+  {
+    "player1": "123",
+    "player2": "234",
+    "score": "4-0",
+    "pointChange1": -41.155743085046495,
+    "pointChange2": 46.74641665586731,
+    "date": "2024-10-24T04:01:55.399Z"
   }
 ]

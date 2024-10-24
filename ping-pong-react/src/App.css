@@ -18,6 +18,8 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
 }
 
 .App-main {
@@ -25,6 +27,7 @@ body {
   flex: 1;
   padding: 1rem;
   gap: 1rem;
+  overflow: hidden;
 }
 
 .App-column {
@@ -33,6 +36,7 @@ body {
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   padding: 1rem;
   overflow: auto;
+  max-height: calc(100vh - 2rem - 60px);
 }
 
 .leaderboard-column {
@@ -299,4 +303,19 @@ h2 {
   border: none;
   border-radius: 0.5vh;
   cursor: pointer;
+}
+
+.btn.admin-controls {
+  background-color: #FFA500; /* Orange color for admin button */
+  color: white;
+}
+
+.btn.admin-controls:hover {
+  background-color: #FF8C00; /* Darker orange on hover */
+}
+
+/* Add this new style for the admin page */
+.admin-page {
+  height: 100vh;
+  overflow-y: auto;
 }

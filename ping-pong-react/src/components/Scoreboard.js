@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import settings from '../settings';
+import { endGame, quitGame } from '../services/dataService';
 
-function Scoreboard({ player1, player2, onGameEnd }) {
-  const [scores, setScores] = useState([0, 0]);
+function Scoreboard({ player1, player2, onGameEnd, onQuitGame }) {
+  const [player1Score, setPlayer1Score] = useState(0);
+  const [player2Score, setPlayer2Score] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [message, setMessage] = useState('');
@@ -18,17 +20,24 @@ function Scoreboard({ player1, player2, onGameEnd }) {
   }, []);
 
   const handleScoreChange = (playerIndex, change) => {
-    const newScores = [...scores];
+    const newScores = [...[player1Score, player2Score]];
     newScores[playerIndex] = Math.max(0, newScores[playerIndex] + change);
-    setScores(newScores);
+    if (playerIndex === 0) {
+      setPlayer1Score(newScores[0]);
+    } else {
+      setPlayer2Score(newScores[1]);
+    }
   };
 
-  const handleEndGame = () => {
-    onGameEnd(player1, player2, scores[0], scores[1]);
+  const handleEndGame = async () => {
+    const result = await endGame(player1, player2, player1Score, player2Score);
+    if (result) {
+      onGameEnd(result.historyMessage);
+    }
   };
 
   const handleQuitGame = () => {
-    onGameEnd(null, null, 0, 0);
+    onQuitGame();
   };
 
   const toggleFullscreen = () => {
@@ -70,7 +79,7 @@ function Scoreboard({ player1, player2, onGameEnd }) {
     return () => {
       window.removeEventListener('keydown', handleKeyPress);
     };
-  }, [scores]);
+  }, [player1Score, player2Score]);
 
   return (
     <div className="Scoreboard" tabIndex="0">
@@ -78,7 +87,7 @@ function Scoreboard({ player1, player2, onGameEnd }) {
         {[player1, player2].map((player, index) => (
           <div key={player} className={`player-score ${index === 0 ? 'green' : 'blue'}`}>
             <div className="player-name">{player}</div>
-            <div className="score">{scores[index]}</div>
+            <div className="score">{index === 0 ? player1Score : player2Score}</div>
             <div className="score-buttons">
               <button className="score-btn plus" onClick={() => handleScoreChange(index, 1)}>+1</button>
               <button className="score-btn minus" onClick={() => handleScoreChange(index, -1)}>-1</button>

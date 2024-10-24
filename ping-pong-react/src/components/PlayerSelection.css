@@ -1,0 +1,25 @@
+.PlayerSelection {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.player-select-container {
+  display: flex;
+  gap: 20px;
+}
+
+.player-select {
+  display: flex;
+  align-items: center;
+}
+
+.player-select label {
+  margin-right: 10px;
+  white-space: nowrap;
+}
+
+.player-select select {
+  padding: 5px;
+  font-size: 16px;
+}

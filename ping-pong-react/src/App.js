@@ -6,7 +6,7 @@ import Scoreboard from './components/Scoreboard';
 import PlayerSelection from './components/PlayerSelection';
 import AdminControls from './components/AdminControls';
 import InputModal from './components/InputModal';
-import dataService from './services/dataService';
+import dataService, { endGame, quitGame } from './services/dataService';
 
 function App() {
   const [currentScreen, setCurrentScreen] = useState('main');
@@ -17,6 +17,18 @@ function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalConfig, setModalConfig] = useState({});
   const [gameInProgress, setGameInProgress] = useState(false);
+
+  useEffect(() => {
+    const testConnection = async () => {
+      const isConnected = await dataService.testServerConnection();
+      if (isConnected) {
+        console.log('Successfully connected to the server');
+      } else {
+        console.error('Failed to connect to the server');
+      }
+    };
+    testConnection();
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -36,15 +48,23 @@ function App() {
     setGameHistory(dataService.getGameHistory());
   };
 
-  const handleGameEnd = (player1, player2, player1Score, player2Score) => {
-    const gameResult = dataService.recordGame(player1, player2, player1Score, player2Score);
-    updateLeaderboard();
-    updateGameHistory();
-    setCurrentScreen('main');
-    setGameInProgress(false);
-    
-    // Optionally, you can display a game result message here
-    console.log(`Game ended: ${gameResult.winner} beat ${gameResult.loser} [${gameResult.winnerScore}-${gameResult.loserScore}]`);
+  const handleGameEnd = async (player1, player2, player1Score, player2Score) => {
+    const result = await endGame(player1, player2, player1Score, player2Score);
+    if (result) {
+      setGameHistory(prevHistory => [...prevHistory, result.gameResult].slice(-40));
+      updateLeaderboard();
+      setCurrentScreen('main');
+      setGameInProgress(false);
+    }
+  };
+
+  const handleQuitGame = async () => {
+    const quitResult = await quitGame(selectedPlayers.player1, selectedPlayers.player2);
+    if (quitResult) {
+      setGameHistory(prevHistory => [...prevHistory, quitResult].slice(-40));
+      setCurrentScreen('main');
+      setGameInProgress(false);
+    }
   };
 
   const handleAddPlayer = () => {
@@ -76,24 +96,30 @@ function App() {
     }
   };
 
-  const handlePlayerSelect = (player, index) => {
-    setModalConfig({
-      title: `Enter Password for ${player.name}`,
-      fields: [
-        { name: 'password', label: 'Password', type: 'password' }
-      ],
-      onSubmit: (values) => {
-        if (values.password === dataService.players[player.name].password) {
-          const newSelectedPlayers = { ...selectedPlayers };
-          newSelectedPlayers[`player${index + 1}`] = player.name;
-          setSelectedPlayers(newSelectedPlayers);
-          setIsModalOpen(false);
-        } else {
-          alert('Incorrect password');
+  const handlePlayerSelect = (playerName, index) => {
+    if (playerName === '') {
+      const newSelectedPlayers = { ...selectedPlayers };
+      newSelectedPlayers[`player${index + 1}`] = null;
+      setSelectedPlayers(newSelectedPlayers);
+    } else {
+      setModalConfig({
+        title: `Enter Password for ${playerName}`,
+        fields: [
+          { name: 'password', label: 'Password', type: 'password' }
+        ],
+        onSubmit: (values) => {
+          if (values.password === dataService.players[playerName].password) {
+            const newSelectedPlayers = { ...selectedPlayers };
+            newSelectedPlayers[`player${index + 1}`] = playerName;
+            setSelectedPlayers(newSelectedPlayers);
+            setIsModalOpen(false);
+          } else {
+            alert('Incorrect password');
+          }
         }
-      }
-    });
-    setIsModalOpen(true);
+      });
+      setIsModalOpen(true);
+    }
   };
 
   return (
@@ -130,10 +156,13 @@ function App() {
           player1={selectedPlayers.player1} 
           player2={selectedPlayers.player2}
           onGameEnd={handleGameEnd}
+          onQuitGame={handleQuitGame}
         />
       )}
       {currentScreen === 'admin' && (
-        <AdminControls onExit={() => setCurrentScreen('main')} />
+        <div className="admin-page">
+          <AdminControls onExit={() => setCurrentScreen('main')} />
+        </div>
       )}
       <InputModal
         isOpen={isModalOpen}
