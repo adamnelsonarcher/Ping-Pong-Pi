@@ -243,7 +243,9 @@ class DataService {
     const gameResult = {
       player1: player1Name,
       player2: player2Name,
-      score: `${winnerScore}-${loserScore}`,
+      score: `${player1Score} - ${player2Score}`,
+      player1Rank: this.getPlayerRank(player1Name),
+      player2Rank: this.getPlayerRank(player2Name),
       pointChange1: player1 === winner ? winnerScoreChange : loserScoreChange,
       pointChange2: player2 === winner ? winnerScoreChange : loserScoreChange,
       date: new Date().toISOString()
@@ -252,15 +254,17 @@ class DataService {
     // Add to game history
     this.gameHistory.push(gameResult);
 
-    // Limit game history to last 40 games
-    if (this.gameHistory.length > this.settings.GAME_HISTORY_KEEP) {
-      this.gameHistory = this.gameHistory.slice(-this.settings.GAME_HISTORY_KEEP);
-    }
-
     // Save updated data
     this.saveData();
 
     return gameResult;
+  }
+
+  getPlayerRank(playerName) {
+    const activePlayers = Object.values(this.players).filter(p => p.active);
+    const sortedPlayers = activePlayers.sort((a, b) => b.score - a.score);
+    const playerIndex = sortedPlayers.findIndex(p => p.name === playerName);
+    return playerIndex !== -1 ? playerIndex + 1 : 'Unranked';
   }
 
   getGameHistoryMessage(gameResult) {
@@ -431,9 +435,8 @@ export const savePlayersData = async () => {
 export const endGame = async (player1Name, player2Name, player1Score, player2Score) => {
   try {
     const gameResult = dataService.recordGame(player1Name, player2Name, player1Score, player2Score);
-    const historyMessage = dataService.getGameHistoryMessage(gameResult);
     await dataService.saveData();
-    return { gameResult, historyMessage };
+    return { gameResult };
   } catch (error) {
     console.error('Error ending game:', error);
     return null;

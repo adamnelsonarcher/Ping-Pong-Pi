@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getSettings } from '../services/dataService';
-import { endGame, quitGame } from '../services/dataService';
+import { getSettings, endGame, quitGame } from '../services/dataService';
 
 function Scoreboard({ player1, player2, onGameEnd, onQuitGame }) {
   const [player1Score, setPlayer1Score] = useState(0);
@@ -41,7 +40,7 @@ function Scoreboard({ player1, player2, onGameEnd, onQuitGame }) {
   const handleEndGame = async () => {
     const result = await endGame(player1, player2, player1Score, player2Score);
     if (result) {
-      onGameEnd(result.historyMessage);
+      onGameEnd(result.gameResult);
     }
   };
 
