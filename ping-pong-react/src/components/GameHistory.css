@@ -41,6 +41,7 @@
   color: #ffd700;
 }
 
-.game-history-item .skunk {
-  color: #ff4500;
+.game-history-item.skunk span {
+  color: red;
+  font-weight: bold;
 }

@@ -50,34 +50,35 @@
   },
   {
     "name": "5",
-    "score": 1098.1035280413728,
-    "gamesPlayed": 1,
-    "wins": 1,
+    "score": 1141.7102948919253,
+    "gamesPlayed": 2,
+    "wins": 2,
     "losses": 0,
     "password": "password5",
-    "lifetimeGamesPlayed": 0,
-    "lifetimeWins": 0,
+    "lifetimeGamesPlayed": 1,
+    "lifetimeWins": 1,
     "lifetimeLosses": 1,
-    "lifetimeScore": 1204.0432458927423,
-    "currentStreak": 1,
-    "maxWinStreak": 1,
+    "lifetimeScore": 1248.063637361472,
+    "currentStreak": 2,
+    "maxWinStreak": 2,
     "scoreHistory": [
       1182.93,
       1141.42,
-      1204.04
+      1204.04,
+      1248.06
     ]
   },
   {
     "name": "123",
-    "score": 1081.0074336497369,
-    "gamesPlayed": 22,
+    "score": 1072.548105803735,
+    "gamesPlayed": 23,
     "wins": 11,
-    "losses": 11,
+    "losses": 12,
     "password": "123",
-    "lifetimeGamesPlayed": 16,
+    "lifetimeGamesPlayed": 17,
     "lifetimeWins": 12,
-    "lifetimeLosses": 15,
-    "lifetimeScore": 1190.4980511895703,
+    "lifetimeLosses": 16,
+    "lifetimeScore": 1181.9602683141452,
     "currentStreak": 0,
     "maxWinStreak": 3,
     "scoreHistory": [
@@ -112,7 +113,8 @@
       1071.87,
       1140.01,
       1243.29,
-      1190.5
+      1190.5,
+      1181.96
     ]
   },
   {

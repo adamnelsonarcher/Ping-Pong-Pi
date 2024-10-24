@@ -231,8 +231,6 @@ class DataService {
     const player2 = this.players[player2Name];
     const winner = player1Score > player2Score ? player1 : player2;
     const loser = player1Score > player2Score ? player2 : player1;
-    const winnerScore = Math.max(player1Score, player2Score);
-    const loserScore = Math.min(player1Score, player2Score);
 
     // Calculate score changes
     const pointDifference = Math.abs(player1Score - player2Score);

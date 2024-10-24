@@ -28,5 +28,45 @@
     "pointChange1": -63.79050889541886,
     "pointChange2": 100.2409467958499,
     "date": "2024-10-24T22:37:24.060Z"
+  },
+  {
+    "player1": "123",
+    "player2": "234",
+    "score": "20 - 0",
+    "player1Rank": 2,
+    "player2Rank": 3,
+    "pointChange1": 144.74253118654784,
+    "pointChange2": -76.56161546032138,
+    "date": "2024-10-24T22:35:07.059Z"
+  },
+  {
+    "player1": "123",
+    "player2": "234",
+    "score": "20 - 0",
+    "player1Rank": 2,
+    "player2Rank": 3,
+    "pointChange1": 144.74253118654784,
+    "pointChange2": -76.56161546032138,
+    "date": "2024-10-24T22:35:07.059Z"
+  },
+  {
+    "player1": "123",
+    "player2": "1",
+    "score": "0 - 7",
+    "player1Rank": 3,
+    "player2Rank": 2,
+    "pointChange1": -63.79050889541886,
+    "pointChange2": 100.2409467958499,
+    "date": "2024-10-24T22:37:24.060Z"
+  },
+  {
+    "player1": "5",
+    "player2": "123",
+    "score": "1 - 0",
+    "player1Rank": "Unranked",
+    "player2Rank": 3,
+    "pointChange1": 43.606766850552575,
+    "pointChange2": -8.459327846001688,
+    "date": "2024-10-24T22:40:00.114Z"
   }
 ]
