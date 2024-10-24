@@ -34,13 +34,13 @@ function LifetimeStatsDialog({ player, onClose }) {
       <div className="lifetime-stats-dialog">
         <h2>Lifetime Stats for {player.name}</h2>
         <div className="stats-info">
-          <p>Score: {formatValue(player.lifetimeScore)}</p>
-          <p>Games Played: {formatValue(player.lifetimeGamesPlayed)}</p>
+          <p>Lifetime Score: {formatValue(player.lifetimeScore)}</p>
+          <p>Total Games Played: {formatValue(player.lifetimeGamesPlayed)}</p>
           <p>Wins: {formatValue(player.lifetimeWins)}</p>
           <p>Losses: {formatValue(player.lifetimeLosses)}</p>
           <p>Highest Win Streak: {formatValue(player.maxWinStreak)}</p>
         </div>
-        <p><b>Score Over Time</b></p>
+        <p><b>Lifetime Score</b></p>
         <div className="stats-chart">
           {LineChart ? (
             <ResponsiveContainer width="100%" height={300}>

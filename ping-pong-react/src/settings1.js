@@ -24,9 +24,6 @@ export const PLAYER2_SCOREBOARD_COLOR = '#2196F3';
 // this is how many games to keep stored in the history
 export const GAME_HISTORY_KEEP = 30;
 
-// password for deleting players and resetting scores
-export const ADMIN_PASSWORD = '613668';
-
 // this determines if anyone can create a new player, or if the admin needs to do it
 export const ADDPLAYER_ADMINONLY = false;
 

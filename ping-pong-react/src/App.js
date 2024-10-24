@@ -6,8 +6,7 @@ import Scoreboard from './components/Scoreboard';
 import PlayerSelection from './components/PlayerSelection';
 import AdminControls from './components/AdminControls';
 import InputModal from './components/InputModal';
-import dataService, { getPlayers, endGame, quitGame } from './services/dataService';
-import settings from './settings';
+import dataService, { getPlayers, endGame, quitGame, getSettings } from './services/dataService';
 
 function App() {
   const [currentScreen, setCurrentScreen] = useState('main');
@@ -18,19 +17,17 @@ function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalConfig, setModalConfig] = useState({});
   const [gameInProgress, setGameInProgress] = useState(false);
-  const [timerDuration, setTimerDuration] = useState(settings.TIMER_INTERVAL * 60 * 1000);
+  const [timerDuration, setTimerDuration] = useState(0);
+  const [gameHistoryKeep, setGameHistoryKeep] = useState(10); // default value
   const clearSelectionTimerRef = useRef(null);
 
   useEffect(() => {
-    const testConnection = async () => {
-      const isConnected = await dataService.testServerConnection();
-      if (isConnected) {
-        console.log('Successfully connected to the server');
-      } else {
-        console.error('Failed to connect to the server');
-      }
+    const loadSettings = async () => {
+      const settings = await getSettings();
+      setTimerDuration(settings.TIMER_INTERVAL * 60 * 1000);
+      setGameHistoryKeep(settings.GAME_HISTORY_KEEP); // set the game history keep value
     };
-    testConnection();
+    loadSettings();
   }, []);
 
   useEffect(() => {
@@ -39,21 +36,19 @@ function App() {
       updateLeaderboard();
       updateGameHistory();
       const playerList = await getPlayers();
-      console.log('Loaded players:', playerList); // Add this line for debugging
       setPlayers(playerList);
-      setTimerDuration(settings.TIMER_INTERVAL * 60 * 1000);
     };
     loadData();
   }, []);
 
   const updateLeaderboard = () => {
     const leaderboardData = dataService.getLeaderboard();
-    console.log('Updating leaderboard:', leaderboardData); // Add this line for debugging
     setLeaderboard(leaderboardData);
   };
 
   const updateGameHistory = () => {
-    setGameHistory(dataService.getGameHistory());
+    const fullHistory = dataService.getGameHistory();
+    setGameHistory(fullHistory.slice(-gameHistoryKeep)); // Ensure slicing is applied here
   };
 
   const startClearSelectionTimer = () => {
@@ -66,7 +61,7 @@ function App() {
   };
 
   const handleGameEnd = async (historyMessage) => {
-    setGameHistory(prevHistory => [historyMessage, ...prevHistory].slice(0, 40));
+    setGameHistory(prevHistory => [...prevHistory, historyMessage].slice(-gameHistoryKeep));
     updateLeaderboard();
     setCurrentScreen('main');
     setGameInProgress(false);
@@ -74,7 +69,7 @@ function App() {
   };
 
   const handleQuitGame = async (quitResult) => {
-    setGameHistory(prevHistory => [quitResult, ...prevHistory].slice(0, 40));
+    setGameHistory(prevHistory => [...prevHistory, quitResult].slice(-gameHistoryKeep));
     setCurrentScreen('main');
     setGameInProgress(false);
     startClearSelectionTimer();
@@ -97,7 +92,9 @@ function App() {
   };
 
   const handleClearSelections = () => {
-    setSelectedPlayers({ player1: null, player2: null });
+    setSelectedPlayers({ player1: '', player2: '' });
+    localStorage.removeItem('selectedPlayer1');
+    localStorage.removeItem('selectedPlayer2');
     if (clearSelectionTimerRef.current) {
       clearTimeout(clearSelectionTimerRef.current);
     }
@@ -118,7 +115,7 @@ function App() {
   const handlePlayerSelect = (playerName, index) => {
     if (playerName === '') {
       const newSelectedPlayers = { ...selectedPlayers };
-      newSelectedPlayers[`player${index + 1}`] = null;
+      newSelectedPlayers[`player${index + 1}`] = '';
       setSelectedPlayers(newSelectedPlayers);
     } else {
       setModalConfig({
@@ -135,6 +132,12 @@ function App() {
           } else {
             alert('Incorrect password');
           }
+        },
+        onCancel: () => {
+          const newSelectedPlayers = { ...selectedPlayers };
+          newSelectedPlayers[`player${index + 1}`] = '';
+          setSelectedPlayers(newSelectedPlayers);
+          setIsModalOpen(false);
         }
       });
       setIsModalOpen(true);

@@ -1,4 +1,4 @@
-import settings from '../settings';
+import settings from '../settings1';
 
 class Player {
   constructor(name, score = 1000, password = "") {
@@ -91,7 +91,7 @@ class DataService {
   constructor() {
     this.players = {};
     this.gameHistory = [];
-    this.settings = { ...settings };
+    this.settings = {};
   }
 
   async loadData() {
@@ -110,7 +110,6 @@ class DataService {
       console.log('Loaded settings:', this.settings);
     } catch (error) {
       console.error('Error loading settings:', error);
-      // Keep using default settings if loading fails
     }
   }
 
@@ -254,8 +253,8 @@ class DataService {
     this.gameHistory.push(gameResult);
 
     // Limit game history to last 40 games
-    if (this.gameHistory.length > 40) {
-      this.gameHistory = this.gameHistory.slice(-40);
+    if (this.gameHistory.length > this.settings.GAME_HISTORY_KEEP) {
+      this.gameHistory = this.gameHistory.slice(-this.settings.GAME_HISTORY_KEEP);
     }
 
     // Save updated data
@@ -499,6 +498,8 @@ export const updateSettings = async (newSettings) => {
   await dataService.updateSettings(newSettings);
 };
 
-export const getSettings = () => {
+export const getSettings = async () => {
+  await dataService.loadSettings();
   return dataService.getSettings();
 };
+

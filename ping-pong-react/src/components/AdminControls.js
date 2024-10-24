@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import dataService, { getPlayers, editPlayerPassword, editPlayerScore, deletePlayer, resetAllScores, updateSettings, getSettings } from '../services/dataService';
+import { getPlayers, editPlayerPassword, editPlayerScore, deletePlayer, resetAllScores, updateSettings, getSettings } from '../services/dataService';
 import './AdminControls.css';
 
 function AdminControls({ onExit }) {
@@ -13,22 +13,14 @@ function AdminControls({ onExit }) {
     const loadData = async () => {
       const playerList = await getPlayers();
       setPlayers(playerList);
-      const settings = getSettings();
+      const settings = await getSettings();
       setGameSettings(settings);
     };
     loadData();
   }, []);
 
-  useEffect(() => {
-    if (selectedPlayer) {
-      const settings = getSettings(selectedPlayer);
-      setGameSettings(settings);
-    } else {
-      setGameSettings(null);
-    }
-  }, [selectedPlayer]);
-
-  const handleEditPassword = async () => {
+  const handleEditPassword = async (e) => {
+    e.preventDefault();
     if (selectedPlayer && newPassword) {
       await editPlayerPassword(selectedPlayer, newPassword);
       setNewPassword('');
@@ -36,7 +28,8 @@ function AdminControls({ onExit }) {
     }
   };
 
-  const handleEditScore = async () => {
+  const handleEditScore = async (e) => {
+    e.preventDefault();
     if (selectedPlayer && newScore) {
       await editPlayerScore(selectedPlayer, parseFloat(newScore));
       setNewScore('');
@@ -65,18 +58,24 @@ function AdminControls({ onExit }) {
     setGameSettings({ ...gameSettings, [setting]: value });
   };
 
-  const saveSettings = async () => {
+  const saveSettings = async (e) => {
+    e.preventDefault();
     if (gameSettings) {
       await updateSettings(gameSettings);
       alert('Settings updated successfully');
     }
   };
 
-  const formatSettingName = (name) => {
-    return name
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
+  const settingDescriptions = {
+    TIMER_INTERVAL: "Time in minutes before player selection is cleared.",
+    SCORE_CHANGE_K_FACTOR: "Maximum points that can be won or lost in a game.",
+    POINT_DIFFERENCE_WEIGHT: "Multiplier for the point difference at the end of a game.",
+    ACTIVITY_THRESHOLD: "Number of games a player needs to play to become ranked.",
+    GAME_HISTORY_KEEP: "Number of games to keep stored in the history.",
+    ADDPLAYER_ADMINONLY: "Determines if only admins can add new players.",
+    DEFAULT_RANK: "Default rank for new players.",
+    PLAYER1_SCOREBOARD_COLOR: "Color of the scoreboard for Player 1.",
+    PLAYER2_SCOREBOARD_COLOR: "Color of the scoreboard for Player 2."
   };
 
   return (
@@ -92,15 +91,15 @@ function AdminControls({ onExit }) {
           ))}
         </select>
         
-        <div className="input-group">
+        <form onSubmit={handleEditPassword} className="input-group">
           <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New Password" />
-          <button onClick={handleEditPassword}>Edit Password</button>
-        </div>
+          <button type="submit">Edit Password</button>
+        </form>
         
-        <div className="input-group">
+        <form onSubmit={handleEditScore} className="input-group">
           <input type="number" value={newScore} onChange={(e) => setNewScore(e.target.value)} placeholder="New Score" />
-          <button onClick={handleEditScore}>Edit Score</button>
-        </div>
+          <button type="submit">Edit Score</button>
+        </form>
         
         <button onClick={handleDeletePlayer} className="delete-btn">Delete Player</button>
       </div>
@@ -113,13 +112,14 @@ function AdminControls({ onExit }) {
       <div className="admin-section">
         <h3>Game Settings</h3>
         {gameSettings && (
-          <div className="settings-list">
+          <form onSubmit={saveSettings} className="settings-list">
             {Object.entries(gameSettings).map(([key, value]) => (
               <div key={key} className="setting-item">
-                <label htmlFor={key}>{formatSettingName(key)}:</label>
+                <label htmlFor={key}>{key.replace(/_/g, ' ')}:</label>
+                <p className="setting-description">{settingDescriptions[key]}</p>
                 <input
                   id={key}
-                  type={typeof value === 'boolean' ? 'checkbox' : 'number'}
+                  type={typeof value === 'boolean' ? 'checkbox' : 'text'}
                   checked={typeof value === 'boolean' ? value : undefined}
                   value={typeof value === 'boolean' ? undefined : value}
                   onChange={(e) => handleSettingChange(key, 
@@ -130,8 +130,8 @@ function AdminControls({ onExit }) {
                 />
               </div>
             ))}
-            <button onClick={saveSettings} className="save-btn">Save Settings</button>
-          </div>
+            <button type="submit" className="save-btn">Save Settings</button>
+          </form>
         )}
       </div>
 

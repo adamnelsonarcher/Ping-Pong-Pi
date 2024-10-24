@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './InputModal.css';
 
-function InputModal({ isOpen, onClose, title, fields, onSubmit }) {
+function InputModal({ isOpen, onClose, title, fields, onSubmit, onCancel }) {
   const [values, setValues] = useState({});
 
   useEffect(() => {
@@ -14,6 +14,13 @@ function InputModal({ isOpen, onClose, title, fields, onSubmit }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(values);
+  };
+
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel(); // Call the onCancel function
+    }
+    onClose(); // Close the modal
   };
 
   if (!isOpen) return null;
@@ -37,7 +44,7 @@ function InputModal({ isOpen, onClose, title, fields, onSubmit }) {
           ))}
           <div className="modal-buttons">
             <button type="submit">Submit</button>
-            <button type="button" onClick={onClose}>Cancel</button>
+            <button type="button" onClick={handleCancel}>Cancel</button>
           </div>
         </form>
       </div>
