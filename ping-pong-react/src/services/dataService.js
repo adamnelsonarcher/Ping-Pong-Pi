@@ -120,7 +120,7 @@ class DataService {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const playerData = await response.json();
-      console.log('Loaded player data:', playerData);
+      // console.log('Loaded player data:', playerData);
       this.players = {};
       playerData.forEach(data => {
         const player = new Player(data.name, data.score, data.password);
@@ -173,7 +173,7 @@ class DataService {
       maxWinStreak: player.maxWinStreak,
       scoreHistory: player.scoreHistory,
     }));
-    
+
     try {
       console.log('Sending player data to server:', playerData);
       const response = await fetch('/api/savePlayers', {
@@ -194,21 +194,27 @@ class DataService {
     }
   }
 
-  async saveGameHistory() {
+  async saveGameHistory(gameResult) {
     try {
+      console.log('Attempting to save game result:', gameResult);
       const response = await fetch('/api/saveGameHistory', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(this.gameHistory),
+        body: JSON.stringify(gameResult),
       });
+      
       if (!response.ok) {
-        throw new Error('Failed to save game history');
+        throw new Error('Failed to save game result');
       }
+      
+      console.log('Game result saved successfully');
+      this.gameHistory.push(gameResult);
+      return true;
     } catch (error) {
-      console.error('Error saving game history:', error);
-      throw error;
+      console.error('Error saving game result:', error);
+      return false;
     }
   }
 
@@ -263,30 +269,6 @@ class DataService {
     const sortedPlayers = activePlayers.sort((a, b) => b.score - a.score);
     const playerIndex = sortedPlayers.findIndex(p => p.name === playerName);
     return playerIndex !== -1 ? playerIndex + 1 : 'Unranked';
-  }
-
-  getGameHistoryMessage(gameResult) {
-    const player1IsUnranked = !this.players[gameResult.player1].active;
-    const player2IsUnranked = !this.players[gameResult.player2].active;
-
-    const player1Name = player1IsUnranked ? `${gameResult.player1} (unranked)` : gameResult.player1;
-    const player2Name = player2IsUnranked ? `${gameResult.player2} (unranked)` : gameResult.player2;
-
-    if (player1IsUnranked || player2IsUnranked) {
-      return `<b>${player1Name}</b> vs <b>${player2Name}</b>: ${gameResult.score}`;
-    }
-
-    const [winner, loser] = gameResult.score.split('-')[0] > gameResult.score.split('-')[1] 
-      ? [gameResult.player1, gameResult.player2] 
-      : [gameResult.player2, gameResult.player1];
-    
-    const winnerChange = gameResult.player1 === winner ? gameResult.pointChange1 : gameResult.pointChange2;
-    const loserChange = gameResult.player1 === loser ? gameResult.pointChange1 : gameResult.pointChange2;
-
-    const winnerChangeText = winnerChange > 0 ? `+${winnerChange.toFixed(2)}` : winnerChange.toFixed(2);
-    const loserChangeText = loserChange > 0 ? `+${loserChange.toFixed(2)}` : loserChange.toFixed(2);
-
-    return `<b>${winner}</b> beat <b>${loser}</b> <b>[${gameResult.score}]</b>: ${winnerChangeText} / ${loserChangeText}`;
   }
 
   getLeaderboard() {
@@ -433,22 +415,11 @@ export const savePlayersData = async () => {
 export const endGame = async (player1Name, player2Name, player1Score, player2Score) => {
   try {
     const gameResult = dataService.recordGame(player1Name, player2Name, player1Score, player2Score);
-    await dataService.saveData();
+    await dataService.saveGameHistory(gameResult);
     return { gameResult };
   } catch (error) {
     console.error('Error ending game:', error);
     return null;
-  }
-};
-
-export const saveGameHistory = async (gameResult) => {
-  try {
-    dataService.gameHistory.unshift(gameResult);
-    await dataService.saveGameHistory();
-    return true;
-  } catch (error) {
-    console.error('Error saving game history:', error);
-    return false;
   }
 };
 
@@ -462,8 +433,7 @@ export const quitGame = async (player1Name, player2Name) => {
       pointChange2: 0,
       date: new Date().toISOString()
     };
-    dataService.gameHistory.push(gameResult);
-    await dataService.saveGameHistory();
+    // Don't add to gameHistory or save here
     return gameResult;
   } catch (error) {
     console.error('Error quitting game:', error);
@@ -503,4 +473,3 @@ export const getSettings = async () => {
   await dataService.loadSettings();
   return dataService.getSettings();
 };
-

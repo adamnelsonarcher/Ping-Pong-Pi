@@ -60,19 +60,25 @@ function App() {
     }, timerDuration);
   };
 
-  const handleGameEnd = async (historyMessage) => {
-    setGameHistory(prevHistory => [...prevHistory, historyMessage].slice(-gameHistoryKeep));
+  const handleGameEnd = async (gameResult) => {
+    console.log('Saving game result:', gameResult);
+    await dataService.saveGameHistory(gameResult);
+    // updateGameHistory();
     updateLeaderboard();
     setCurrentScreen('main');
     setGameInProgress(false);
     startClearSelectionTimer();
   };
 
-  const handleQuitGame = async (quitResult) => {
-    setGameHistory(prevHistory => [...prevHistory, quitResult].slice(-gameHistoryKeep));
-    setCurrentScreen('main');
-    setGameInProgress(false);
-    startClearSelectionTimer();
+  const handleQuitGame = async () => {
+    const quitResult = await quitGame(selectedPlayers.player1, selectedPlayers.player2);
+    if (quitResult) {
+      setGameHistory(prevHistory => [...prevHistory, quitResult].slice(-gameHistoryKeep));
+      await dataService.saveGameHistory(quitResult);
+      setCurrentScreen('main');
+      setGameInProgress(false);
+      startClearSelectionTimer();
+    }
   };
 
   const handleAddPlayer = () => {

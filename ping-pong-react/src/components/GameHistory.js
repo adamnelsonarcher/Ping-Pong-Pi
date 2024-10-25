@@ -3,14 +3,25 @@ import './GameHistory.css';
 
 const formatGameResult = (game) => {
   if (!game) {
-    return 'Invalid game data: game is undefined';
+    return { message: 'Invalid game data: game is undefined', isSkunk: false };
   }
 
   if (game.score === 'Quit') {
-    return `Game between <b>${game.player1}</b> and <b>${game.player2}</b> was quit`;
+    return { message: `Game between <b>${game.player1}</b> and <b>${game.player2}</b> was quit`, isSkunk: false };
+  }
+
+  // Check if score is undefined or not a string
+  if (typeof game.score !== 'string') {
+    return { message: `Invalid game data for ${game.player1} vs ${game.player2}`, isSkunk: false };
   }
 
   const [score1, score2] = game.score.split(' - ').map(Number);
+  
+  // Check if scores are valid numbers
+  if (isNaN(score1) || isNaN(score2)) {
+    return { message: `Invalid score data for ${game.player1} vs ${game.player2}: ${game.score}`, isSkunk: false };
+  }
+
   const winner = score1 > score2 ? game.player1 : game.player2;
   const loser = score1 > score2 ? game.player2 : game.player1;
   const winnerScore = Math.max(score1, score2);

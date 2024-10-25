@@ -15,7 +15,6 @@ function Leaderboard({ players }) {
 
   return (
     <div className="Leaderboard">
-      <h2>Leaderboard</h2>
       <table>
         <thead>
           <tr>
