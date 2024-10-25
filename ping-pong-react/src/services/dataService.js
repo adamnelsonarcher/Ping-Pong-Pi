@@ -220,7 +220,6 @@ class DataService {
 
   async saveData() {
     await this.savePlayers();
-    await this.saveGameHistory();
   }
 
   addPlayer(name, password) {
@@ -254,13 +253,6 @@ class DataService {
       pointChange2: player2 === winner ? winnerScoreChange : loserScoreChange,
       date: new Date().toISOString()
     };
-
-    // Add to game history
-    this.gameHistory.push(gameResult);
-
-    // Save updated data
-    this.saveData();
-
     return gameResult;
   }
 
@@ -416,6 +408,7 @@ export const endGame = async (player1Name, player2Name, player1Score, player2Sco
   try {
     const gameResult = dataService.recordGame(player1Name, player2Name, player1Score, player2Score);
     await dataService.saveGameHistory(gameResult);
+    await dataService.savePlayers(); // Add this line to save updated player data
     return { gameResult };
   } catch (error) {
     console.error('Error ending game:', error);
@@ -433,7 +426,7 @@ export const quitGame = async (player1Name, player2Name) => {
       pointChange2: 0,
       date: new Date().toISOString()
     };
-    // Don't add to gameHistory or save here
+    await dataService.saveGameHistory(gameResult);
     return gameResult;
   } catch (error) {
     console.error('Error quitting game:', error);
@@ -473,3 +466,4 @@ export const getSettings = async () => {
   await dataService.loadSettings();
   return dataService.getSettings();
 };
+
