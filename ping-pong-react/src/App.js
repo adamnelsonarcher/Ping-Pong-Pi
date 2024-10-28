@@ -7,6 +7,7 @@ import PlayerSelection from './components/PlayerSelection';
 import AdminControls from './components/AdminControls';
 import InputModal from './components/InputModal';
 import dataService, { getPlayers, endGame, quitGame, getSettings } from './services/dataService';
+import { useSettings } from './contexts/SettingsContext';
 
 function App() {
   const [currentScreen, setCurrentScreen] = useState('main');
@@ -20,12 +21,25 @@ function App() {
   const [timerDuration, setTimerDuration] = useState(0);
   const [gameHistoryKeep, setGameHistoryKeep] = useState(10); // default value
   const clearSelectionTimerRef = useRef(null);
+  const { settings } = useSettings();
+
+  useEffect(() => {
+    if (settings) {
+      const duration = settings.TIMER_INTERVAL * 60 * 1000;
+      setTimerDuration(duration);
+      setGameHistoryKeep(settings.GAME_HISTORY_KEEP);
+    }
+  }, [settings]);
 
   useEffect(() => {
     const loadSettings = async () => {
+      console.log('Loading settings...');
       const settings = await getSettings();
-      setTimerDuration(settings.TIMER_INTERVAL * 60 * 1000);
-      setGameHistoryKeep(settings.GAME_HISTORY_KEEP); // set the game history keep value
+      console.log('Settings loaded:', settings);
+      const duration = settings.TIMER_INTERVAL * 60 * 1000;
+      console.log(`Setting timer duration to ${duration}ms (${settings.TIMER_INTERVAL} minutes)`);
+      setTimerDuration(duration);
+      setGameHistoryKeep(settings.GAME_HISTORY_KEEP);
     };
     loadSettings();
   }, []);
@@ -37,9 +51,23 @@ function App() {
       updateGameHistory();
       const playerList = await getPlayers();
       setPlayers(playerList);
+      
+      // Load saved player selections from localStorage
+      const savedPlayer1 = localStorage.getItem('selectedPlayer1');
+      const savedPlayer2 = localStorage.getItem('selectedPlayer2');
+      if (savedPlayer1 && savedPlayer2) {
+        setSelectedPlayers({
+          player1: savedPlayer1,
+          player2: savedPlayer2
+        });
+      }
     };
     loadData();
   }, []);
+
+  useEffect(() => {
+    console.log('Timer duration changed to:', timerDuration);
+  }, [timerDuration]);
 
   const updateLeaderboard = () => {
     const leaderboardData = dataService.getLeaderboard();
@@ -52,29 +80,61 @@ function App() {
   };
 
   const startClearSelectionTimer = () => {
+    console.log('startClearSelectionTimer called');
+    console.log('Current timer duration:', timerDuration);
+    
+    if (!timerDuration || timerDuration <= 0) {
+      console.log('Invalid timer duration, cannot start timer');
+      return;
+    }
+
     if (clearSelectionTimerRef.current) {
+      console.log('Clearing existing timer');
       clearTimeout(clearSelectionTimerRef.current);
     }
+
+    console.log(`Starting new timer for ${timerDuration/1000} seconds`);
     clearSelectionTimerRef.current = setTimeout(() => {
+      console.log('Timer completed - clearing selections');
       handleClearSelections();
     }, timerDuration);
+    
+    // Verify timer was set
+    console.log('Timer reference after setting:', clearSelectionTimerRef.current);
   };
 
   const handleGameEnd = async (gameResult) => {
-    console.log('Saving game result:', gameResult);
-    await dataService.saveGameHistory(gameResult);
-    // updateGameHistory();
-    updateLeaderboard();
-    setCurrentScreen('main');
-    setGameInProgress(false);
-    startClearSelectionTimer();
+    console.log('handleGameEnd called with result:', gameResult);
+    console.log('Current timer duration:', timerDuration);
+    
+    try {
+      await dataService.saveGameHistory(gameResult);
+      updateLeaderboard();
+    } catch (error) {
+      console.error('Error saving game data:', error);
+    } finally {
+      // These actions should happen whether the save succeeds or fails
+      setCurrentScreen('main');
+      setGameInProgress(false);
+      
+      localStorage.setItem('selectedPlayer1', selectedPlayers.player1);
+      localStorage.setItem('selectedPlayer2', selectedPlayers.player2);
+      
+      console.log('Starting clear selection timer...');
+      startClearSelectionTimer();
+    }
   };
 
   const handleQuitGame = async () => {
-    const quitResult = await quitGame(selectedPlayers.player1, selectedPlayers.player2);
-    if (quitResult) {
-      setGameHistory(prevHistory => [...prevHistory, quitResult].slice(-gameHistoryKeep));
-      await dataService.saveGameHistory(quitResult);
+    try {
+      const quitResult = await quitGame(selectedPlayers.player1, selectedPlayers.player2);
+      if (quitResult) {
+        setGameHistory(prevHistory => [...prevHistory, quitResult].slice(-gameHistoryKeep));
+        await dataService.saveGameHistory(quitResult);
+      }
+    } catch (error) {
+      console.error('Error in handleQuitGame:', error);
+    } finally {
       setCurrentScreen('main');
       setGameInProgress(false);
       startClearSelectionTimer();
@@ -98,6 +158,7 @@ function App() {
   };
 
   const handleClearSelections = () => {
+    console.log('Clearing player selections');
     setSelectedPlayers({ player1: '', player2: '' });
     localStorage.removeItem('selectedPlayer1');
     localStorage.removeItem('selectedPlayer2');
@@ -123,6 +184,7 @@ function App() {
       const newSelectedPlayers = { ...selectedPlayers };
       newSelectedPlayers[`player${index + 1}`] = '';
       setSelectedPlayers(newSelectedPlayers);
+      localStorage.setItem(`selectedPlayer${index + 1}`, '');
     } else {
       setModalConfig({
         title: `Enter Password for ${playerName}`,
@@ -134,6 +196,7 @@ function App() {
             const newSelectedPlayers = { ...selectedPlayers };
             newSelectedPlayers[`player${index + 1}`] = playerName;
             setSelectedPlayers(newSelectedPlayers);
+            localStorage.setItem(`selectedPlayer${index + 1}`, playerName);
             setIsModalOpen(false);
           } else {
             alert('Incorrect password');
@@ -143,6 +206,7 @@ function App() {
           const newSelectedPlayers = { ...selectedPlayers };
           newSelectedPlayers[`player${index + 1}`] = '';
           setSelectedPlayers(newSelectedPlayers);
+          localStorage.setItem(`selectedPlayer${index + 1}`, '');
           setIsModalOpen(false);
         }
       });

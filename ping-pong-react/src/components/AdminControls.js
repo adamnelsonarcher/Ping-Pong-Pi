@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getPlayers, editPlayerPassword, editPlayerScore, deletePlayer, resetAllScores, updateSettings, getSettings } from '../services/dataService';
+import { useSettings } from '../contexts/SettingsContext';
 import './AdminControls.css';
 
 function AdminControls({ onExit }) {
@@ -78,35 +79,112 @@ function AdminControls({ onExit }) {
     PLAYER2_SCOREBOARD_COLOR: "Color of the scoreboard for Player 2."
   };
 
+  const renderSettingInput = (key, value) => {
+    if (key.includes('COLOR')) {
+      return (
+        <div className="color-input-container">
+          <input
+            type="color"
+            value={value}
+            onChange={(e) => handleSettingChange(key, e.target.value)}
+          />
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => handleSettingChange(key, e.target.value)}
+            style={{ marginLeft: '10px' }}
+          />
+          <div 
+            className="color-preview" 
+            style={{ 
+              backgroundColor: value,
+              width: '30px',
+              height: '30px',
+              border: '1px solid #ccc',
+              borderRadius: '4px',
+              marginLeft: '10px'
+            }}
+          />
+        </div>
+      );
+    }
+    
+    return (
+      <input
+        type={typeof value === 'boolean' ? 'checkbox' : 'text'}
+        checked={typeof value === 'boolean' ? value : undefined}
+        value={typeof value === 'boolean' ? undefined : value}
+        onChange={(e) => handleSettingChange(key, 
+          typeof value === 'boolean' ? e.target.checked : 
+          typeof value === 'number' ? parseFloat(e.target.value) : 
+          e.target.value
+        )}
+      />
+    );
+  };
+
+  const handleResetToDefaults = async () => {
+    if (window.confirm('Are you sure you want to reset all settings to their defaults?')) {
+      // Import default values from settings1.js
+      const defaultSettings = {
+        TIMER_INTERVAL: 5,
+        SCORE_CHANGE_K_FACTOR: 70,
+        POINT_DIFFERENCE_WEIGHT: 6,
+        ACTIVITY_THRESHOLD: 3,
+        DEFAULT_RANK: "Unranked",
+        PLAYER1_SCOREBOARD_COLOR: '#4CAF50',
+        PLAYER2_SCOREBOARD_COLOR: '#2196F3',
+        GAME_HISTORY_KEEP: 30,
+        ADDPLAYER_ADMINONLY: false
+      };
+
+      setGameSettings(defaultSettings);
+      await updateSettings(defaultSettings);
+      alert('Settings have been reset to defaults');
+    }
+  };
+
   return (
     <div className="admin-controls">
       <h2>Admin Controls</h2>
       
       <div className="admin-section">
         <h3>Player Management</h3>
-        <select value={selectedPlayer} onChange={(e) => setSelectedPlayer(e.target.value)}>
-          <option value="">Select a player</option>
+        <select 
+          value={selectedPlayer} 
+          onChange={(e) => setSelectedPlayer(e.target.value)}
+          style={{ marginBottom: '20px' }}
+        >
+          <option value="">Select Player</option>
           {players.map(player => (
             <option key={player.name} value={player.name}>{player.name}</option>
           ))}
         </select>
-        
-        <form onSubmit={handleEditPassword} className="input-group">
-          <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New Password" />
-          <button type="submit">Edit Password</button>
-        </form>
-        
-        <form onSubmit={handleEditScore} className="input-group">
-          <input type="number" value={newScore} onChange={(e) => setNewScore(e.target.value)} placeholder="New Score" />
-          <button type="submit">Edit Score</button>
-        </form>
-        
-        <button onClick={handleDeletePlayer} className="delete-btn">Delete Player</button>
-      </div>
 
-      <div className="admin-section">
-        <h3>Global Actions</h3>
-        <button onClick={handleResetAllScores} className="reset-btn">Reset All Scores</button>
+        <form onSubmit={handleEditPassword}>
+          <input
+            type="password"
+            placeholder="New Password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+          />
+          <button type="submit" class="standard-btn">Update Password</button>
+        </form>
+
+        <form onSubmit={handleEditScore}>
+          <input
+            type="number"
+            placeholder="New Score"
+            value={newScore}
+            onChange={(e) => setNewScore(e.target.value)}
+          />
+          <button type="submit" class="standard-btn">Update Score</button>
+        </form>
+
+        <div className="button-group">
+          <button className="delete-btn" onClick={handleDeletePlayer}>Delete Player</button>
+          <button className="reset-btn" onClick={handleResetAllScores}>Reset All Scores</button>
+        </div>
       </div>
 
       <div className="admin-section">
@@ -115,22 +193,17 @@ function AdminControls({ onExit }) {
           <form onSubmit={saveSettings} className="settings-list">
             {Object.entries(gameSettings).map(([key, value]) => (
               <div key={key} className="setting-item">
-                <label htmlFor={key}>{key.replace(/_/g, ' ')}:</label>
+                <label>{key.replace(/_/g, ' ')}</label>
                 <p className="setting-description">{settingDescriptions[key]}</p>
-                <input
-                  id={key}
-                  type={typeof value === 'boolean' ? 'checkbox' : 'text'}
-                  checked={typeof value === 'boolean' ? value : undefined}
-                  value={typeof value === 'boolean' ? undefined : value}
-                  onChange={(e) => handleSettingChange(key, 
-                    typeof value === 'boolean' ? e.target.checked : 
-                    typeof value === 'number' ? parseFloat(e.target.value) : 
-                    e.target.value
-                  )}
-                />
+                {renderSettingInput(key, value)}
               </div>
             ))}
-            <button type="submit" className="save-btn">Save Settings</button>
+            <div className="button-group">
+              <button type="submit" className="save-btn">Save Settings</button>
+              <button type="button" onClick={handleResetToDefaults} className="reset-defaults-btn">
+                Reset to Defaults
+              </button>
+            </div>
           </form>
         )}
       </div>

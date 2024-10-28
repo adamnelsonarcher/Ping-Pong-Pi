@@ -1,19 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import './PlayerSelection.css';  // Add this line if it's not already there
-import { getSettings } from '../services/dataService';
+import './PlayerSelection.css';
+import { useSettings } from '../contexts/SettingsContext';
 
 function PlayerSelection({ players, selectedPlayers, onPlayerSelect }) {
   const [selectedPlayer1, setSelectedPlayer1] = useState(selectedPlayers.player1 || '');
   const [selectedPlayer2, setSelectedPlayer2] = useState(selectedPlayers.player2 || '');
-  const [settings, setSettings] = useState({});
-
-  useEffect(() => {
-    const loadSettings = async () => {
-      const settings = await getSettings();
-      setSettings(settings);
-    };
-    loadSettings();
-  }, []);
+  const { settings } = useSettings();
 
   useEffect(() => {
     setSelectedPlayer1(selectedPlayers.player1 || '');
@@ -29,6 +21,11 @@ function PlayerSelection({ players, selectedPlayers, onPlayerSelect }) {
     onPlayerSelect(player, playerIndex);
   };
 
+  // Sort players alphabetically by name
+  const sortedPlayers = [...players].sort((a, b) => 
+    a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+  );
+
   return (
     <div className="PlayerSelection">
       <div className="player-select-container">
@@ -38,9 +35,10 @@ function PlayerSelection({ players, selectedPlayers, onPlayerSelect }) {
             id="player1"
             value={selectedPlayer1}
             onChange={(e) => handlePlayerSelect(e.target.value, 0)}
+            onKeyDown={(e) => e.preventDefault()} // Prevent keyboard input
           >
             <option value="">Select Player</option>
-            {players.map((player) => (
+            {sortedPlayers.map((player) => (
               <option key={player.name} value={player.name}>
                 {player.name}
               </option>
@@ -53,9 +51,10 @@ function PlayerSelection({ players, selectedPlayers, onPlayerSelect }) {
             id="player2"
             value={selectedPlayer2}
             onChange={(e) => handlePlayerSelect(e.target.value, 1)}
+            onKeyDown={(e) => e.preventDefault()} // Prevent keyboard input
           >
             <option value="">Select Player</option>
-            {players.map((player) => (
+            {sortedPlayers.map((player) => (
               <option key={player.name} value={player.name}>
                 {player.name}
               </option>

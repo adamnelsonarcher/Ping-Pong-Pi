@@ -37,13 +37,6 @@ app.post('/api/saveGameHistory', async (req, res) => {
       console.error('Error reading game history:', error);
       // If file doesn't exist or is empty, we'll start with an empty array
     }
-    // Check if the last element is an array and remove it
-    if (Array.isArray(gameHistory[gameHistory.length - 1])) {
-      console.log('Removing the last element of gameHistory as it is an array:', gameHistory[gameHistory.length - 1]);
-      gameHistory.pop();
-    } else {
-      console.log('The last element of gameHistory is not an array:', gameHistory[gameHistory.length - 1]);
-    }
 
     // Append the new game result
     gameHistory.push(newGameResult);

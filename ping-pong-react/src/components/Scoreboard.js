@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { getSettings, endGame, quitGame } from '../services/dataService';
+import { endGame, quitGame } from '../services/dataService';
+import { useSettings } from '../contexts/SettingsContext';
 
 function Scoreboard({ player1, player2, onGameEnd, onQuitGame }) {
   const [player1Score, setPlayer1Score] = useState(0);
@@ -7,15 +8,7 @@ function Scoreboard({ player1, player2, onGameEnd, onQuitGame }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [message, setMessage] = useState('');
-  const [settings, setSettings] = useState({});
-
-  useEffect(() => {
-    const loadSettings = async () => {
-      const settings = await getSettings();
-      setSettings(settings);
-    };
-    loadSettings();
-  }, []);
+  const { settings } = useSettings();
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -40,7 +33,8 @@ function Scoreboard({ player1, player2, onGameEnd, onQuitGame }) {
   const handleEndGame = async () => {
     const result = await endGame(player1, player2, player1Score, player2Score);
     if (result) {
-      onGameEnd(result.gameResult);
+      console.log('Game ended, passing result to parent:', result);
+      onGameEnd(result);
     }
   };
 

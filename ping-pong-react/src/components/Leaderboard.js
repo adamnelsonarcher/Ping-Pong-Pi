@@ -1,16 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Leaderboard.css';
 import LifetimeStatsDialog from './LifetimeStatsDialog';
 import dataService from '../services/dataService';
+import { useSettings } from '../contexts/SettingsContext';
 
 function Leaderboard({ players }) {
   const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const { settings } = useSettings();
   const activePlayers = players.filter(player => player.active);
   const inactivePlayers = players.filter(player => !player.active);
 
   const handlePlayerDoubleClick = (playerName) => {
     const fullPlayerData = dataService.players[playerName];
     setSelectedPlayer(fullPlayerData);
+  };
+
+  const formatScore = (player) => {
+    if (!player.active && settings) {
+      return settings.DEFAULT_RANK;
+    }
+    return player.score;
   };
 
   return (
@@ -27,14 +36,14 @@ function Leaderboard({ players }) {
           {activePlayers.map((player) => (
             <tr key={player.name} onDoubleClick={() => handlePlayerDoubleClick(player.name)}>
               <td>{player.name}</td>
-              <td>{player.score}</td>
+              <td>{formatScore(player)}</td>
               <td>{player.ratio}</td>
             </tr>
           ))}
           {inactivePlayers.map((player) => (
             <tr key={player.name} className="inactive" onDoubleClick={() => handlePlayerDoubleClick(player.name)}>
               <td>{player.name}</td>
-              <td>{player.score}</td>
+              <td>{formatScore(player)}</td>
               <td>{player.ratio}</td>
             </tr>
           ))}

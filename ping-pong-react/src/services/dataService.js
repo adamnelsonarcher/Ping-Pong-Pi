@@ -137,7 +137,7 @@ class DataService {
         player.updateActiveStatus(this.settings.ACTIVITY_THRESHOLD);
         this.players[data.name] = player;
       });
-      console.log('Processed players:', this.players);
+      // console.log('Processed players:', this.players);
     } catch (error) {
       console.error('Error loading players:', error);
     }
