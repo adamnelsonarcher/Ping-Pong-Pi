@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 import Leaderboard from './components/Leaderboard';
 import GameHistory from './components/GameHistory';
@@ -18,27 +18,14 @@ function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalConfig, setModalConfig] = useState({});
   const [gameInProgress, setGameInProgress] = useState(false);
-  const [timerDuration, setTimerDuration] = useState(0);
   const [gameHistoryKeep, setGameHistoryKeep] = useState(10); // default value
-  const clearSelectionTimerRef = useRef(null);
   const { settings } = useSettings();
-
-  useEffect(() => {
-    if (settings) {
-      const duration = settings.TIMER_INTERVAL * 60 * 1000;
-      setTimerDuration(duration);
-      setGameHistoryKeep(settings.GAME_HISTORY_KEEP);
-    }
-  }, [settings]);
 
   useEffect(() => {
     const loadSettings = async () => {
       console.log('Loading settings...');
       const settings = await getSettings();
       console.log('Settings loaded:', settings);
-      const duration = settings.TIMER_INTERVAL * 60 * 1000;
-      console.log(`Setting timer duration to ${duration}ms (${settings.TIMER_INTERVAL} minutes)`);
-      setTimerDuration(duration);
       setGameHistoryKeep(settings.GAME_HISTORY_KEEP);
     };
     loadSettings();
@@ -65,10 +52,6 @@ function App() {
     loadData();
   }, []);
 
-  useEffect(() => {
-    console.log('Timer duration changed to:', timerDuration);
-  }, [timerDuration]);
-
   const updateLeaderboard = () => {
     const leaderboardData = dataService.getLeaderboard();
     setLeaderboard(leaderboardData);
@@ -79,33 +62,8 @@ function App() {
     setGameHistory(fullHistory.slice(-gameHistoryKeep)); // Ensure slicing is applied here
   };
 
-  const startClearSelectionTimer = () => {
-    console.log('startClearSelectionTimer called');
-    console.log('Current timer duration:', timerDuration);
-    
-    if (!timerDuration || timerDuration <= 0) {
-      console.log('Invalid timer duration, cannot start timer');
-      return;
-    }
-
-    if (clearSelectionTimerRef.current) {
-      console.log('Clearing existing timer');
-      clearTimeout(clearSelectionTimerRef.current);
-    }
-
-    console.log(`Starting new timer for ${timerDuration/1000} seconds`);
-    clearSelectionTimerRef.current = setTimeout(() => {
-      console.log('Timer completed - clearing selections');
-      handleClearSelections();
-    }, timerDuration);
-    
-    // Verify timer was set
-    console.log('Timer reference after setting:', clearSelectionTimerRef.current);
-  };
-
   const handleGameEnd = async (gameResult) => {
     console.log('handleGameEnd called with result:', gameResult);
-    console.log('Current timer duration:', timerDuration);
     
     try {
       await dataService.saveGameHistory(gameResult);
@@ -117,8 +75,6 @@ function App() {
       setGameInProgress(false);
       localStorage.setItem('selectedPlayer1', selectedPlayers.player1);
       localStorage.setItem('selectedPlayer2', selectedPlayers.player2);
-      console.log('Starting clear selection timer...');
-      startClearSelectionTimer();
     }
   };
 
@@ -134,7 +90,6 @@ function App() {
     } finally {
       setCurrentScreen('main');
       setGameInProgress(false);
-      startClearSelectionTimer();
     }
   };
 
@@ -159,18 +114,12 @@ function App() {
     setSelectedPlayers({ player1: '', player2: '' });
     localStorage.removeItem('selectedPlayer1');
     localStorage.removeItem('selectedPlayer2');
-    if (clearSelectionTimerRef.current) {
-      clearTimeout(clearSelectionTimerRef.current);
-    }
   };
 
   const handleStartGame = () => {
     if (selectedPlayers.player1 && selectedPlayers.player2) {
       setCurrentScreen('game');
       setGameInProgress(true);
-      if (clearSelectionTimerRef.current) {
-        clearTimeout(clearSelectionTimerRef.current);
-      }
     } else {
       alert("Please select two players before starting a game.");
     }
