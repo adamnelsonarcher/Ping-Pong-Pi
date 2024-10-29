@@ -407,9 +407,8 @@ export const savePlayersData = async () => {
 export const endGame = async (player1Name, player2Name, player1Score, player2Score) => {
   try {
     const gameResult = dataService.recordGame(player1Name, player2Name, player1Score, player2Score);
-    await dataService.saveGameHistory(gameResult);
-    await dataService.savePlayers(); // Add this line to save updated player data
-    return { gameResult };
+    await dataService.savePlayers(); // Save updated player data
+    return gameResult; // Return the gameResult directly
   } catch (error) {
     console.error('Error ending game:', error);
     return null;

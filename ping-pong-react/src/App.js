@@ -113,13 +113,10 @@ function App() {
     } catch (error) {
       console.error('Error saving game data:', error);
     } finally {
-      // These actions should happen whether the save succeeds or fails
       setCurrentScreen('main');
       setGameInProgress(false);
-      
       localStorage.setItem('selectedPlayer1', selectedPlayers.player1);
       localStorage.setItem('selectedPlayer2', selectedPlayers.player2);
-      
       console.log('Starting clear selection timer...');
       startClearSelectionTimer();
     }
