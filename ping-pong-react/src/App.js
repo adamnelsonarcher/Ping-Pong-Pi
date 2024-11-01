@@ -20,6 +20,7 @@ function App() {
   const [gameInProgress, setGameInProgress] = useState(false);
   const [gameHistoryKeep, setGameHistoryKeep] = useState(10); // default value
   const { settings } = useSettings();
+  const [showAdminPrompt, setShowAdminPrompt] = useState(false);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -160,6 +161,26 @@ function App() {
     }
   };
 
+  const handleAdminAccess = (values) => {
+    if (settings && values.password === settings.ADMIN_PASSWORD) {
+      setCurrentScreen('admin');
+      setIsModalOpen(false);
+    } else {
+      alert('Incorrect admin password');
+    }
+  };
+
+  const handleAdminClick = () => {
+    setModalConfig({
+      title: 'Enter Admin Password',
+      fields: [
+        { name: 'password', label: 'Password', type: 'password' }
+      ],
+      onSubmit: handleAdminAccess
+    });
+    setIsModalOpen(true);
+  };
+
   return (
     <div className="App">
       {currentScreen === 'main' && (
@@ -183,8 +204,10 @@ function App() {
               <button className="btn start-game" onClick={handleStartGame}>Start Game</button>
             </div>
             <div className="admin-buttons">
-              <button className="btn add-player" onClick={handleAddPlayer}>Add Player</button>
-              <button className="btn admin-controls" onClick={() => setCurrentScreen('admin')}>Admin</button>
+              {settings && !settings.ADDPLAYER_ADMINONLY && (
+                <button className="btn add-player" onClick={handleAddPlayer}>Add Player</button>
+              )}
+              <button className="btn admin-controls" onClick={handleAdminClick}>Admin</button>
             </div>
           </footer>
         </>
@@ -199,7 +222,10 @@ function App() {
       )}
       {currentScreen === 'admin' && (
         <div className="admin-page">
-          <AdminControls onExit={() => setCurrentScreen('main')} />
+          <AdminControls 
+            onExit={() => setCurrentScreen('main')} 
+            onAddPlayer={handleAddPlayer}
+          />
         </div>
       )}
       <InputModal

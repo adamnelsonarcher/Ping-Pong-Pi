@@ -3,12 +3,14 @@ import { getPlayers, editPlayerPassword, editPlayerScore, deletePlayer, resetAll
 import { useSettings } from '../contexts/SettingsContext';
 import './AdminControls.css';
 
-function AdminControls({ onExit }) {
+function AdminControls({ onExit, onAddPlayer }) {
   const [players, setPlayers] = useState([]);
   const [selectedPlayer, setSelectedPlayer] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newScore, setNewScore] = useState('');
   const [gameSettings, setGameSettings] = useState(null);
+  const [newAdminPassword, setNewAdminPassword] = useState('');
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -144,10 +146,41 @@ function AdminControls({ onExit }) {
     }
   };
 
+  const handleChangeAdminPassword = async () => {
+    if (newAdminPassword.length < 4) {
+      alert('Password must be at least 4 characters long');
+      return;
+    }
+    
+    const updatedSettings = {
+      ...gameSettings,
+      ADMIN_PASSWORD: newAdminPassword
+    };
+    
+    try {
+      await updateSettings(updatedSettings);
+      setGameSettings(updatedSettings);
+      setNewAdminPassword('');
+      alert('Admin password updated successfully');
+    } catch (error) {
+      console.error('Error updating admin password:', error);
+      alert('Failed to update admin password');
+    }
+  };
+
   return (
     <div className="admin-controls">
       <h2>Admin Controls</h2>
       
+      {gameSettings?.ADDPLAYER_ADMINONLY && (
+        <div className="admin-section">
+          <h3>Add New Player</h3>
+          <button className="standard-btn" onClick={onAddPlayer}>
+            Add New Player
+          </button>
+        </div>
+      )}
+
       <div className="admin-section">
         <h3>Player Management</h3>
         <select 
@@ -188,15 +221,45 @@ function AdminControls({ onExit }) {
       </div>
 
       <div className="admin-section">
+        <h3>Admin Password</h3>
+        <div className="setting-item">
+          <label>Change Admin Password</label>
+          <div className="password-input-container">
+            <input
+              type={showAdminPassword ? "text" : "password"}
+              value={newAdminPassword}
+              onChange={(e) => setNewAdminPassword(e.target.value)}
+              placeholder="New Admin Password"
+            />
+            <button 
+              type="button"
+              className="password-toggle-btn"
+              onClick={() => setShowAdminPassword(!showAdminPassword)}
+            >
+              {showAdminPassword ? '🙈' : '👁️'}
+            </button>
+          </div>
+          <button 
+            className="standard-btn"
+            onClick={handleChangeAdminPassword}
+          >
+            Update Admin Password
+          </button>
+        </div>
+      </div>
+
+      <div className="admin-section">
         <h3>Game Settings</h3>
         {gameSettings && (
           <form onSubmit={saveSettings} className="settings-list">
-            {Object.entries(gameSettings).map(([key, value]) => (
-              <div key={key} className="setting-item">
-                <label>{key.replace(/_/g, ' ')}</label>
-                <p className="setting-description">{settingDescriptions[key]}</p>
-                {renderSettingInput(key, value)}
-              </div>
+            {Object.entries(gameSettings)
+              .filter(([key]) => key !== 'ADMIN_PASSWORD')
+              .map(([key, value]) => (
+                <div key={key} className="setting-item">
+                  <label>{key.replace(/_/g, ' ')}</label>
+                  <p className="setting-description">{settingDescriptions[key]}</p>
+                  {renderSettingInput(key, value)}
+                </div>
             ))}
             <div className="button-group">
               <button type="submit" className="save-btn">Save Settings</button>
