@@ -38,5 +38,25 @@
     "pointChange1": -87.47988441303212,
     "pointChange2": 161.24008594632872,
     "date": "2024-11-01T23:06:15.584Z"
+  },
+  {
+    "player1": "5",
+    "player2": "1",
+    "score": "1 - 0",
+    "player1Rank": 1,
+    "player2Rank": 4,
+    "pointChange1": 36.869231185581675,
+    "pointChange2": -33.30851788239831,
+    "date": "2024-11-01T23:11:49.105Z"
+  },
+  {
+    "player1": "5",
+    "player2": "1",
+    "score": "0 - 2",
+    "player1Rank": 4,
+    "player2Rank": 2,
+    "pointChange1": -42.83612626428288,
+    "pointChange2": 64.29613693644166,
+    "date": "2024-11-01T23:11:54.093Z"
   }
 ]

@@ -22,6 +22,18 @@ function Leaderboard({ players }) {
     return player.score;
   };
 
+  const formatPlayerName = (player) => {
+    const fullPlayerData = dataService.players[player.name];
+    if (fullPlayerData && fullPlayerData.currentStreak >= 3) {
+      return (
+        <span>
+          {player.name} 🔥{fullPlayerData.currentStreak}
+        </span>
+      );
+    }
+    return player.name;
+  };
+
   return (
     <div className="Leaderboard">
       <table>
@@ -35,14 +47,14 @@ function Leaderboard({ players }) {
         <tbody>
           {activePlayers.map((player) => (
             <tr key={player.name} onDoubleClick={() => handlePlayerDoubleClick(player.name)}>
-              <td>{player.name}</td>
+              <td>{formatPlayerName(player)}</td>
               <td>{formatScore(player)}</td>
               <td>{player.ratio}</td>
             </tr>
           ))}
           {inactivePlayers.map((player) => (
             <tr key={player.name} className="inactive" onDoubleClick={() => handlePlayerDoubleClick(player.name)}>
-              <td>{player.name}</td>
+              <td>{formatPlayerName(player)}</td>
               <td>{formatScore(player)}</td>
               <td>{player.ratio}</td>
             </tr>
