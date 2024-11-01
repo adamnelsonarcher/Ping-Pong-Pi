@@ -23,6 +23,21 @@ function LifetimeStatsDialog({ player, onClose }) {
     score: score
   }));
 
+  const calculateYDomain = () => {
+    const scores = player.scoreHistory;
+    if (!scores || scores.length === 0) return [0, 100];
+    const minScore = Math.min(...scores);
+    const maxScore = Math.max(...scores);
+    const padding = (maxScore - minScore) * 0.1; // Add 10% padding
+    
+    // Round down to nearest 100 for min
+    const minDomain = Math.floor((minScore - padding) / 100) * 100;
+    // Round up to nearest 100 for max
+    const maxDomain = Math.ceil((maxScore + padding) / 100) * 100;
+    
+    return [minDomain, maxDomain];
+  };
+
   const CustomXAxisTick = ({ x, y, payload }) => (
     <g transform={`translate(${x},${y})`}>
       <line y2="6" stroke="#666" />
@@ -57,6 +72,7 @@ function LifetimeStatsDialog({ player, onClose }) {
                   tick={{ fontSize: 12 }}
                   axisLine={false}
                   tickLine={false}
+                  domain={calculateYDomain()}
                 />
                 <Tooltip />
                 <Line type="monotone" dataKey="score" stroke="#8884d8" dot={false} />
