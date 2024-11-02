@@ -51,7 +51,7 @@ function AdminControls({ onExit, onAddPlayer }) {
   };
 
   const handleResetAllScores = async () => {
-    if (window.confirm('Are you sure you want to reset all scores?')) {
+    if (window.confirm('Are you sure you want to reset all scores? This impacts all players, but not lifetime scores.')) {
       await resetAllScores();
       alert('All scores have been reset');
     }
@@ -71,12 +71,12 @@ function AdminControls({ onExit, onAddPlayer }) {
 
   const settingDescriptions = {
     TIMER_INTERVAL: "Time in minutes before player selection is cleared.",
-    SCORE_CHANGE_K_FACTOR: "Maximum points that can be won or lost in a game.",
-    POINT_DIFFERENCE_WEIGHT: "Multiplier for the point difference at the end of a game.",
-    ACTIVITY_THRESHOLD: "Number of games a player needs to play to become ranked.",
-    GAME_HISTORY_KEEP: "Number of games to keep stored in the history.",
-    ADDPLAYER_ADMINONLY: "Determines if only admins can add new players.",
-    DEFAULT_RANK: "Default rank for new players.",
+    SCORE_CHANGE_K_FACTOR: "Maximum points that can be won or lost in a game, before the point difference is factored in.",
+    POINT_DIFFERENCE_WEIGHT: "Multiplier for the point difference at the end of a game. Increases K by the point difference times this value.",
+    ACTIVITY_THRESHOLD: "Number of games a player needs to play to become ranked/active.",
+    GAME_HISTORY_KEEP: "Number of games to show in the game history.",
+    ADDPLAYER_ADMINONLY: "Moves the 'Add New Player' button to the admin controls section.",
+    DEFAULT_RANK: "Text that shows instead of score for for unranked/inactive players.",
     PLAYER1_SCOREBOARD_COLOR: "Color of the scoreboard for Player 1.",
     PLAYER2_SCOREBOARD_COLOR: "Color of the scoreboard for Player 2."
   };
