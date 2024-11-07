@@ -15,40 +15,48 @@
       "players": {
         "555": {
           "name": "555",
-          "score": 954.2894174954594,
-          "gamesPlayed": 1,
-          "wins": 0,
-          "losses": 1,
+          "score": 987.6452140030129,
+          "gamesPlayed": 5,
+          "wins": 1,
+          "losses": 4,
           "password": "123",
-          "currentStreak": 0,
-          "maxWinStreak": 0,
-          "lifetimeGamesPlayed": 1,
-          "lifetimeWins": 0,
-          "lifetimeLosses": 1,
-          "lifetimeScore": 954.2894174954594,
-          "active": false,
+          "currentStreak": 1,
+          "maxWinStreak": 1,
+          "lifetimeGamesPlayed": 5,
+          "lifetimeWins": 1,
+          "lifetimeLosses": 4,
+          "lifetimeScore": 987.6452140030129,
+          "active": true,
           "scoreHistory": [
             1000,
-            954.29
+            954.29,
+            923.62,
+            891.87,
+            870.53,
+            987.65
           ]
         },
         "test444": {
           "name": "test444",
-          "score": 1052.8,
-          "gamesPlayed": 1,
-          "wins": 1,
-          "losses": 0,
+          "score": 1045.9192762940247,
+          "gamesPlayed": 5,
+          "wins": 4,
+          "losses": 1,
           "password": "123",
-          "currentStreak": 1,
-          "maxWinStreak": 1,
-          "lifetimeGamesPlayed": 1,
-          "lifetimeWins": 1,
-          "lifetimeLosses": 0,
-          "lifetimeScore": 1052.8,
-          "active": false,
+          "currentStreak": 0,
+          "maxWinStreak": 4,
+          "lifetimeGamesPlayed": 5,
+          "lifetimeWins": 4,
+          "lifetimeLosses": 1,
+          "lifetimeScore": 1045.9192762940247,
+          "active": true,
           "scoreHistory": [
             1000,
-            1052.8
+            1052.8,
+            1087.14,
+            1123.41,
+            1146.83,
+            1045.92
           ]
         }
       },
@@ -112,6 +120,46 @@
           "pointChange1": -42.83612626428288,
           "pointChange2": 64.29613693644166,
           "date": "2024-11-01T23:11:54.093Z"
+        },
+        {
+          "player1": "555",
+          "player2": "test444",
+          "score": "0 - 1",
+          "player1Rank": "Unranked",
+          "player2Rank": "Unranked",
+          "pointChange1": -30.671081128690407,
+          "pointChange2": 34.344641958903814,
+          "date": "2024-11-07T23:44:32.912Z"
+        },
+        {
+          "player1": "555",
+          "player2": "test444",
+          "score": "0 - 5",
+          "player1Rank": 2,
+          "player2Rank": 1,
+          "pointChange1": -31.74928696659323,
+          "pointChange2": 36.26660545460111,
+          "date": "2024-11-07T23:44:51.846Z"
+        },
+        {
+          "player1": "555",
+          "player2": "test444",
+          "score": "0 - 5",
+          "player1Rank": 2,
+          "player2Rank": 1,
+          "pointChange1": -21.33914037601396,
+          "pointChange2": 23.419597500387024,
+          "date": "2024-11-07T23:44:56.330Z"
+        },
+        {
+          "player1": "555",
+          "player2": "test444",
+          "score": "7 - 0",
+          "player1Rank": 2,
+          "player2Rank": 1,
+          "pointChange1": 117.11530497885113,
+          "pointChange2": -100.91156861986713,
+          "date": "2024-11-07T23:44:59.452Z"
         }
       ]
     }

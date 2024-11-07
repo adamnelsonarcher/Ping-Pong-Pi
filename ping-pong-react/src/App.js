@@ -65,8 +65,9 @@ function App() {
     console.log('handleGameEnd called with result:', gameResult);
     
     try {
-      await dataService.saveGameHistory(gameResult);
+      await endGame(gameResult.player1, gameResult.player2, gameResult.score1, gameResult.score2);
       updateLeaderboard();
+      updateGameHistory();
     } catch (error) {
       console.error('Error saving game data:', error);
     } finally {
@@ -79,11 +80,8 @@ function App() {
 
   const handleQuitGame = async () => {
     try {
-      const quitResult = await quitGame(selectedPlayers.player1, selectedPlayers.player2);
-      if (quitResult) {
-        setGameHistory(prevHistory => [...prevHistory, quitResult].slice(-gameHistoryKeep));
-        await dataService.saveGameHistory(quitResult);
-      }
+      await quitGame(selectedPlayers.player1, selectedPlayers.player2);
+      updateGameHistory();
     } catch (error) {
       console.error('Error in handleQuitGame:', error);
     } finally {

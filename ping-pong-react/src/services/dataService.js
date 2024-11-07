@@ -170,8 +170,20 @@ class DataService {
   }
 
   recordGame(player1Name, player2Name, player1Score, player2Score) {
+    // Validate scores
+    if (typeof player1Score !== 'number' || typeof player2Score !== 'number') {
+      console.error('Invalid scores:', player1Score, player2Score);
+      return null;
+    }
+
     const player1 = this.players[player1Name];
     const player2 = this.players[player2Name];
+    
+    if (!player1 || !player2) {
+      console.error('Players not found:', player1Name, player2Name);
+      return null;
+    }
+
     const winner = player1Score > player2Score ? player1 : player2;
     const loser = player1Score > player2Score ? player2 : player1;
 
@@ -191,6 +203,7 @@ class DataService {
       pointChange2: player2 === winner ? winnerScoreChange : loserScoreChange,
       date: new Date().toISOString()
     };
+
     return gameResult;
   }
 
@@ -321,6 +334,17 @@ class DataService {
     await this.saveData();
     return true;
   }
+
+  async saveGameHistory(gameResult) {
+    try {
+      this.gameHistory.push(gameResult);
+      await this.saveData();
+      return true;
+    } catch (error) {
+      console.error('Error saving game history:', error);
+      throw error;
+    }
+  }
 }
 
 const dataService = new DataService();
@@ -363,8 +387,19 @@ export const getGameHistory = () => {
 
 export const endGame = async (player1Name, player2Name, player1Score, player2Score) => {
   try {
-    const gameResult = dataService.recordGame(player1Name, player2Name, player1Score, player2Score);
-    await dataService.saveData();
+    // Convert scores to numbers and validate
+    const score1 = parseInt(player1Score, 10);
+    const score2 = parseInt(player2Score, 10);
+    
+    if (isNaN(score1) || isNaN(score2)) {
+      console.error('Invalid scores:', player1Score, player2Score);
+      return null;
+    }
+
+    const gameResult = dataService.recordGame(player1Name, player2Name, score1, score2);
+    if (gameResult) {
+      await dataService.saveGameHistory(gameResult);
+    }
     return gameResult;
   } catch (error) {
     console.error('Error ending game:', error);
@@ -382,8 +417,7 @@ export const quitGame = async (player1Name, player2Name) => {
       pointChange2: 0,
       date: new Date().toISOString()
     };
-    dataService.gameHistory.push(gameResult);
-    await dataService.saveData();
+    await dataService.saveGameHistory(gameResult);
     return gameResult;
   } catch (error) {
     console.error('Error quitting game:', error);
