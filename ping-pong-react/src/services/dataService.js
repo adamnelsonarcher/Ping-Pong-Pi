@@ -92,37 +92,23 @@ class DataService {
     this.players = {};
     this.gameHistory = [];
     this.settings = {};
+    this.currentUser = 'admin'; // Default user
   }
 
   async loadData() {
-    await this.loadSettings();
-    await this.loadPlayers();
-    await this.loadGameHistory();
-  }
-
-  async loadSettings() {
     try {
-      const response = await fetch('/api/getSettings');
+      const response = await fetch('http://localhost:3001/api/getData');
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      this.settings = await response.json();
-      console.log('Loaded settings:', this.settings);
-    } catch (error) {
-      console.error('Error loading settings:', error);
-    }
-  }
+      const data = await response.json();
+      const userData = data.users[this.currentUser];
 
-  async loadPlayers() {
-    try {
-      const response = await fetch('/api/getPlayers');
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const playerData = await response.json();
-      // console.log('Loaded player data:', playerData);
+      this.settings = userData.settings;
+      
+      // Convert player objects back to Player instances
       this.players = {};
-      playerData.forEach(data => {
+      Object.entries(userData.players).forEach(([name, data]) => {
         const player = new Player(data.name, data.score, data.password);
         player.gamesPlayed = data.gamesPlayed || 0;
         player.wins = data.wins || 0;
@@ -135,91 +121,43 @@ class DataService {
         player.maxWinStreak = data.maxWinStreak || 0;
         player.scoreHistory = Array.isArray(data.scoreHistory) ? data.scoreHistory : [data.score];
         player.updateActiveStatus(this.settings.ACTIVITY_THRESHOLD);
-        this.players[data.name] = player;
+        this.players[name] = player;
       });
-      // console.log('Processed players:', this.players);
-    } catch (error) {
-      console.error('Error loading players:', error);
-    }
-  }
 
-  async loadGameHistory() {
-    try {
-      const response = await fetch('/api/getGameHistory');
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      this.gameHistory = data;
+      this.gameHistory = userData.gameHistory;
+      
+      console.log('All data loaded successfully');
     } catch (error) {
-      console.error('Error loading game history:', error);
+      console.error('Error loading data:', error);
+      this.settings = {};
+      this.players = {};
       this.gameHistory = [];
     }
   }
 
-  async savePlayers() {
-    const playerData = Object.values(this.players).map(player => ({
-      name: player.name,
-      score: player.score,
-      gamesPlayed: player.gamesPlayed,
-      wins: player.wins,
-      losses: player.losses,
-      password: player.password,
-      lifetimeGamesPlayed: player.lifetimeGamesPlayed,
-      lifetimeWins: player.lifetimeWins,
-      lifetimeLosses: player.lifetimeLosses,
-      lifetimeScore: player.lifetimeScore,
-      currentStreak: player.currentStreak,
-      maxWinStreak: player.maxWinStreak,
-      scoreHistory: player.scoreHistory,
-    }));
-
+  async saveData() {
     try {
-      console.log('Sending player data to server:', playerData);
-      const response = await fetch('/api/savePlayers', {
+      const response = await fetch('http://localhost:3001/api/saveData', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(playerData),
+        body: JSON.stringify({
+          currentUser: this.currentUser,
+          settings: this.settings,
+          players: this.players,
+          gameHistory: this.gameHistory
+        })
       });
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Failed to save players data: ${errorData.error}, ${errorData.details}`);
+        throw new Error('Failed to save data');
       }
-      console.log('Players data saved successfully');
+      console.log('All data saved successfully');
     } catch (error) {
-      console.error('Error saving players data:', error);
+      console.error('Error saving data:', error);
       throw error;
     }
-  }
-
-  async saveGameHistory(gameResult) {
-    try {
-      console.log('Attempting to save game result:', gameResult);
-      const response = await fetch('/api/saveGameHistory', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(gameResult),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to save game result');
-      }
-      
-      console.log('Game result saved successfully');
-      this.gameHistory.push(gameResult);
-      return true;
-    } catch (error) {
-      console.error('Error saving game result:', error);
-      return false;
-    }
-  }
-
-  async saveData() {
-    await this.savePlayers();
   }
 
   addPlayer(name, password) {
@@ -315,29 +253,45 @@ class DataService {
   }
 
   async editPlayerPassword(playerName, newPassword) {
-    this.players[playerName].password = newPassword;
-    await this.savePlayers();
+    if (this.players[playerName]) {
+      this.players[playerName].password = newPassword;
+      await this.saveData();
+      return true;
+    }
+    return false;
   }
 
   async editPlayerScore(playerName, newScore) {
-    this.players[playerName].score = newScore;
-    await this.savePlayers();
+    if (this.players[playerName]) {
+      this.players[playerName].score = newScore;
+      this.players[playerName].scoreHistory.push(newScore);
+      await this.saveData();
+      return true;
+    }
+    return false;
   }
 
   async deletePlayer(playerName) {
-    delete this.players[playerName];
-    await this.savePlayers();
+    if (this.players[playerName]) {
+      delete this.players[playerName];
+      await this.saveData();
+      return true;
+    }
+    return false;
   }
 
   async resetAllScores() {
     Object.values(this.players).forEach(player => {
       player.score = 1000;
+      player.scoreHistory = [1000];
       player.gamesPlayed = 0;
       player.wins = 0;
       player.losses = 0;
       player.currentStreak = 0;
+      player.active = false;
     });
-    await this.savePlayers();
+    await this.saveData();
+    return true;
   }
 
   async saveSettings() {
@@ -364,7 +318,8 @@ class DataService {
 
   async updateSettings(newSettings) {
     this.settings = { ...this.settings, ...newSettings };
-    await this.saveSettings();
+    await this.saveData();
+    return true;
   }
 }
 
@@ -373,42 +328,44 @@ const dataService = new DataService();
 export default dataService;
 
 export const getPlayers = async () => {
-  await dataService.loadPlayers();
+  await dataService.loadData();
   return Object.values(dataService.players);
 };
 
-export const addPlayer = async (newPlayer) => {
-  try {
-    const added = dataService.addPlayer(newPlayer.name, newPlayer.password);
-    if (added) {
-      await dataService.saveData();
-      console.log('Player added and saved:', newPlayer.name);
-      // Immediately load players to verify the save
-      await dataService.loadPlayers();
-      return true;
-    }
-    return false;
-  } catch (error) {
-    console.error('Error adding player:', error);
-    return false;
-  }
+export const getSettings = async () => {
+  await dataService.loadData();
+  return dataService.settings;
 };
 
-export const savePlayersData = async () => {
-  try {
-    await dataService.savePlayers();
-    return true;
-  } catch (error) {
-    console.error('Error saving players data:', error);
-    return false;
-  }
+export const editPlayerPassword = async (playerName, newPassword) => {
+  return await dataService.editPlayerPassword(playerName, newPassword);
+};
+
+export const editPlayerScore = async (playerName, newScore) => {
+  return await dataService.editPlayerScore(playerName, newScore);
+};
+
+export const deletePlayer = async (playerName) => {
+  return await dataService.deletePlayer(playerName);
+};
+
+export const resetAllScores = async () => {
+  return await dataService.resetAllScores();
+};
+
+export const updateSettings = async (newSettings) => {
+  return await dataService.updateSettings(newSettings);
+};
+
+export const getGameHistory = () => {
+  return dataService.gameHistory;
 };
 
 export const endGame = async (player1Name, player2Name, player1Score, player2Score) => {
   try {
     const gameResult = dataService.recordGame(player1Name, player2Name, player1Score, player2Score);
-    await dataService.savePlayers(); // Save updated player data
-    return gameResult; // Return the gameResult directly
+    await dataService.saveData();
+    return gameResult;
   } catch (error) {
     console.error('Error ending game:', error);
     return null;
@@ -425,44 +382,12 @@ export const quitGame = async (player1Name, player2Name) => {
       pointChange2: 0,
       date: new Date().toISOString()
     };
-    await dataService.saveGameHistory(gameResult);
+    dataService.gameHistory.push(gameResult);
+    await dataService.saveData();
     return gameResult;
   } catch (error) {
     console.error('Error quitting game:', error);
     return null;
   }
-};
-
-export const getLeaderboard = () => {
-  return dataService.getLeaderboard();
-};
-
-export const getGameHistory = () => {
-  return dataService.getGameHistory();
-};
-
-export const editPlayerPassword = async (playerName, newPassword) => {
-  await dataService.editPlayerPassword(playerName, newPassword);
-};
-
-export const editPlayerScore = async (playerName, newScore) => {
-  await dataService.editPlayerScore(playerName, newScore);
-};
-
-export const deletePlayer = async (playerName) => {
-  await dataService.deletePlayer(playerName);
-};
-
-export const resetAllScores = async () => {
-  await dataService.resetAllScores();
-};
-
-export const updateSettings = async (newSettings) => {
-  await dataService.updateSettings(newSettings);
-};
-
-export const getSettings = async () => {
-  await dataService.loadSettings();
-  return dataService.getSettings();
 };
 

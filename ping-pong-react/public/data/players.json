@@ -1,16 +1,16 @@
 [
   {
     "name": "1",
-    "score": 1261.8125547529728,
-    "gamesPlayed": 42,
+    "score": 1225.2835500829692,
+    "gamesPlayed": 43,
     "wins": 18,
-    "losses": 24,
+    "losses": 25,
     "password": "12",
-    "lifetimeGamesPlayed": 41,
+    "lifetimeGamesPlayed": 42,
     "lifetimeWins": 21,
-    "lifetimeLosses": 24,
-    "lifetimeScore": 1375.5537008773947,
-    "currentStreak": 1,
+    "lifetimeLosses": 25,
+    "lifetimeScore": 1339.0594882732723,
+    "currentStreak": 0,
     "maxWinStreak": 3,
     "scoreHistory": [
       1222.26,
@@ -59,7 +59,8 @@
       1384.05,
       1344.45,
       1311.19,
-      1375.55
+      1375.55,
+      1339.06
     ]
   },
   {
@@ -84,16 +85,16 @@
   },
   {
     "name": "5",
-    "score": 1236.4924752216848,
-    "gamesPlayed": 6,
-    "wins": 5,
+    "score": 1276.95066237628,
+    "gamesPlayed": 7,
+    "wins": 6,
     "losses": 1,
     "password": "password5",
-    "lifetimeGamesPlayed": 5,
-    "lifetimeWins": 4,
+    "lifetimeGamesPlayed": 6,
+    "lifetimeWins": 5,
     "lifetimeLosses": 2,
-    "lifetimeScore": 1350.6304616946438,
-    "currentStreak": 0,
+    "lifetimeScore": 1391.0502268662776,
+    "currentStreak": 1,
     "maxWinStreak": 5,
     "scoreHistory": [
       1182.93,
@@ -103,7 +104,8 @@
       1296.59,
       1356.7,
       1393.51,
-      1350.63
+      1350.63,
+      1391.05
     ]
   },
   {
@@ -357,36 +359,38 @@
   },
   {
     "name": "test2",
-    "score": 1000,
-    "gamesPlayed": 0,
-    "wins": 0,
+    "score": 1060,
+    "gamesPlayed": 1,
+    "wins": 1,
     "losses": 0,
     "password": "123",
-    "lifetimeGamesPlayed": 0,
-    "lifetimeWins": 0,
+    "lifetimeGamesPlayed": 1,
+    "lifetimeWins": 1,
     "lifetimeLosses": 0,
-    "lifetimeScore": 1000,
-    "currentStreak": 0,
-    "maxWinStreak": 0,
+    "lifetimeScore": 1060,
+    "currentStreak": 1,
+    "maxWinStreak": 1,
     "scoreHistory": [
-      1000
+      1000,
+      1060
     ]
   },
   {
     "name": "test444",
-    "score": 1000,
-    "gamesPlayed": 0,
+    "score": 949.1386716886307,
+    "gamesPlayed": 1,
     "wins": 0,
-    "losses": 0,
+    "losses": 1,
     "password": "123",
-    "lifetimeGamesPlayed": 0,
+    "lifetimeGamesPlayed": 1,
     "lifetimeWins": 0,
-    "lifetimeLosses": 0,
-    "lifetimeScore": 1000,
+    "lifetimeLosses": 1,
+    "lifetimeScore": 949.1386716886307,
     "currentStreak": 0,
     "maxWinStreak": 0,
     "scoreHistory": [
-      1000
+      1000,
+      949.14
     ]
   }
 ]

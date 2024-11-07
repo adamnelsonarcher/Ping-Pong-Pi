@@ -24,10 +24,8 @@ function App() {
 
   useEffect(() => {
     const loadSettings = async () => {
-      console.log('Loading settings...');
-      const settings = await getSettings();
-      console.log('Settings loaded:', settings);
-      setGameHistoryKeep(settings.GAME_HISTORY_KEEP);
+      await dataService.loadData();
+      setGameHistoryKeep(dataService.settings.GAME_HISTORY_KEEP);
     };
     loadSettings();
   }, []);
@@ -37,7 +35,7 @@ function App() {
       await dataService.loadData();
       updateLeaderboard();
       updateGameHistory();
-      const playerList = await getPlayers();
+      const playerList = Object.values(dataService.players);
       setPlayers(playerList);
       
       // Load saved player selections from localStorage
