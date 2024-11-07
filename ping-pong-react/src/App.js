@@ -65,9 +65,12 @@ function App() {
     console.log('handleGameEnd called with result:', gameResult);
     
     try {
-      await endGame(gameResult.player1, gameResult.player2, gameResult.score1, gameResult.score2);
-      updateLeaderboard();
-      updateGameHistory();
+      const result = await endGame(gameResult.player1, gameResult.player2, gameResult.score1, gameResult.score2);
+      if (result) {
+        // Update both leaderboard and game history at once
+        setLeaderboard(dataService.getLeaderboard());
+        setGameHistory(prev => [...prev, result].slice(-gameHistoryKeep));
+      }
     } catch (error) {
       console.error('Error saving game data:', error);
     } finally {

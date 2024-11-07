@@ -93,6 +93,18 @@ class DataService {
     this.gameHistory = [];
     this.settings = {};
     this.currentUser = 'admin'; // Default user
+    this.saveTimeout = null;
+    this.SAVE_DELAY = 1000; // 1 second delay for batching saves
+  }
+
+  // New method for debounced saving
+  debouncedSave() {
+    if (this.saveTimeout) {
+      clearTimeout(this.saveTimeout);
+    }
+    this.saveTimeout = setTimeout(() => {
+      this.saveData();
+    }, this.SAVE_DELAY);
   }
 
   async loadData() {
@@ -163,7 +175,7 @@ class DataService {
   addPlayer(name, password) {
     if (!(name in this.players)) {
       this.players[name] = new Player(name, 1000, password);
-      this.saveData();
+      this.debouncedSave();
       return true;
     }
     return false;
@@ -268,7 +280,7 @@ class DataService {
   async editPlayerPassword(playerName, newPassword) {
     if (this.players[playerName]) {
       this.players[playerName].password = newPassword;
-      await this.saveData();
+      this.debouncedSave();
       return true;
     }
     return false;
@@ -278,7 +290,7 @@ class DataService {
     if (this.players[playerName]) {
       this.players[playerName].score = newScore;
       this.players[playerName].scoreHistory.push(newScore);
-      await this.saveData();
+      this.debouncedSave();
       return true;
     }
     return false;
@@ -287,7 +299,7 @@ class DataService {
   async deletePlayer(playerName) {
     if (this.players[playerName]) {
       delete this.players[playerName];
-      await this.saveData();
+      this.debouncedSave();
       return true;
     }
     return false;
@@ -303,7 +315,7 @@ class DataService {
       player.currentStreak = 0;
       player.active = false;
     });
-    await this.saveData();
+    this.debouncedSave();
     return true;
   }
 
@@ -331,19 +343,14 @@ class DataService {
 
   async updateSettings(newSettings) {
     this.settings = { ...this.settings, ...newSettings };
-    await this.saveData();
+    this.debouncedSave();
     return true;
   }
 
   async saveGameHistory(gameResult) {
-    try {
-      this.gameHistory.push(gameResult);
-      await this.saveData();
-      return true;
-    } catch (error) {
-      console.error('Error saving game history:', error);
-      throw error;
-    }
+    this.gameHistory.push(gameResult);
+    this.debouncedSave();
+    return true;
   }
 }
 
@@ -387,7 +394,6 @@ export const getGameHistory = () => {
 
 export const endGame = async (player1Name, player2Name, player1Score, player2Score) => {
   try {
-    // Convert scores to numbers and validate
     const score1 = parseInt(player1Score, 10);
     const score2 = parseInt(player2Score, 10);
     
@@ -399,8 +405,9 @@ export const endGame = async (player1Name, player2Name, player1Score, player2Sco
     const gameResult = dataService.recordGame(player1Name, player2Name, score1, score2);
     if (gameResult) {
       await dataService.saveGameHistory(gameResult);
+      return gameResult;
     }
-    return gameResult;
+    return null;
   } catch (error) {
     console.error('Error ending game:', error);
     return null;
