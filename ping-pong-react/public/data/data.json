@@ -1,0 +1,98 @@
+{
+    "users": {
+      "admin": {
+        "settings": {
+            "SCORE_CHANGE_K_FACTOR": 70,
+            "POINT_DIFFERENCE_WEIGHT": 6,
+            "ACTIVITY_THRESHOLD": 3,
+            "DEFAULT_RANK": "Unranked",
+            "PLAYER1_SCOREBOARD_COLOR": "#4CAF50",
+            "PLAYER2_SCOREBOARD_COLOR": "#2196F3",
+            "GAME_HISTORY_KEEP": 30,
+            "ADDPLAYER_ADMINONLY": false,
+            "ADMIN_PASSWORD": "admin"
+        },
+        "players": {
+            "test444": {
+                "name": "test444",
+                "score": 1000,
+                "gamesPlayed": 0,
+                "wins": 0,
+                "losses": 0,
+                "password": "123",
+                "lifetimeGamesPlayed": 0,
+                "lifetimeWins": 0,
+                "lifetimeLosses": 0,
+                "lifetimeScore": 1000,
+                "currentStreak": 0,
+                "maxWinStreak": 0,
+                "scoreHistory": [
+                    1000
+                ]
+            }
+        },
+        "gameHistory": [
+            {
+            "player1": "123",
+            "player2": "1",
+            "score": "3 - 0",
+            "player1Rank": 6,
+            "player2Rank": 7,
+            "pointChange1": 70.61987573231184,
+            "pointChange2": -46.566243828491785,
+            "date": "2024-10-25T05:40:11.411Z"
+            },
+            {
+            "player1": "123",
+            "player2": "1",
+            "score": "0 - 5",
+            "player1Rank": 4,
+            "player2Rank": 1,
+            "pointChange1": -46.459773483176775,
+            "pointChange2": 72.3973215045706,
+            "date": "2024-10-29T04:33:51.225Z"
+            },
+            {
+            "player1": "123",
+            "player2": "1",
+            "score": "1 - 0",
+            "player1Rank": 1,
+            "player2Rank": 4,
+            "pointChange1": 58.66451983526861,
+            "pointChange2": -39.507741358316046,
+            "date": "2024-10-29T04:34:12.167Z"
+            },
+            {
+            "player1": "555",
+            "player2": "234",
+            "score": "2 - 21",
+            "player1Rank": 6,
+            "player2Rank": 1,
+            "pointChange1": -87.47988441303212,
+            "pointChange2": 161.24008594632872,
+            "date": "2024-11-01T23:06:15.584Z"
+            },
+            {
+            "player1": "5",
+            "player2": "1",
+            "score": "1 - 0",
+            "player1Rank": 1,
+            "player2Rank": 4,
+            "pointChange1": 36.869231185581675,
+            "pointChange2": -33.30851788239831,
+            "date": "2024-11-01T23:11:49.105Z"
+            },
+            {
+            "player1": "5",
+            "player2": "1",
+            "score": "0 - 2",
+            "player1Rank": 4,
+            "player2Rank": 2,
+            "pointChange1": -42.83612626428288,
+            "pointChange2": 64.29613693644166,
+            "date": "2024-11-01T23:11:54.093Z"
+            }
+        ]
+      }
+    }
+  }
