@@ -238,64 +238,42 @@
         "ADMIN_PASSWORD": "1234"
       },
       "players": {
-        "12": {
-          "name": "12",
-          "score": 1076.416194654564,
-          "gamesPlayed": 3,
-          "wins": 2,
+        "123": {
+          "name": "123",
+          "score": 949.1386716886307,
+          "gamesPlayed": 1,
+          "wins": 0,
           "losses": 1,
+          "password": "1",
+          "currentStreak": 0,
+          "maxWinStreak": 0,
+          "lifetimeGamesPlayed": 1,
+          "lifetimeWins": 0,
+          "lifetimeLosses": 1,
+          "lifetimeScore": 949.1386716886307,
+          "active": false,
+          "scoreHistory": [
+            1000,
+            949.14
+          ]
+        },
+        "565": {
+          "name": "565",
+          "score": 1060,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
           "password": "12",
           "currentStreak": 1,
           "maxWinStreak": 1,
-          "lifetimeGamesPlayed": 3,
-          "lifetimeWins": 2,
-          "lifetimeLosses": 1,
-          "lifetimeScore": 1076.416194654564,
-          "active": true,
-          "scoreHistory": [
-            1000,
-            1045.6,
-            981.9,
-            1076.42
-          ]
-        },
-        "34": {
-          "name": "34",
-          "score": 1007.5583891605628,
-          "gamesPlayed": 3,
-          "wins": 1,
-          "losses": 2,
-          "password": "12",
-          "currentStreak": 0,
-          "maxWinStreak": 1,
-          "lifetimeGamesPlayed": 3,
+          "lifetimeGamesPlayed": 1,
           "lifetimeWins": 1,
-          "lifetimeLosses": 2,
-          "lifetimeScore": 1007.5583891605628,
-          "active": true,
-          "scoreHistory": [
-            1000,
-            959.7,
-            1065.95,
-            1007.56
-          ]
-        },
-        "1234": {
-          "name": "1234",
-          "score": 1000,
-          "gamesPlayed": 0,
-          "wins": 0,
-          "losses": 0,
-          "password": "1234",
-          "currentStreak": 0,
-          "maxWinStreak": 0,
-          "lifetimeGamesPlayed": 0,
-          "lifetimeWins": 0,
           "lifetimeLosses": 0,
-          "lifetimeScore": 1000,
+          "lifetimeScore": 1060,
           "active": false,
           "scoreHistory": [
-            1000
+            1000,
+            1060
           ]
         }
       },
@@ -303,64 +281,22 @@
         {
           "player1": "12",
           "player2": "34",
-          "score": "1 - 0",
-          "player1Rank": "Unranked",
-          "player2Rank": "Unranked",
-          "pointChange1": 45.6,
-          "pointChange2": -40.304112296785405,
-          "date": "2024-11-08T07:09:45.185Z"
+          "score": "Quit",
+          "pointChange1": 0,
+          "pointChange2": 0,
+          "date": "2024-11-08T07:25:14.045Z"
         },
         {
-          "player1": "12",
-          "player2": "34",
-          "score": "0 - 7",
+          "player1": "123",
+          "player2": "565",
+          "score": "0 - 5",
           "player1Rank": "Unranked",
           "player2Rank": "Unranked",
-          "pointChange1": -63.704020545235394,
-          "pointChange2": 106.25665514252378,
-          "date": "2024-11-08T07:13:50.594Z"
-        },
-        {
-          "player1": "12",
-          "player2": "34",
-          "score": "5 - 0",
-          "player1Rank": 1,
-          "player2Rank": 2,
-          "pointChange1": 94.52021519979934,
-          "pointChange2": -58.39415368517561,
-          "date": "2024-11-08T07:13:53.631Z"
+          "pointChange1": -50.86132831136928,
+          "pointChange2": 60,
+          "date": "2024-11-08T07:25:53.040Z"
         }
       ]
-    },
-    "spam69420spam@gmail.com": {
-      "settings": {
-        "SCORE_CHANGE_K_FACTOR": 70,
-        "POINT_DIFFERENCE_WEIGHT": 6,
-        "ACTIVITY_THRESHOLD": 3,
-        "DEFAULT_RANK": "Unranked",
-        "PLAYER1_SCOREBOARD_COLOR": "#4CAF50",
-        "PLAYER2_SCOREBOARD_COLOR": "#2196F3",
-        "GAME_HISTORY_KEEP": 30,
-        "ADDPLAYER_ADMINONLY": false,
-        "ADMIN_PASSWORD": "1234"
-      },
-      "players": {},
-      "gameHistory": []
-    },
-    "adamnelsonarcher@gmail.com": {
-      "settings": {
-        "SCORE_CHANGE_K_FACTOR": 70,
-        "POINT_DIFFERENCE_WEIGHT": 6,
-        "ACTIVITY_THRESHOLD": 3,
-        "DEFAULT_RANK": "Unranked",
-        "PLAYER1_SCOREBOARD_COLOR": "#4CAF50",
-        "PLAYER2_SCOREBOARD_COLOR": "#2196F3",
-        "GAME_HISTORY_KEEP": 30,
-        "ADDPLAYER_ADMINONLY": false,
-        "ADMIN_PASSWORD": ""
-      },
-      "players": {},
-      "gameHistory": []
     }
   }
 }

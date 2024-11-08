@@ -96,10 +96,8 @@
 }
 
 .exit-btn {
-  position: sticky;
-  bottom: 20px;
-  width: 100%;
   margin-top: 20px;
+  width: 100%;
 }
 
 .password-input-container {
@@ -264,4 +262,45 @@ button[type="button"].delete-player-btn {
 .admin-controls *::before,
 .admin-controls *::after {
   box-sizing: border-box;
+}
+
+.data-management-buttons {
+  display: flex;
+  gap: 10px;
+  margin: 15px 0;
+  flex-wrap: wrap;
+}
+
+.danger-btn {
+  background-color: #dc3545;
+}
+
+.danger-btn:hover {
+  background-color: #c82333;
+}
+
+.upload-btn {
+  position: relative;
+  cursor: pointer;
+}
+
+.upload-btn input[type="file"] {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.admin-section {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.admin-section h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #333;
 }

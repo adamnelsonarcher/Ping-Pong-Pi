@@ -89,15 +89,24 @@ class Player {
 
 class DataService {
   constructor() {
+    this.defaultSettings = {
+      SCORE_CHANGE_K_FACTOR: 70,
+      POINT_DIFFERENCE_WEIGHT: 6,
+      ACTIVITY_THRESHOLD: 3,
+      DEFAULT_RANK: "Unranked",
+      PLAYER1_SCOREBOARD_COLOR: "#4CAF50",
+      PLAYER2_SCOREBOARD_COLOR: "#2196F3",
+      GAME_HISTORY_KEEP: 30,
+      ADDPLAYER_ADMINONLY: false
+    };
+    
     this.players = {};
     this.gameHistory = [];
-    this.settings = {};
+    this.settings = { ...this.defaultSettings, ADMIN_PASSWORD: "" };
     this.currentUser = localStorage.getItem('currentUser') || 'admin';
     this.isLocalMode = localStorage.getItem('isLocalMode') === 'true';
     this.saveTimeout = null;
     this.SAVE_DELAY = 1000;
-
-    // Bind the method to this instance
     this.debouncedSave = this.debouncedSave.bind(this);
   }
 
@@ -119,11 +128,10 @@ class DataService {
     if (this.isLocalMode) {
       const localData = JSON.parse(localStorage.getItem('localGameData'));
       if (localData) {
-        this.settings = localData.settings;
+        this.settings = { ...this.defaultSettings, ...localData.settings };
         this.gameHistory = localData.gameHistory || [];
         this.players = {};
         
-        // Properly reconstruct Player objects
         Object.entries(localData.players || {}).forEach(([name, playerData]) => {
           const player = new Player(
             playerData.name,
@@ -142,27 +150,35 @@ class DataService {
         if (!response.ok) throw new Error('Failed to fetch data');
         const data = await response.json();
         
+        // Check if this is a new user
         if (!data.users[this.currentUser]) {
+          // Initialize with empty data structure and blank admin password
           data.users[this.currentUser] = {
-            settings: {
-              SCORE_CHANGE_K_FACTOR: 70,
-              POINT_DIFFERENCE_WEIGHT: 6,
-              ACTIVITY_THRESHOLD: 3,
-              DEFAULT_RANK: "Unranked",
-              PLAYER1_SCOREBOARD_COLOR: "#4CAF50",
-              PLAYER2_SCOREBOARD_COLOR: "#2196F3",
-              GAME_HISTORY_KEEP: 30,
-              ADDPLAYER_ADMINONLY: false,
-              ADMIN_PASSWORD: ""
+            settings: { 
+              ...this.defaultSettings,
+              ADMIN_PASSWORD: "" // Explicitly set empty password for new accounts
             },
             players: {},
             gameHistory: []
           };
-          await this.saveData();
+          
+          // Save the new user data structure
+          const saveResponse = await fetch('http://localhost:3001/api/saveData', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+          });
+
+          if (!saveResponse.ok) {
+            throw new Error('Failed to initialize new user data');
+          }
         }
 
+        // Load the user's data
         const userData = data.users[this.currentUser];
-        this.settings = userData.settings;
+        this.settings = { ...this.defaultSettings, ...userData.settings };
         this.gameHistory = userData.gameHistory || [];
         this.players = {};
         
@@ -175,6 +191,7 @@ class DataService {
           Object.assign(player, playerData);
           this.players[name] = player;
         });
+        
         return true;
       } catch (error) {
         console.error('Error loading data:', error);
