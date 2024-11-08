@@ -142,86 +142,6 @@
           "pointChange1": -42.83612626428288,
           "pointChange2": 64.29613693644166,
           "date": "2024-11-01T23:11:54.093Z"
-        },
-        {
-          "player1": "555",
-          "player2": "test444",
-          "score": "0 - 1",
-          "player1Rank": "Unranked",
-          "player2Rank": "Unranked",
-          "pointChange1": -30.671081128690407,
-          "pointChange2": 34.344641958903814,
-          "date": "2024-11-07T23:44:32.912Z"
-        },
-        {
-          "player1": "555",
-          "player2": "test444",
-          "score": "0 - 5",
-          "player1Rank": 2,
-          "player2Rank": 1,
-          "pointChange1": -31.74928696659323,
-          "pointChange2": 36.26660545460111,
-          "date": "2024-11-07T23:44:51.846Z"
-        },
-        {
-          "player1": "555",
-          "player2": "test444",
-          "score": "0 - 5",
-          "player1Rank": 2,
-          "player2Rank": 1,
-          "pointChange1": -21.33914037601396,
-          "pointChange2": 23.419597500387024,
-          "date": "2024-11-07T23:44:56.330Z"
-        },
-        {
-          "player1": "555",
-          "player2": "test444",
-          "score": "7 - 0",
-          "player1Rank": 2,
-          "player2Rank": 1,
-          "pointChange1": 117.11530497885113,
-          "pointChange2": -100.91156861986713,
-          "date": "2024-11-07T23:44:59.452Z"
-        },
-        {
-          "player1": "555",
-          "player2": "test444",
-          "score": "1 - 5",
-          "player1Rank": 2,
-          "player2Rank": 1,
-          "pointChange1": -35.4207986231587,
-          "pointChange2": 40.044231660042925,
-          "date": "2024-11-07T23:46:47.958Z"
-        },
-        {
-          "player1": "555",
-          "player2": "test444",
-          "score": "3 - 0",
-          "player1Rank": 2,
-          "player2Rank": 1,
-          "pointChange1": 76.04202392257643,
-          "pointChange2": -50.44823926759132,
-          "date": "2024-11-07T23:47:04.351Z"
-        },
-        {
-          "player1": "555",
-          "player2": "test444",
-          "score": "0 - 1",
-          "player1Rank": 2,
-          "player2Rank": 1,
-          "pointChange1": -33.68805464682513,
-          "pointChange2": 37.295347710419875,
-          "date": "2024-11-07T23:47:15.796Z"
-        },
-        {
-          "player1": "newP",
-          "player2": "555",
-          "score": "3 - 0",
-          "player1Rank": "Unranked",
-          "player2Rank": 2,
-          "pointChange1": 52.067668100054476,
-          "pointChange2": -8.539693341674713,
-          "date": "2024-11-07T23:47:23.877Z"
         }
       ]
     },
@@ -235,7 +155,7 @@
         "PLAYER2_SCOREBOARD_COLOR": "#2196F3",
         "GAME_HISTORY_KEEP": 30,
         "ADDPLAYER_ADMINONLY": false,
-        "ADMIN_PASSWORD": "1234"
+        "ADMIN_PASSWORD": "5555"
       },
       "players": {},
       "gameHistory": []

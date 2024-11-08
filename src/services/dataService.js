@@ -89,349 +89,97 @@ class Player {
 
 class DataService {
   constructor() {
+    // Initialize with default settings
+    this.settings = {
+      SCORE_CHANGE_K_FACTOR: 70,
+      POINT_DIFFERENCE_WEIGHT: 6,
+      ACTIVITY_THRESHOLD: 3,
+      DEFAULT_RANK: "Unranked",
+      PLAYER1_SCOREBOARD_COLOR: "#4CAF50",
+      PLAYER2_SCOREBOARD_COLOR: "#2196F3",
+      GAME_HISTORY_KEEP: 30,
+      ADDPLAYER_ADMINONLY: false,
+      ADMIN_PASSWORD: ""
+    };
+    this.currentUser = null;
     this.players = {};
     this.gameHistory = [];
-    this.settings = {};
-    this.currentUser = localStorage.getItem('currentUser') || 'admin';
-    this.saveTimeout = null;
-    this.SAVE_DELAY = 1000; // 1 second delay for batching saves
+    this.isLocalMode = localStorage.getItem('isLocalMode') === 'true';
   }
 
-  // New method for debounced saving
-  debouncedSave() {
-    if (this.saveTimeout) {
-      clearTimeout(this.saveTimeout);
-    }
-    this.saveTimeout = setTimeout(() => {
-      this.saveData();
-    }, this.SAVE_DELAY);
+  setLocalMode(isLocal) {
+    this.isLocalMode = isLocal;
   }
 
   async loadData() {
-    try {
-      const response = await fetch('http://localhost:3001/api/getData');
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+    if (this.isLocalMode) {
+      const localData = JSON.parse(localStorage.getItem('localGameData'));
+      if (localData) {
+        // Merge with default settings to ensure all properties exist
+        this.settings = { ...this.settings, ...localData.settings };
+        this.players = localData.players;
+        this.gameHistory = localData.gameHistory;
+        return true;
       }
-      const data = await response.json();
-      
-      // If user doesn't exist, create them with default data
-      if (!data.users[this.currentUser]) {
-        data.users[this.currentUser] = {
-          settings: {
-            SCORE_CHANGE_K_FACTOR: 70,
-            POINT_DIFFERENCE_WEIGHT: 6,
-            ACTIVITY_THRESHOLD: 3,
-            DEFAULT_RANK: "Unranked",
-            PLAYER1_SCOREBOARD_COLOR: "#4CAF50",
-            PLAYER2_SCOREBOARD_COLOR: "#2196F3",
-            GAME_HISTORY_KEEP: 30,
-            ADDPLAYER_ADMINONLY: false,
-            ADMIN_PASSWORD: ''
-          },
-          players: {},
-          gameHistory: []
-        };
-        
-        // Save the new user data
-        await this.saveData();
-      }
-      
-      const userData = data.users[this.currentUser];
-      this.settings = userData.settings;
-      this.gameHistory = userData.gameHistory || [];
-      this.players = {};
-      
-      Object.entries(userData.players || {}).forEach(([name, playerData]) => {
-        const player = new Player(
-          playerData.name,
-          playerData.score,
-          playerData.password
-        );
-        Object.assign(player, playerData);
-        this.players[name] = player;
-      });
-    } catch (error) {
-      console.error('Error loading data:', error);
-      throw error;
+      // If no local data, keep default settings
+      return true;
+    } else {
+      return this.loadServerData();
     }
   }
 
   async saveData() {
-    try {
-      if (!this.currentUser || this.currentUser === 'undefined') {
-        throw new Error('No valid user set');
-      }
-
-      // First get the current data
-      const response = await fetch('http://localhost:3001/api/getData');
-      const data = await response.json();
-
-      // Update only the current user's data
-      data.users[this.currentUser] = {
+    if (this.isLocalMode) {
+      const dataToSave = {
         settings: this.settings,
-        players: {},
-        gameHistory: this.gameHistory || []
+        players: this.players,
+        gameHistory: this.gameHistory
       };
-
-      // Convert Player instances to plain objects
-      Object.entries(this.players).forEach(([name, player]) => {
-        data.users[this.currentUser].players[name] = {
-          name: player.name,
-          score: player.score,
-          gamesPlayed: player.gamesPlayed,
-          wins: player.wins,
-          losses: player.losses,
-          password: player.password,
-          currentStreak: player.currentStreak,
-          maxWinStreak: player.maxWinStreak,
-          lifetimeGamesPlayed: player.lifetimeGamesPlayed,
-          lifetimeWins: player.lifetimeWins,
-          lifetimeLosses: player.lifetimeLosses,
-          lifetimeScore: player.lifetimeScore,
-          active: player.active,
-          scoreHistory: player.scoreHistory
-        };
-      });
-
-      // Remove any 'undefined' user entry
-      if (data.users['undefined']) {
-        delete data.users['undefined'];
-      }
-
-      const saveResponse = await fetch('http://localhost:3001/api/saveData', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data)
-      });
-
-      if (!saveResponse.ok) {
-        throw new Error('Failed to save data');
-      }
-    } catch (error) {
-      console.error('Error saving data:', error);
-      throw error;
-    }
-  }
-
-  addPlayer(name, password) {
-    if (!(name in this.players)) {
-      this.players[name] = new Player(name, 1000, password);
-      this.debouncedSave();
+      localStorage.setItem('localGameData', JSON.stringify(dataToSave));
       return true;
-    }
-    return false;
-  }
-
-  recordGame(player1Name, player2Name, player1Score, player2Score) {
-    // Validate scores
-    if (typeof player1Score !== 'number' || typeof player2Score !== 'number') {
-      console.error('Invalid scores:', player1Score, player2Score);
-      return null;
-    }
-
-    const player1 = this.players[player1Name];
-    const player2 = this.players[player2Name];
-    
-    if (!player1 || !player2) {
-      console.error('Players not found:', player1Name, player2Name);
-      return null;
-    }
-
-    const winner = player1Score > player2Score ? player1 : player2;
-    const loser = player1Score > player2Score ? player2 : player1;
-
-    // Calculate score changes
-    const pointDifference = Math.abs(player1Score - player2Score);
-    const winnerScoreChange = winner.updateScore(loser, true, pointDifference, this.settings);
-    const loserScoreChange = loser.updateScore(winner, false, pointDifference, this.settings);
-
-    // Create game history entry
-    const gameResult = {
-      player1: player1Name,
-      player2: player2Name,
-      score: `${player1Score} - ${player2Score}`,
-      player1Rank: this.getPlayerRank(player1Name),
-      player2Rank: this.getPlayerRank(player2Name),
-      pointChange1: player1 === winner ? winnerScoreChange : loserScoreChange,
-      pointChange2: player2 === winner ? winnerScoreChange : loserScoreChange,
-      date: new Date().toISOString()
-    };
-
-    return gameResult;
-  }
-
-  getPlayerRank(playerName) {
-    const activePlayers = Object.values(this.players).filter(p => p.active);
-    const sortedPlayers = activePlayers.sort((a, b) => b.score - a.score);
-    const playerIndex = sortedPlayers.findIndex(p => p.name === playerName);
-    return playerIndex !== -1 ? playerIndex + 1 : 'Unranked';
-  }
-
-  getLeaderboard() {
-    const activePlayers = Object.values(this.players)
-      .filter(player => player.active)
-      .sort((a, b) => b.score - a.score)
-      .map(player => ({
-        name: player.name,
-        score: player.score.toFixed(2),
-        ratio: player.winLossRatio(),
-        active: true
-      }));
-
-    const inactivePlayers = Object.values(this.players)
-      .filter(player => !player.active)
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .map(player => ({
-        name: player.name,
-        score: this.settings.DEFAULT_RANK,
-        ratio: player.winLossRatio(),
-        active: false
-      }));
-
-    return [...activePlayers, ...inactivePlayers];
-  }
-
-  getGameHistory() {
-    return this.gameHistory;
-  }
-
-  async testServerConnection() {
-    try {
-      const response = await fetch('/api/test');
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const text = await response.text();
-      console.log('Raw test response:', text);
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (error) {
-        console.error('Failed to parse JSON:', error);
-        throw new Error('Invalid JSON response from server');
-      }
-      console.log('Server test response:', data);
-      return true;
-    } catch (error) {
-      console.error('Error testing server connection:', error);
-      return false;
+    } else {
+      return this.saveServerData();
     }
   }
 
-  async editPlayerPassword(playerName, newPassword) {
-    if (this.players[playerName]) {
-      this.players[playerName].password = newPassword;
-      this.debouncedSave();
-      return true;
-    }
-    return false;
-  }
-
-  async editPlayerScore(playerName, newScore) {
-    if (this.players[playerName]) {
-      this.players[playerName].score = newScore;
-      this.players[playerName].scoreHistory.push(newScore);
-      this.debouncedSave();
-      return true;
-    }
-    return false;
-  }
-
-  async deletePlayer(playerName) {
-    if (this.players[playerName]) {
-      delete this.players[playerName];
-      this.debouncedSave();
-      return true;
-    }
-    return false;
-  }
-
-  async resetAllScores() {
-    Object.values(this.players).forEach(player => {
-      player.score = 1000;
-      player.scoreHistory = [1000];
-      player.gamesPlayed = 0;
-      player.wins = 0;
-      player.losses = 0;
-      player.currentStreak = 0;
-      player.active = false;
-    });
-    this.debouncedSave();
-    return true;
-  }
-
-  async saveSettings() {
-    try {
-      const response = await fetch('/api/saveSettings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(this.settings),
-      });
-      if (!response.ok) {
-        throw new Error('Failed to save settings');
-      }
-    } catch (error) {
-      console.error('Error saving settings:', error);
-      throw error;
-    }
-  }
-
-  getSettings() {
-    return this.settings;
-  }
-
-  async updateSettings(newSettings) {
-    this.settings = { ...this.settings, ...newSettings };
-    this.debouncedSave();
-    return true;
-  }
-
-  async saveGameHistory(gameResult) {
-    this.gameHistory.push(gameResult);
-    this.debouncedSave();
-    return true;
-  }
-
-  setCurrentUser(username) {
+  async setCurrentUser(username) {
     this.currentUser = username;
     localStorage.setItem('currentUser', username);
     return this.loadData();
   }
 
-  async createUser(username, password) {
+  async createUser(username, authType) {
     try {
       if (!username) {
         console.error('No username provided');
-        return false;
+        return { success: false, isNewAccount: false };
       }
 
+      if (this.isLocalMode) {
+        return { 
+          success: await this.setCurrentUser(username), 
+          isNewAccount: true 
+        };
+      }
+
+      // First, get current data
       const response = await fetch('http://localhost:3001/api/getData');
       const data = await response.json();
       
-      let isFirstUser = Object.keys(data.users).length === 0;
-      if (!data.users[username]) {
-        // Create new user with default settings
+      const isNewAccount = !data.users[username];
+      
+      if (isNewAccount) {
+        // Create new user with empty admin password
         data.users[username] = {
           settings: {
-            SCORE_CHANGE_K_FACTOR: 70,
-            POINT_DIFFERENCE_WEIGHT: 6,
-            ACTIVITY_THRESHOLD: 3,
-            DEFAULT_RANK: "Unranked",
-            PLAYER1_SCOREBOARD_COLOR: "#4CAF50",
-            PLAYER2_SCOREBOARD_COLOR: "#2196F3",
-            GAME_HISTORY_KEEP: 30,
-            ADDPLAYER_ADMINONLY: false,
-            ADMIN_PASSWORD: ""
+            ...this.settings,
+            ADMIN_PASSWORD: "" // Ensure new accounts start with empty password
           },
           players: {},
           gameHistory: []
         };
 
+        // Save the new user data and wait for completion
         const saveResponse = await fetch('http://localhost:3001/api/saveData', {
           method: 'POST',
           headers: {
@@ -443,49 +191,139 @@ class DataService {
         if (!saveResponse.ok) {
           throw new Error('Failed to save new user data');
         }
+
+        // Wait for data to be saved and available
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
 
-      // Set current user and load their data
-      await this.setCurrentUser(username);
-      await this.loadData();
+      // Set current user
+      this.currentUser = username;
+      localStorage.setItem('currentUser', username);
       
-      return { success: true, isFirstUser };
+      // Verify data is loaded correctly
+      let retries = 3;
+      while (retries > 0) {
+        try {
+          await this.loadData();
+          if (this.settings && this.settings.ADMIN_PASSWORD !== undefined) {
+            break;
+          }
+        } catch (error) {
+          console.log('Retrying data load...');
+        }
+        await new Promise(resolve => setTimeout(resolve, 500));
+        retries--;
+      }
+
+      return { success: true, isNewAccount };
     } catch (error) {
       console.error('Error in createUser:', error);
-      return { success: false, isFirstUser: false };
+      return { success: false, isNewAccount: false };
+    }
+  }
+
+  getLeaderboard() {
+    const activePlayers = Object.values(this.players)
+      .filter(player => player.active)
+      .sort((a, b) => b.score - a.score)
+      .map(player => ({
+        name: player.name,
+        score: player.score.toFixed(2),
+        ratio: player.winLossRatio,
+        active: true
+      }));
+
+    const inactivePlayers = Object.values(this.players)
+      .filter(player => !player.active)
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map(player => ({
+        name: player.name,
+        score: this.settings.DEFAULT_RANK,
+        ratio: player.winLossRatio,
+        active: false
+      }));
+
+    return [...activePlayers, ...inactivePlayers];
+  }
+
+  async loadServerData() {
+    const response = await fetch('http://localhost:3001/api/getData');
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    
+    if (data.users[this.currentUser]) {
+      const userData = data.users[this.currentUser];
+      this.settings = userData.settings;
+      this.players = userData.players;
+      this.gameHistory = userData.gameHistory;
+      return true;
+    }
+    return false;
+  }
+
+  async saveServerData() {
+    const response = await fetch('http://localhost:3001/api/getData');
+    const data = await response.json();
+    
+    data.users[this.currentUser] = {
+      settings: this.settings,
+      players: this.players,
+      gameHistory: this.gameHistory
+    };
+
+    const saveResponse = await fetch('http://localhost:3001/api/saveData', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data)
+    });
+
+    return saveResponse.ok;
+  }
+
+  async updateSettings(newSettings) {
+    try {
+      this.settings = { ...this.settings, ...newSettings };
+      
+      if (this.isLocalMode) {
+        const localData = JSON.parse(localStorage.getItem('localGameData'));
+        localData.settings = this.settings;
+        localStorage.setItem('localGameData', JSON.stringify(localData));
+        return true;
+      } else {
+        return this.saveServerData();
+      }
+    } catch (error) {
+      console.error('Error updating settings:', error);
+      return false;
     }
   }
 
   async setAdminPassword(password) {
     try {
-      this.settings.ADMIN_PASSWORD = password;
-      await this.updateSettings(this.settings);
-      return true;
+      return await this.updateSettings({
+        ...this.settings,
+        ADMIN_PASSWORD: password
+      });
     } catch (error) {
       console.error('Error setting admin password:', error);
       return false;
     }
   }
 
-  async loginUser(username, password, isGoogleLogin = false) {
-    try {
-      const response = await fetch('http://localhost:3001/api/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          username, 
-          password,
-          isGoogleLogin 
-        })
-      });
-      return response.ok;
-    } catch (error) {
-      console.error('Error logging in:', error);
-      return false;
-    }
+  async saveGameHistory(gameResult) {
+    this.gameHistory.push(gameResult);
+    return this.saveData();
   }
+
+  getGameHistory() {
+    return this.gameHistory || [];
+  }
+
+  // ... rest of your existing methods ...
 }
 
 const dataService = new DataService();

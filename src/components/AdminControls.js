@@ -13,6 +13,7 @@ function AdminControls({ onExit, onAddPlayer }) {
   const [newAdminPassword, setNewAdminPassword] = useState('');
   const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [settings, setSettings] = useState(dataService.settings);
 
   useEffect(() => {
     const loadData = async () => {
@@ -159,7 +160,112 @@ function AdminControls({ onExit, onAddPlayer }) {
     }
   };
 
+  const handleEraseAccount = async () => {
+    if (window.confirm('Are you sure you want to erase all account data? This cannot be undone.')) {
+      try {
+        if (dataService.isLocalMode) {
+          // Clear local storage data
+          localStorage.removeItem('localGameData');
+          localStorage.removeItem('localUserId');
+          localStorage.removeItem('isLocalMode');
+          localStorage.removeItem('currentUser');
+          window.location.reload(); // Force reload to clear the app state
+        } else {
+          // Delete account from data.json
+          const response = await fetch('http://localhost:3001/api/getData');
+          const data = await response.json();
+          
+          delete data.users[dataService.currentUser];
+          
+          const saveResponse = await fetch('http://localhost:3001/api/saveData', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+          });
 
+          if (!saveResponse.ok) {
+            throw new Error('Failed to delete account data');
+          }
+          
+          window.location.reload(); // Force reload to clear the app state
+        }
+      } catch (error) {
+        console.error('Error erasing account:', error);
+        alert('Failed to erase account data. Please try again.');
+      }
+    }
+  };
+
+  const handleDownloadData = () => {
+    try {
+      const data = {
+        settings: dataService.settings,
+        players: dataService.players,
+        gameHistory: dataService.gameHistory
+      };
+      
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `pingpong_backup_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading data:', error);
+      alert('Failed to download save data. Please try again.');
+    }
+  };
+
+  const handleUploadData = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const data = JSON.parse(e.target.result);
+          
+          // Validate the data structure
+          if (!data.settings || !data.players || !data.gameHistory) {
+            throw new Error('Invalid save file format');
+          }
+
+          if (dataService.isLocalMode) {
+            // Update local storage
+            localStorage.setItem('localGameData', JSON.stringify(data));
+          } else {
+            // Update server data
+            const response = await fetch('http://localhost:3001/api/getData');
+            const serverData = await response.json();
+            
+            serverData.users[dataService.currentUser] = data;
+            
+            const saveResponse = await fetch('http://localhost:3001/api/saveData', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(serverData)
+            });
+
+            if (!saveResponse.ok) {
+              throw new Error('Failed to upload save data');
+            }
+          }
+          
+          window.location.reload(); // Reload to apply the new data
+        } catch (error) {
+          console.error('Error uploading data:', error);
+          alert('Failed to upload save file. Please ensure the file is valid.');
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
 
   return (
     <div className="admin-controls">
@@ -264,17 +370,36 @@ function AdminControls({ onExit, onAddPlayer }) {
         )}
       </div>
 
-      <div className="exit-button-container">
-        <button 
-          className="exit-btn"
-          onClick={() => {
-            setIsAdmin(false);
-            if (onExit) onExit();
-          }}
-        >
-          Exit Admin Controls
-        </button>
+      <div className="data-management-section">
+        <h3>Data Management</h3>
+        <div className="button-group">
+          <button 
+            className="btn danger" 
+            onClick={handleEraseAccount}
+          >
+            Erase Account Data
+          </button>
+          
+          <button 
+            className="btn" 
+            onClick={handleDownloadData}
+          >
+            Download Save Data
+          </button>
+          
+          <label className="btn upload-btn">
+            Upload Save File
+            <input
+              type="file"
+              accept=".json"
+              style={{ display: 'none' }}
+              onChange={handleUploadData}
+            />
+          </label>
+        </div>
       </div>
+
+      <button className="btn exit-btn" onClick={onExit}>Exit Admin Controls</button>
     </div>
   );
 }

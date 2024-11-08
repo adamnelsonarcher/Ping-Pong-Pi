@@ -265,3 +265,42 @@ button[type="button"].delete-player-btn {
 .admin-controls *::after {
   box-sizing: border-box;
 }
+
+.data-management-section {
+  margin: 20px 0;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.data-management-section h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+}
+
+.button-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn.danger {
+  background-color: #dc3545;
+}
+
+.btn.danger:hover {
+  background-color: #c82333;
+}
+
+.upload-btn {
+  position: relative;
+  cursor: pointer;
+}
+
+.upload-btn input[type="file"] {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  cursor: pointer;
+}

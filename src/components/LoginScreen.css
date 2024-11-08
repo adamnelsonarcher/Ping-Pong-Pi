@@ -51,4 +51,27 @@
 .login-screen .toggle-mode:hover {
   color: #333;
   background: none;
+}
+
+.login-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  max-width: 300px;
+}
+
+.local-login-btn {
+  padding: 10px 20px;
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.2s;
+}
+
+.local-login-btn:hover {
+  background-color: #1976D2;
 } 
