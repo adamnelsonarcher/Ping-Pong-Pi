@@ -93,11 +93,14 @@ class DataService {
     this.gameHistory = [];
     this.settings = {};
     this.currentUser = localStorage.getItem('currentUser') || 'admin';
+    this.isLocalMode = localStorage.getItem('isLocalMode') === 'true';
     this.saveTimeout = null;
-    this.SAVE_DELAY = 1000; // 1 second delay for batching saves
+    this.SAVE_DELAY = 1000;
+
+    // Bind the method to this instance
+    this.debouncedSave = this.debouncedSave.bind(this);
   }
 
-  // New method for debounced saving
   debouncedSave() {
     if (this.saveTimeout) {
       clearTimeout(this.saveTimeout);
@@ -107,119 +110,122 @@ class DataService {
     }, this.SAVE_DELAY);
   }
 
+  setLocalMode(isLocal) {
+    this.isLocalMode = isLocal;
+    localStorage.setItem('isLocalMode', isLocal.toString());
+  }
+
   async loadData() {
-    try {
-      const response = await fetch('http://localhost:3001/api/getData');
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      
-      // If user doesn't exist, create them with default data
-      if (!data.users[this.currentUser]) {
-        data.users[this.currentUser] = {
-          settings: {
-            SCORE_CHANGE_K_FACTOR: 70,
-            POINT_DIFFERENCE_WEIGHT: 6,
-            ACTIVITY_THRESHOLD: 3,
-            DEFAULT_RANK: "Unranked",
-            PLAYER1_SCOREBOARD_COLOR: "#4CAF50",
-            PLAYER2_SCOREBOARD_COLOR: "#2196F3",
-            GAME_HISTORY_KEEP: 30,
-            ADDPLAYER_ADMINONLY: false,
-            ADMIN_PASSWORD: ''
-          },
-          players: {},
-          gameHistory: []
-        };
+    if (this.isLocalMode) {
+      const localData = JSON.parse(localStorage.getItem('localGameData'));
+      if (localData) {
+        this.settings = localData.settings;
+        this.gameHistory = localData.gameHistory || [];
+        this.players = {};
         
-        // Save the new user data
-        await this.saveData();
+        // Properly reconstruct Player objects
+        Object.entries(localData.players || {}).forEach(([name, playerData]) => {
+          const player = new Player(
+            playerData.name,
+            playerData.score,
+            playerData.password
+          );
+          Object.assign(player, playerData);
+          this.players[name] = player;
+        });
+        return true;
       }
-      
-      const userData = data.users[this.currentUser];
-      this.settings = userData.settings;
-      this.gameHistory = userData.gameHistory || [];
-      this.players = {};
-      
-      Object.entries(userData.players || {}).forEach(([name, playerData]) => {
-        const player = new Player(
-          playerData.name,
-          playerData.score,
-          playerData.password
-        );
-        Object.assign(player, playerData);
-        this.players[name] = player;
-      });
-    } catch (error) {
-      console.error('Error loading data:', error);
-      throw error;
+      return false;
+    } else {
+      try {
+        const response = await fetch('http://localhost:3001/api/getData');
+        if (!response.ok) throw new Error('Failed to fetch data');
+        const data = await response.json();
+        
+        if (!data.users[this.currentUser]) {
+          data.users[this.currentUser] = {
+            settings: {
+              SCORE_CHANGE_K_FACTOR: 70,
+              POINT_DIFFERENCE_WEIGHT: 6,
+              ACTIVITY_THRESHOLD: 3,
+              DEFAULT_RANK: "Unranked",
+              PLAYER1_SCOREBOARD_COLOR: "#4CAF50",
+              PLAYER2_SCOREBOARD_COLOR: "#2196F3",
+              GAME_HISTORY_KEEP: 30,
+              ADDPLAYER_ADMINONLY: false,
+              ADMIN_PASSWORD: ""
+            },
+            players: {},
+            gameHistory: []
+          };
+          await this.saveData();
+        }
+
+        const userData = data.users[this.currentUser];
+        this.settings = userData.settings;
+        this.gameHistory = userData.gameHistory || [];
+        this.players = {};
+        
+        Object.entries(userData.players || {}).forEach(([name, playerData]) => {
+          const player = new Player(
+            playerData.name,
+            playerData.score,
+            playerData.password
+          );
+          Object.assign(player, playerData);
+          this.players[name] = player;
+        });
+        return true;
+      } catch (error) {
+        console.error('Error loading data:', error);
+        throw error;
+      }
     }
   }
 
   async saveData() {
-    try {
-      if (!this.currentUser || this.currentUser === 'undefined') {
-        throw new Error('No valid user set');
-      }
-
-      // First get the current data
-      const response = await fetch('http://localhost:3001/api/getData');
-      const data = await response.json();
-
-      // Update only the current user's data
-      data.users[this.currentUser] = {
+    if (this.isLocalMode) {
+      const dataToSave = {
         settings: this.settings,
-        players: {},
-        gameHistory: this.gameHistory || []
+        players: this.players,
+        gameHistory: this.gameHistory
       };
-
-      // Convert Player instances to plain objects
-      Object.entries(this.players).forEach(([name, player]) => {
-        data.users[this.currentUser].players[name] = {
-          name: player.name,
-          score: player.score,
-          gamesPlayed: player.gamesPlayed,
-          wins: player.wins,
-          losses: player.losses,
-          password: player.password,
-          currentStreak: player.currentStreak,
-          maxWinStreak: player.maxWinStreak,
-          lifetimeGamesPlayed: player.lifetimeGamesPlayed,
-          lifetimeWins: player.lifetimeWins,
-          lifetimeLosses: player.lifetimeLosses,
-          lifetimeScore: player.lifetimeScore,
-          active: player.active,
-          scoreHistory: player.scoreHistory
+      localStorage.setItem('localGameData', JSON.stringify(dataToSave));
+      return true;
+    } else {
+      try {
+        const response = await fetch('http://localhost:3001/api/getData');
+        const data = await response.json();
+        
+        data.users[this.currentUser] = {
+          settings: this.settings,
+          players: this.players,
+          gameHistory: this.gameHistory
         };
-      });
 
-      // Remove any 'undefined' user entry
-      if (data.users['undefined']) {
-        delete data.users['undefined'];
+        const saveResponse = await fetch('http://localhost:3001/api/saveData', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        if (!saveResponse.ok) throw new Error('Failed to save data');
+        return true;
+      } catch (error) {
+        console.error('Error saving data:', error);
+        throw error;
       }
-
-      const saveResponse = await fetch('http://localhost:3001/api/saveData', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data)
-      });
-
-      if (!saveResponse.ok) {
-        throw new Error('Failed to save data');
-      }
-    } catch (error) {
-      console.error('Error saving data:', error);
-      throw error;
     }
   }
 
   addPlayer(name, password) {
     if (!(name in this.players)) {
       this.players[name] = new Player(name, 1000, password);
-      this.debouncedSave();
+      if (this.isLocalMode) {
+        this.saveData(); // Immediate save for local storage
+      } else {
+        this.debouncedSave(); // Debounced save for server
+      }
       return true;
     }
     return false;

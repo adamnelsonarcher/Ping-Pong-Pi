@@ -219,22 +219,24 @@ function App() {
   };
 
   const handleLogout = () => {
-    // Clear all local state
+    const isLocalMode = localStorage.getItem('isLocalMode') === 'true';
+    
     setSelectedPlayers({ player1: null, player2: null });
     setLeaderboard([]);
     setGameHistory([]);
     setPlayers([]);
-    setGameHistoryKeep(10);
+    setCurrentScreen('login');
     
-    // Clear localStorage
-    localStorage.removeItem('selectedPlayer1');
-    localStorage.removeItem('selectedPlayer2');
+    // Clear session-specific items
     localStorage.removeItem('currentUser');
     
-    // Reset dataService to default state
+    // Only clear these if we're not in local mode
+    if (!isLocalMode) {
+      localStorage.removeItem('isLocalMode');
+    }
+    
     dataService.currentUser = null;
     setCurrentUser(null);
-    setCurrentScreen('login');
   };
 
   const handleLogin = async (username) => {

@@ -7,7 +7,6 @@ import { signInWithPopup } from 'firebase/auth';
 function LoginScreen({ onLogin }) {
   const handleGoogleLogin = async () => {
     try {
-      console.log('Starting Google login process...');
       const result = await signInWithPopup(auth, googleProvider);
       
       if (!result.user || !result.user.email) {
@@ -15,51 +14,72 @@ function LoginScreen({ onLogin }) {
       }
       
       const email = result.user.email;
-      console.log('Got email:', email);
-      
-      // Create/verify user and set as current
-      console.log('Creating/verifying user...');
-      const success = await dataService.createUser(email, 'google-auth');
-      console.log('Create/verify user result:', success);
-      
-      if (!success) {
-        throw new Error('Failed to create/verify user');
-      }
-      
-      // Ensure data is loaded before proceeding
-      await dataService.loadData();
-      
-      // Set the current user in localStorage
+      dataService.setLocalMode(false); // Ensure server mode for Google login
       localStorage.setItem('currentUser', email);
-      
-      // Notify parent of successful login
-      console.log('Login successful, notifying parent...');
       onLogin(email);
     } catch (error) {
-      console.error('Google login error details:', {
-        message: error.message,
-        code: error.code,
-        stack: error.stack
-      });
-      
+      console.error('Google login error:', error);
       if (error.code !== 'auth/cancelled-popup-request') {
         alert('Failed to login with Google. Please try again.');
       }
-      // Reset everything on error
       dataService.currentUser = null;
       localStorage.removeItem('currentUser');
+    }
+  };
+
+  const handleLocalLogin = async () => {
+    try {
+      const localId = 'local_user';
+      dataService.setLocalMode(true);
+      localStorage.setItem('currentUser', localId);
+      
+      // Initialize local storage if it doesn't exist
+      if (!localStorage.getItem('localGameData')) {
+        const defaultData = {
+          settings: {
+            SCORE_CHANGE_K_FACTOR: 70,
+            POINT_DIFFERENCE_WEIGHT: 6,
+            ACTIVITY_THRESHOLD: 3,
+            DEFAULT_RANK: "Unranked",
+            PLAYER1_SCOREBOARD_COLOR: "#4CAF50",
+            PLAYER2_SCOREBOARD_COLOR: "#2196F3",
+            GAME_HISTORY_KEEP: 30,
+            ADDPLAYER_ADMINONLY: false,
+            ADMIN_PASSWORD: ""
+          },
+          players: {},
+          gameHistory: []
+        };
+        localStorage.setItem('localGameData', JSON.stringify(defaultData));
+      }
+      
+      onLogin(localId);
+    } catch (error) {
+      console.error('Local login error:', error);
+      alert('Failed to initialize local storage. Please try again.');
+      localStorage.removeItem('localGameData');
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('isLocalMode');
     }
   };
 
   return (
     <div className="login-screen">
       <h2>Welcome to Ping Pong Scoreboard</h2>
-      <button 
-        className="google-login-btn" 
-        onClick={handleGoogleLogin}
-      >
-        Login with Google
-      </button>
+      <div className="login-buttons">
+        <button 
+          className="google-login-btn" 
+          onClick={handleGoogleLogin}
+        >
+          Login with Google
+        </button>
+        <button 
+          className="local-login-btn" 
+          onClick={handleLocalLogin}
+        >
+          Use Local Storage
+        </button>
+      </div>
     </div>
   );
 }
