@@ -50,19 +50,8 @@
 
 /* Buttons */
 .admin-controls button {
-  padding: 10px 15px;
-  font-size: 1rem;
-  border-radius: 4px;
-  border: none;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-
-.admin-controls button {
   padding: 8px 16px;
   margin-right: 10px;
-  margin-left: 10px;
   margin-bottom: 10px;
   font-size: 1rem;
   font-weight: 600;
@@ -118,10 +107,13 @@
   align-items: center;
   gap: 8px;
   margin-bottom: 10px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .password-input-container input {
   flex: 1;
+  min-width: 0;
 }
 
 .password-toggle-btn {
@@ -181,4 +173,95 @@ button.reset-defaults-btn {
 button[type="button"].delete-player-btn {
   background-color: #e74c3c; /* Red */
   color: white;
+}
+
+.delete-btn {
+  background-color: #e74c3c; /* Red */
+  color: white;
+}
+
+.button-group {
+  display: flex;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.standard-btn:hover {
+  background-color: #45a049;
+}
+
+.delete-btn:hover {
+  background-color: #c0392b;
+}
+
+.reset-btn:hover {
+  background-color: #e67e22;
+}
+
+.save-btn:hover {
+  background-color: #1976D2;
+}
+
+.reset-defaults-btn:hover {
+  background-color: #e67e22;
+}
+
+/* Add these input styles */
+.admin-controls input[type="text"],
+.admin-controls input[type="password"],
+.admin-controls input[type="number"],
+.admin-controls select,
+.admin-controls input[type="email"] {
+  width: 100%;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+  box-sizing: border-box;
+}
+
+.admin-controls input[type="text"]:focus,
+.admin-controls input[type="password"]:focus,
+.admin-controls input[type="number"]:focus,
+.admin-controls select:focus,
+.admin-controls input[type="email"]:focus {
+  outline: none;
+  border-color: #2196F3;
+  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+}
+
+/* Color input specific styling */
+.admin-controls input[type="color"] {
+  width: 50px;
+  height: 40px;
+  padding: 2px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Update button styles to ensure Reset to Defaults is properly colored */
+.reset-defaults-btn {
+  background-color: #f39c12 !important; /* Orange */
+  color: white;
+  width: auto;
+  margin: 10px 0;
+}
+
+.reset-defaults-btn:hover {
+  background-color: #e67e22 !important;
+}
+
+/* Form styling */
+.admin-controls form {
+  margin-bottom: 20px;
+}
+
+/* Add this to ensure all form elements follow the same box model */
+.admin-controls *,
+.admin-controls *::before,
+.admin-controls *::after {
+  box-sizing: border-box;
 }

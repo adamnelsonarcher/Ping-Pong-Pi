@@ -194,7 +194,7 @@ function AdminControls({ onExit, onAddPlayer }) {
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
           />
-          <button type="submit" class="standard-btn">Update Password</button>
+          <button type="submit" className="standard-btn">Update Password</button>
         </form>
 
         <form onSubmit={handleEditScore}>
@@ -204,7 +204,7 @@ function AdminControls({ onExit, onAddPlayer }) {
             value={newScore}
             onChange={(e) => setNewScore(e.target.value)}
           />
-          <button type="submit" class="standard-btn">Update Score</button>
+          <button type="submit" className="standard-btn">Update Score</button>
         </form>
 
         <div className="button-group">

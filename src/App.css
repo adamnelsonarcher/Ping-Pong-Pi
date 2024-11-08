@@ -319,3 +319,13 @@ h2 {
   height: 100vh;
   overflow-y: auto;
 }
+
+/* Add this at the top of your App.css */
+* {
+  box-sizing: border-box;
+}
+
+input, select, textarea {
+  box-sizing: border-box;
+  max-width: 100%;
+}
