@@ -1,10 +1,67 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import './LoginScreen.css';
 import dataService from '../services/dataService';
 import { auth, googleProvider } from '../config/firebase';
 import { signInWithPopup } from 'firebase/auth';
 
 function LoginScreen({ onLogin }) {
+  const canvasRef = useRef(null);
+  const ballRef = useRef({
+    x: 100,
+    y: 100,
+    dx: 4,
+    dy: 4,
+    radius: 8
+  });
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    let animationFrameId;
+    
+    const resizeCanvas = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+
+    const drawBall = () => {
+      const ball = ballRef.current;
+      
+      // Clear canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw ball
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.closePath();
+      
+      // Update position
+      ball.x += ball.dx;
+      ball.y += ball.dy;
+      
+      // Bounce off walls
+      if (ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) {
+        ball.dx = -ball.dx;
+      }
+      if (ball.y + ball.dy > canvas.height - ball.radius || ball.y + ball.dy < ball.radius) {
+        ball.dy = -ball.dy;
+      }
+      
+      animationFrameId = requestAnimationFrame(drawBall);
+    };
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    drawBall();
+
+    return () => {
+      window.removeEventListener('resize', resizeCanvas);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, []);
+
   const handleGoogleLogin = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
@@ -14,7 +71,7 @@ function LoginScreen({ onLogin }) {
       }
       
       const email = result.user.email;
-      dataService.setLocalMode(false); // Ensure server mode for Google login
+      dataService.setLocalMode(false);
       localStorage.setItem('currentUser', email);
       onLogin(email);
     } catch (error) {
@@ -65,20 +122,31 @@ function LoginScreen({ onLogin }) {
 
   return (
     <div className="login-screen">
-      <h2>Welcome to Ping Pong Scoreboard</h2>
-      <div className="login-buttons">
-        <button 
-          className="google-login-btn" 
-          onClick={handleGoogleLogin}
-        >
-          Login with Google
-        </button>
-        <button 
-          className="local-login-btn" 
-          onClick={handleLocalLogin}
-        >
-          Use Local Storage
-        </button>
+      <canvas ref={canvasRef} className="background-canvas" />
+      <div className="login-content">
+        <div className="logo-container">
+          <h1>🏓</h1>
+          <h2>Ping Pong Pi</h2>
+        </div>
+        <div className="login-buttons">
+          <button 
+            className="google-login-btn" 
+            onClick={handleGoogleLogin}
+          >
+            <span className="btn-icon">G</span>
+            <span className="btn-text">Login with Google</span>
+          </button>
+          <div className="divider">
+            <span>or</span>
+          </div>
+          <button 
+            className="local-login-btn" 
+            onClick={handleLocalLogin}
+          >
+            <span className="btn-icon">💾</span>
+            <span className="btn-text">Use Local Storage</span>
+          </button>
+        </div>
       </div>
     </div>
   );
