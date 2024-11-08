@@ -31,6 +31,11 @@ function App() {
     const initializeApp = async () => {
       if (currentUser) {
         try {
+          const isLocalMode = localStorage.getItem('isLocalMode') === 'true';
+          if (isLocalMode) {
+            dataService.setLocalMode(true);
+          }
+          
           await dataService.setCurrentUser(currentUser);
           await dataService.loadData();
           const players = Object.values(dataService.players);
@@ -154,12 +159,18 @@ function App() {
   };
 
   const handleStartGame = () => {
-    if (selectedPlayers.player1 && selectedPlayers.player2) {
-      setCurrentScreen('game');
-      setGameInProgress(true);
-    } else {
+    if (!selectedPlayers.player1 || !selectedPlayers.player2) {
       alert("Please select two players before starting a game.");
+      return;
     }
+    
+    if (selectedPlayers.player1 === selectedPlayers.player2) {
+      alert("Please select different players - the same player cannot play against themselves.");
+      return;
+    }
+
+    setCurrentScreen('game');
+    setGameInProgress(true);
   };
 
   const handlePlayerSelect = (playerName, index) => {
@@ -220,40 +231,66 @@ function App() {
 
   const handleLogout = () => {
     const isLocalMode = localStorage.getItem('isLocalMode') === 'true';
-    
+
+    // Clear current session state
     setSelectedPlayers({ player1: null, player2: null });
     setLeaderboard([]);
     setGameHistory([]);
     setPlayers([]);
-    setCurrentScreen('login');
+    setGameHistoryKeep(10);
     
-    // Clear session-specific items
+    // Clear only session-specific localStorage items
     localStorage.removeItem('currentUser');
     
     // Only clear these if we're not in local mode
     if (!isLocalMode) {
+      localStorage.removeItem('localUserId');
+      localStorage.removeItem('localGameData');
       localStorage.removeItem('isLocalMode');
     }
     
+    // Reset dataService to default state
     dataService.currentUser = null;
     setCurrentUser(null);
+    setCurrentScreen('login');
   };
 
-  const handleLogin = async (username) => {
-    const result = await dataService.createUser(username);
-    if (result.success) {
-      if (result.isFirstUser) {
+  const handleLogin = async (username, isNewAccount) => {
+    setCurrentUser(username);
+    
+    try {
+      await dataService.loadData();
+      
+      // Only show admin password prompt for new accounts or empty passwords
+      if (isNewAccount || !dataService.settings?.ADMIN_PASSWORD) {
         setShowAdminPasswordPrompt(true);
       } else {
-        setCurrentUser(username);
         setCurrentScreen('main');
       }
+    } catch (error) {
+      console.error('Error during login:', error);
+      handleLogout();
     }
   };
 
   const handleSetAdminPassword = async (password) => {
     try {
-      await dataService.setAdminPassword(password);
+      if (dataService.isLocalMode) {
+        // For local mode, update the settings directly in localStorage
+        const localData = JSON.parse(localStorage.getItem('localGameData'));
+        localData.settings.ADMIN_PASSWORD = password;
+        localStorage.setItem('localGameData', JSON.stringify(localData));
+        
+        // Update dataService settings
+        dataService.settings.ADMIN_PASSWORD = password;
+      } else {
+        // For server mode
+        await dataService.updateSettings({
+          ...dataService.settings,
+          ADMIN_PASSWORD: password
+        });
+      }
+      
       setShowAdminPasswordPrompt(false);
       setCurrentScreen('main');
     } catch (error) {
