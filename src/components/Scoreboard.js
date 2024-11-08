@@ -87,7 +87,7 @@ function Scoreboard({ player1, player2, onGameEnd, onQuitGame }) {
   }, [player1Score, player2Score]);
 
   return (
-    <div className="Scoreboard" tabIndex="0">
+    <div className="Scoreboard game-transition-enter" tabIndex="0">
       <div className="score-container">
         {[player1, player2].map((player, index) => (
           <div key={player} className={`player-score ${index === 0 ? 'green' : 'blue'}`}>
