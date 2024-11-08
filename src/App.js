@@ -11,6 +11,7 @@ import { useSettings } from './contexts/SettingsContext';
 import UserAccount from './components/UserAccount';
 import LoginScreen from './components/LoginScreen';
 import AdminPasswordPrompt from './components/AdminPasswordPrompt';
+import InfoButton from './components/InfoButton';
 
 function App() {
   const [currentUser, setCurrentUser] = useState(localStorage.getItem('currentUser'));
@@ -312,7 +313,6 @@ function App() {
             />
           ) : (
             <>
-              <UserAccount currentUser={currentUser} onLogout={handleLogout} />
               {currentScreen === 'main' && (
                 <>
                   <main className="App-main">
@@ -346,6 +346,7 @@ function App() {
                       <button className="btn admin-controls" onClick={handleAdminClick}>
                         Admin
                       </button>
+                      <InfoButton currentUser={currentUser} onLogout={handleLogout} />
                     </div>
                   </footer>
                 </>
