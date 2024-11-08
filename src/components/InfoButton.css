@@ -1,10 +1,26 @@
 .info-btn {
-  background-color: #2196F3;
-  color: white;
+  background-color: #e9e9e9f1;
+  color: rgb(0, 0, 0);
+  min-width: 60px;
+  padding: 0.5rem;
+  position: relative;
+}
+
+.info-icon {
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  border: 2px solid rgb(0, 0, 0);
+  border-radius: 50%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: normal;
+  line-height: 24px;
+  text-align: center;
+  font-size: 20px;
 }
 
 .info-btn:hover {
-  background-color: #1976D2;
+  background-color: #c4c4c4f1;
 }
 
 .modal-overlay {
@@ -22,60 +38,109 @@
 
 .info-popup {
   position: relative;
-  width: 300px;
+  width: 600px;
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 20px rgba(0,0,0,0.2);
-  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+  padding: 30px;
 }
 
 .info-content {
+  text-align: left;
+}
+
+.info-content h2 {
+  color: #1a1a1a;
+  font-size: 1.8rem;
+  margin: 0 0 20px 0;
   text-align: center;
 }
 
-.info-content h3 {
-  margin: 0 0 10px 0;
-  color: #333;
+.info-section {
+  margin: 25px 0;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.info-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.info-section h3 {
+  color: #2196F3;
+  font-size: 1.2rem;
+  margin: 0 0 15px 0;
+}
+
+.info-section p {
+  color: #4a4a4a;
+  font-size: 1rem;
+  line-height: 1.5;
+  margin: 8px 0;
+}
+
+.links-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.info-link {
+  display: flex;
+  align-items: center;
+  color: #2196F3;
+  text-decoration: none;
+  font-size: 1rem;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: #f5f9ff;
+  transition: background 0.2s ease;
+}
+
+.info-link:hover {
+  background: #e3f2fd;
+  text-decoration: none;
+}
+
+.link-icon {
+  margin-right: 10px;
   font-size: 1.2rem;
 }
 
-.info-content p {
-  margin: 5px 0;
+.account-section {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-top: 30px;
+}
+
+.email-label {
   color: #666;
   font-size: 0.9rem;
 }
 
-.info-content a {
-  color: #2196F3;
-  text-decoration: none;
-  font-size: 0.9rem;
-}
-
-.info-content a:hover {
-  text-decoration: underline;
-}
-
-.account-section {
-  margin-top: 15px;
-  padding-top: 15px;
-  border-top: 1px solid #eee;
-}
-
 .user-email {
-  font-size: 0.85rem;
-  color: #888;
+  background: white;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  margin: 10px 0;
   word-break: break-all;
 }
 
 .logout-button {
-  margin-top: 10px;
-  padding: 8px 16px;
+  width: 100%;
+  padding: 12px;
   background-color: #dc3545;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
 }
 
 .logout-button:hover {
@@ -84,20 +149,76 @@
 
 .close-btn {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  background: none;
+  top: 15px;
+  right: 15px;
+  background: #f0f0f0;
   border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
   font-size: 20px;
   color: #666;
   cursor: pointer;
-  width: 24px;
-  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s ease;
 }
 
 .close-btn:hover {
+  background: #e0e0e0;
   color: #333;
+}
+
+.version-header {
+  text-align: center;
+  margin-bottom: 25px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.version-header h2 {
+  margin: 0;
+  color: #1a1a1a;
+  font-size: 2rem;
+}
+
+.version-info {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.version-tag {
+  display: inline-block;
+  background: #e3f2fd;
+  color: #2196F3;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+
+.changelog-link {
+  color: #2196F3;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.changelog-link:hover {
+  text-decoration: underline;
+}
+
+.personal-link {
+  display: inline;
+  color: #2196F3;
+  text-decoration: none;
+  font-size: 0.9rem;
+  margin-left: 5px;
+}
+
+.personal-link:hover {
+  text-decoration: underline;
 } 
