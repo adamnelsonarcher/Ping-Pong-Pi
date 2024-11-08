@@ -275,6 +275,24 @@
             1000,
             1060
           ]
+        },
+        "test5": {
+          "name": "test5",
+          "score": 1000,
+          "gamesPlayed": 0,
+          "wins": 0,
+          "losses": 0,
+          "password": "123",
+          "currentStreak": 0,
+          "maxWinStreak": 0,
+          "lifetimeGamesPlayed": 0,
+          "lifetimeWins": 0,
+          "lifetimeLosses": 0,
+          "lifetimeScore": 1000,
+          "active": false,
+          "scoreHistory": [
+            1000
+          ]
         }
       },
       "gameHistory": [

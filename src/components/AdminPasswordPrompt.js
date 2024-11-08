@@ -22,24 +22,57 @@ function AdminPasswordPrompt({ onSubmit }) {
   return (
     <div className="admin-password-prompt">
       <div className="prompt-content">
-        <h2>Set Admin Password</h2>
-        <p>To finish creating your account, set an account to be used for the "admin settings" panel. This is a place you can change major game settings and edit player data. Set a password so not everyone can access it.</p>
+        <div className="prompt-header">
+          <span className="lock-icon">🔒</span>
+          <h2>Set Admin Password</h2>
+        </div>
+        
+        <div className="info-section">
+          <div className="info-card">
+            <h3>What is this for?</h3>
+            <p>The admin settings panel lets you:</p>
+            <ul>
+              <li>Modify game settings</li>
+              <li>Edit player data</li>
+              <li>Manage system preferences</li>
+            </ul>
+            <p>This basically makes sure that not everyone can mess with the important stuff</p>
+          </div>
+          
+        </div>
+
         <form onSubmit={handleSubmit}>
-          <input
-            type="password"
-            placeholder="Enter admin password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <input
-            type="password"
-            placeholder="Confirm admin password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-          />
-          {error && <div className="error-message">{error}</div>}
+          <div className="password-inputs">
+            <div className="input-group">
+              <label htmlFor="password">Password</label>
+              <input
+                id="password"
+                type="password"
+                placeholder="Enter admin password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            
+            <div className="input-group">
+              <label htmlFor="confirmPassword">Confirm Password</label>
+              <input
+                id="confirmPassword"
+                type="password"
+                placeholder="Confirm admin password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </div>
+          </div>
+          
+          {error && <div className="error-message">⚠️ {error}</div>}
+          
           <div className="button-group">
-            <button type="submit">Set Admin Password</button>
+            <button type="submit">
+              <span className="btn-icon">🔐</span>
+              Set Password
+            </button>
           </div>
         </form>
       </div>
