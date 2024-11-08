@@ -127,6 +127,7 @@ function LoginScreen({ onLogin }) {
         <div className="logo-container">
           <h1>🏓</h1>
           <h2>Ping Pong Pi</h2>
+          <p className="subtitle">A scoreboard display to track ping pong scores and display stats</p>
         </div>
         <div className="login-buttons">
           <button 
@@ -147,6 +148,9 @@ function LoginScreen({ onLogin }) {
             <span className="btn-text">Use Local Storage</span>
           </button>
         </div>
+      </div>
+      <div className="attribution">
+        by <a href="https://nelsonarcher.com" target="_blank" rel="noopener noreferrer">Adam Nelson-Archer</a>
       </div>
     </div>
   );

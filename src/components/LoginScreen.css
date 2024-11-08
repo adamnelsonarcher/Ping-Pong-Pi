@@ -48,6 +48,16 @@
   font-weight: 600;
 }
 
+.logo-container .subtitle {
+  color: rgba(190, 190, 190, 0.8);
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 400;
+  max-width: 300px;
+  margin: 0 auto;
+  line-height: 1.4;
+}
+
 .login-buttons {
   display: flex;
   flex-direction: column;
@@ -121,4 +131,26 @@
   60% {
     transform: translateY(-10px);
   }
+}
+
+.attribution {
+  position: absolute;
+  bottom: 1rem;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.9rem;
+  z-index: 2;
+}
+
+.attribution a {
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.attribution a:hover {
+  color: white;
+  text-decoration: underline;
 }

@@ -377,6 +377,14 @@
           "pointChange1": -60.63414541363501,
           "pointChange2": 95.87207583397125,
           "date": "2024-11-08T08:21:27.149Z"
+        },
+        {
+          "player1": "565",
+          "player2": "123",
+          "score": "Quit",
+          "pointChange1": 0,
+          "pointChange2": 0,
+          "date": "2024-11-08T08:22:09.557Z"
         }
       ]
     }
