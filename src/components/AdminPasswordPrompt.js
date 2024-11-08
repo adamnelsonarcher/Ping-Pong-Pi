@@ -23,7 +23,7 @@ function AdminPasswordPrompt({ onSubmit }) {
     <div className="admin-password-prompt">
       <div className="prompt-content">
         <h2>Set Admin Password</h2>
-        <p>This is the first account created on this system. Please set an admin password that will be used to access game settings.</p>
+        <p>To finish creating your account, set an account to be used for the "admin settings" panel. This is a place you can change major game settings and edit player data. Set a password so not everyone can access it.</p>
         <form onSubmit={handleSubmit}>
           <input
             type="password"

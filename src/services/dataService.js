@@ -127,7 +127,7 @@ class DataService {
             PLAYER2_SCOREBOARD_COLOR: "#2196F3",
             GAME_HISTORY_KEEP: 30,
             ADDPLAYER_ADMINONLY: false,
-            ADMIN_PASSWORD: 'google-auth'
+            ADMIN_PASSWORD: ''
           },
           players: {},
           gameHistory: []
@@ -426,7 +426,7 @@ class DataService {
             PLAYER2_SCOREBOARD_COLOR: "#2196F3",
             GAME_HISTORY_KEEP: 30,
             ADDPLAYER_ADMINONLY: false,
-            ADMIN_PASSWORD: isFirstUser ? "" : "admin" // Empty only for first user
+            ADMIN_PASSWORD: ""
           },
           players: {},
           gameHistory: []
