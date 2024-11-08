@@ -8,9 +8,13 @@ import AdminControls from './components/AdminControls';
 import InputModal from './components/InputModal';
 import dataService, { getPlayers, endGame, quitGame, getSettings } from './services/dataService';
 import { useSettings } from './contexts/SettingsContext';
+import UserAccount from './components/UserAccount';
+import LoginScreen from './components/LoginScreen';
+import AdminPasswordPrompt from './components/AdminPasswordPrompt';
 
 function App() {
-  const [currentScreen, setCurrentScreen] = useState('main');
+  const [currentUser, setCurrentUser] = useState(localStorage.getItem('currentUser'));
+  const [currentScreen, setCurrentScreen] = useState('login');
   const [selectedPlayers, setSelectedPlayers] = useState({ player1: null, player2: null });
   const [leaderboard, setLeaderboard] = useState([]);
   const [gameHistory, setGameHistory] = useState([]);
@@ -21,6 +25,33 @@ function App() {
   const [gameHistoryKeep, setGameHistoryKeep] = useState(10); // default value
   const { settings } = useSettings();
   const [showAdminPrompt, setShowAdminPrompt] = useState(false);
+  const [showAdminPasswordPrompt, setShowAdminPasswordPrompt] = useState(false);
+
+  useEffect(() => {
+    const initializeApp = async () => {
+      if (currentUser) {
+        try {
+          await dataService.setCurrentUser(currentUser);
+          await dataService.loadData();
+          const players = Object.values(dataService.players);
+          setPlayers(players);
+          setLeaderboard(dataService.getLeaderboard());
+          setGameHistory(dataService.gameHistory);
+          setGameHistoryKeep(dataService.settings.GAME_HISTORY_KEEP);
+          setCurrentScreen('main');
+        } catch (error) {
+          console.error('Error initializing app:', error);
+          if (!error.message.includes('User not found')) {
+            handleLogout();
+          }
+        }
+      } else {
+        setCurrentScreen('login');
+      }
+    };
+    
+    initializeApp();
+  }, [currentUser]);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -161,11 +192,12 @@ function App() {
   };
 
   const handleAdminAccess = (values) => {
-    if (settings && values.password === settings.ADMIN_PASSWORD) {
+    if (dataService.settings && values.password === dataService.settings.ADMIN_PASSWORD) {
       setCurrentScreen('admin');
       setIsModalOpen(false);
     } else {
       alert('Incorrect admin password');
+      setIsModalOpen(false);
     }
   };
 
@@ -180,58 +212,112 @@ function App() {
     setIsModalOpen(true);
   };
 
+  const handleLogout = () => {
+    // Clear all local state
+    setSelectedPlayers({ player1: null, player2: null });
+    setLeaderboard([]);
+    setGameHistory([]);
+    setPlayers([]);
+    setGameHistoryKeep(10);
+    
+    // Clear localStorage
+    localStorage.removeItem('selectedPlayer1');
+    localStorage.removeItem('selectedPlayer2');
+    localStorage.removeItem('currentUser');
+    
+    // Reset dataService to default state
+    dataService.currentUser = null;
+    setCurrentUser(null);
+    setCurrentScreen('login');
+  };
+
+  const handleLogin = async (username) => {
+    const result = await dataService.createUser(username);
+    if (result.success) {
+      if (result.isFirstUser) {
+        setShowAdminPasswordPrompt(true);
+      } else {
+        setCurrentUser(username);
+        setCurrentScreen('main');
+      }
+    }
+  };
+
+  const handleSetAdminPassword = async (password) => {
+    await dataService.setAdminPassword(password);
+    setShowAdminPasswordPrompt(false);
+    setCurrentUser(dataService.currentUser);
+    setCurrentScreen('main');
+  };
+
   return (
     <div className="App">
-      {currentScreen === 'main' && (
+      {currentScreen === 'login' ? (
+        <LoginScreen onLogin={handleLogin} />
+      ) : (
         <>
-          <main className="App-main">
-            <div className="App-column leaderboard-column">
-              <Leaderboard players={leaderboard} />
-            </div>
-            <div className="App-column history-column">
-              <GameHistory gameHistory={gameHistory} />
-            </div>
-          </main>
-          <footer className="App-footer">
-            <div className="player-controls">
-              <PlayerSelection 
-                players={players}
-                selectedPlayers={selectedPlayers}
-                onPlayerSelect={handlePlayerSelect}
-              />
-              <button className="btn clear-selections" onClick={handleClearSelections}>Clear Selections</button>
-              <button className="btn start-game" onClick={handleStartGame}>Start Game</button>
-            </div>
-            <div className="admin-buttons">
-              {settings && !settings.ADDPLAYER_ADMINONLY && (
-                <button className="btn add-player" onClick={handleAddPlayer}>Add Player</button>
-              )}
-              <button className="btn admin-controls" onClick={handleAdminClick}>Admin</button>
-            </div>
-          </footer>
+          <UserAccount currentUser={currentUser} onLogout={handleLogout} />
+          {currentScreen === 'main' && (
+            <>
+              <main className="App-main">
+                <div className="App-column leaderboard-column">
+                  <Leaderboard players={leaderboard} />
+                </div>
+                <div className="App-column history-column">
+                  <GameHistory gameHistory={gameHistory} />
+                </div>
+              </main>
+              <footer className="App-footer">
+                <div className="player-controls">
+                  <PlayerSelection 
+                    players={players}
+                    selectedPlayers={selectedPlayers}
+                    onPlayerSelect={handlePlayerSelect}
+                  />
+                  <button className="btn clear-selections" onClick={handleClearSelections}>
+                    Clear Selections
+                  </button>
+                  <button className="btn start-game" onClick={handleStartGame}>
+                    Start Game
+                  </button>
+                </div>
+                <div className="admin-buttons">
+                  {settings && !settings.ADDPLAYER_ADMINONLY && (
+                    <button className="btn add-player" onClick={handleAddPlayer}>
+                      Add Player
+                    </button>
+                  )}
+                  <button className="btn admin-controls" onClick={handleAdminClick}>
+                    Admin
+                  </button>
+                </div>
+              </footer>
+            </>
+          )}
+          {currentScreen === 'game' && (
+            <Scoreboard 
+              player1={selectedPlayers.player1} 
+              player2={selectedPlayers.player2}
+              onGameEnd={handleGameEnd}
+              onQuit={handleQuitGame}
+            />
+          )}
+          {currentScreen === 'admin' && (
+            <AdminControls 
+              onExit={() => setCurrentScreen('main')} 
+              onAddPlayer={handleAddPlayer}
+            />
+          )}
+          <InputModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            {...modalConfig}
+          />
+          {showAdminPasswordPrompt && (
+            <AdminPasswordPrompt onSubmit={handleSetAdminPassword} />
+          )}
         </>
       )}
-      {currentScreen === 'game' && (
-        <Scoreboard 
-          player1={selectedPlayers.player1} 
-          player2={selectedPlayers.player2}
-          onGameEnd={handleGameEnd}
-          onQuitGame={handleQuitGame}
-        />
-      )}
-      {currentScreen === 'admin' && (
-        <div className="admin-page">
-          <AdminControls 
-            onExit={() => setCurrentScreen('main')} 
-            onAddPlayer={handleAddPlayer}
-          />
-        </div>
-      )}
-      <InputModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        {...modalConfig}
-      />
     </div>
   );
 }

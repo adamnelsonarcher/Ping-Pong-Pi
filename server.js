@@ -23,20 +23,14 @@ app.get('/api/getData', async (req, res) => {
 // Save data
 app.post('/api/saveData', async (req, res) => {
   try {
-    const { currentUser, settings, players, gameHistory } = req.body;
-    
     // Read existing data
     const existingData = JSON.parse(await fs.readFile(dataFilePath, 'utf8'));
     
-    // Update the specific user's data
-    existingData.users[currentUser] = {
-      settings,
-      players,
-      gameHistory
-    };
+    // Update data with the new data structure
+    const newData = req.body;
     
     // Write back to file
-    await fs.writeFile(dataFilePath, JSON.stringify(existingData, null, 2));
+    await fs.writeFile(dataFilePath, JSON.stringify(newData, null, 2));
     res.json({ message: 'Data saved successfully' });
   } catch (error) {
     console.error('Error saving data:', error);

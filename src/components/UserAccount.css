@@ -1,0 +1,54 @@
+.user-account {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+}
+
+.user-button {
+  background-color: #444;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.user-button:hover {
+  background-color: #555;
+}
+
+.user-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  min-width: 200px;
+}
+
+.user-email {
+  padding: 8px 16px;
+  border-bottom: 1px solid #eee;
+  color: #666;
+  font-size: 14px;
+  word-break: break-all;
+}
+
+.user-menu button {
+  width: 100%;
+  padding: 8px 16px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  color: #333;
+}
+
+.user-menu button:hover {
+  background-color: #f5f5f5;
+} 

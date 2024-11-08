@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getPlayers, editPlayerPassword, editPlayerScore, deletePlayer, resetAllScores, updateSettings, getSettings } from '../services/dataService';
 import { useSettings } from '../contexts/SettingsContext';
 import './AdminControls.css';
+import dataService from '../services/dataService';
 
 function AdminControls({ onExit, onAddPlayer }) {
   const [players, setPlayers] = useState([]);
@@ -11,6 +12,7 @@ function AdminControls({ onExit, onAddPlayer }) {
   const [gameSettings, setGameSettings] = useState(null);
   const [newAdminPassword, setNewAdminPassword] = useState('');
   const [showAdminPassword, setShowAdminPassword] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -96,17 +98,6 @@ function AdminControls({ onExit, onAddPlayer }) {
             onChange={(e) => handleSettingChange(key, e.target.value)}
             style={{ marginLeft: '10px' }}
           />
-          <div 
-            className="color-preview" 
-            style={{ 
-              backgroundColor: value,
-              width: '30px',
-              height: '30px',
-              border: '1px solid #ccc',
-              borderRadius: '4px',
-              marginLeft: '10px'
-            }}
-          />
         </div>
       );
     }
@@ -167,6 +158,8 @@ function AdminControls({ onExit, onAddPlayer }) {
       alert('Failed to update admin password');
     }
   };
+
+
 
   return (
     <div className="admin-controls">
@@ -271,7 +264,17 @@ function AdminControls({ onExit, onAddPlayer }) {
         )}
       </div>
 
-      <button onClick={onExit} className="exit-btn">Exit Admin Controls</button>
+      <div className="exit-button-container">
+        <button 
+          className="exit-btn"
+          onClick={() => {
+            setIsAdmin(false);
+            if (onExit) onExit();
+          }}
+        >
+          Exit Admin Controls
+        </button>
+      </div>
     </div>
   );
 }

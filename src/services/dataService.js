@@ -92,7 +92,7 @@ class DataService {
     this.players = {};
     this.gameHistory = [];
     this.settings = {};
-    this.currentUser = 'admin'; // Default user
+    this.currentUser = localStorage.getItem('currentUser') || 'admin';
     this.saveTimeout = null;
     this.SAVE_DELAY = 1000; // 1 second delay for batching saves
   }
@@ -114,58 +114,102 @@ class DataService {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      const userData = data.users[this.currentUser];
-
-      this.settings = userData.settings;
       
-      // Convert player objects back to Player instances
+      // If user doesn't exist, create them with default data
+      if (!data.users[this.currentUser]) {
+        data.users[this.currentUser] = {
+          settings: {
+            SCORE_CHANGE_K_FACTOR: 70,
+            POINT_DIFFERENCE_WEIGHT: 6,
+            ACTIVITY_THRESHOLD: 3,
+            DEFAULT_RANK: "Unranked",
+            PLAYER1_SCOREBOARD_COLOR: "#4CAF50",
+            PLAYER2_SCOREBOARD_COLOR: "#2196F3",
+            GAME_HISTORY_KEEP: 30,
+            ADDPLAYER_ADMINONLY: false,
+            ADMIN_PASSWORD: 'google-auth'
+          },
+          players: {},
+          gameHistory: []
+        };
+        
+        // Save the new user data
+        await this.saveData();
+      }
+      
+      const userData = data.users[this.currentUser];
+      this.settings = userData.settings;
+      this.gameHistory = userData.gameHistory || [];
       this.players = {};
-      Object.entries(userData.players).forEach(([name, data]) => {
-        const player = new Player(data.name, data.score, data.password);
-        player.gamesPlayed = data.gamesPlayed || 0;
-        player.wins = data.wins || 0;
-        player.losses = data.losses || 0;
-        player.lifetimeGamesPlayed = data.lifetimeGamesPlayed || 0;
-        player.lifetimeWins = data.lifetimeWins || 0;
-        player.lifetimeLosses = data.lifetimeLosses || 0;
-        player.lifetimeScore = data.lifetimeScore || data.score;
-        player.currentStreak = data.currentStreak || 0;
-        player.maxWinStreak = data.maxWinStreak || 0;
-        player.scoreHistory = Array.isArray(data.scoreHistory) ? data.scoreHistory : [data.score];
-        player.updateActiveStatus(this.settings.ACTIVITY_THRESHOLD);
+      
+      Object.entries(userData.players || {}).forEach(([name, playerData]) => {
+        const player = new Player(
+          playerData.name,
+          playerData.score,
+          playerData.password
+        );
+        Object.assign(player, playerData);
         this.players[name] = player;
       });
-
-      this.gameHistory = userData.gameHistory;
-      
-      console.log('All data loaded successfully');
     } catch (error) {
       console.error('Error loading data:', error);
-      this.settings = {};
-      this.players = {};
-      this.gameHistory = [];
+      throw error;
     }
   }
 
   async saveData() {
     try {
-      const response = await fetch('http://localhost:3001/api/saveData', {
+      if (!this.currentUser || this.currentUser === 'undefined') {
+        throw new Error('No valid user set');
+      }
+
+      // First get the current data
+      const response = await fetch('http://localhost:3001/api/getData');
+      const data = await response.json();
+
+      // Update only the current user's data
+      data.users[this.currentUser] = {
+        settings: this.settings,
+        players: {},
+        gameHistory: this.gameHistory || []
+      };
+
+      // Convert Player instances to plain objects
+      Object.entries(this.players).forEach(([name, player]) => {
+        data.users[this.currentUser].players[name] = {
+          name: player.name,
+          score: player.score,
+          gamesPlayed: player.gamesPlayed,
+          wins: player.wins,
+          losses: player.losses,
+          password: player.password,
+          currentStreak: player.currentStreak,
+          maxWinStreak: player.maxWinStreak,
+          lifetimeGamesPlayed: player.lifetimeGamesPlayed,
+          lifetimeWins: player.lifetimeWins,
+          lifetimeLosses: player.lifetimeLosses,
+          lifetimeScore: player.lifetimeScore,
+          active: player.active,
+          scoreHistory: player.scoreHistory
+        };
+      });
+
+      // Remove any 'undefined' user entry
+      if (data.users['undefined']) {
+        delete data.users['undefined'];
+      }
+
+      const saveResponse = await fetch('http://localhost:3001/api/saveData', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          currentUser: this.currentUser,
-          settings: this.settings,
-          players: this.players,
-          gameHistory: this.gameHistory
-        })
+        body: JSON.stringify(data)
       });
 
-      if (!response.ok) {
+      if (!saveResponse.ok) {
         throw new Error('Failed to save data');
       }
-      console.log('All data saved successfully');
     } catch (error) {
       console.error('Error saving data:', error);
       throw error;
@@ -351,6 +395,96 @@ class DataService {
     this.gameHistory.push(gameResult);
     this.debouncedSave();
     return true;
+  }
+
+  setCurrentUser(username) {
+    this.currentUser = username;
+    localStorage.setItem('currentUser', username);
+    return this.loadData();
+  }
+
+  async createUser(username, password) {
+    try {
+      if (!username) {
+        console.error('No username provided');
+        return false;
+      }
+
+      const response = await fetch('http://localhost:3001/api/getData');
+      const data = await response.json();
+      
+      let isFirstUser = Object.keys(data.users).length === 0;
+      if (!data.users[username]) {
+        // Create new user with default settings
+        data.users[username] = {
+          settings: {
+            SCORE_CHANGE_K_FACTOR: 70,
+            POINT_DIFFERENCE_WEIGHT: 6,
+            ACTIVITY_THRESHOLD: 3,
+            DEFAULT_RANK: "Unranked",
+            PLAYER1_SCOREBOARD_COLOR: "#4CAF50",
+            PLAYER2_SCOREBOARD_COLOR: "#2196F3",
+            GAME_HISTORY_KEEP: 30,
+            ADDPLAYER_ADMINONLY: false,
+            ADMIN_PASSWORD: isFirstUser ? "" : "admin" // Empty only for first user
+          },
+          players: {},
+          gameHistory: []
+        };
+
+        const saveResponse = await fetch('http://localhost:3001/api/saveData', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data)
+        });
+
+        if (!saveResponse.ok) {
+          throw new Error('Failed to save new user data');
+        }
+      }
+
+      // Set current user and load their data
+      await this.setCurrentUser(username);
+      await this.loadData();
+      
+      return { success: true, isFirstUser };
+    } catch (error) {
+      console.error('Error in createUser:', error);
+      return { success: false, isFirstUser: false };
+    }
+  }
+
+  async setAdminPassword(password) {
+    try {
+      this.settings.ADMIN_PASSWORD = password;
+      await this.updateSettings(this.settings);
+      return true;
+    } catch (error) {
+      console.error('Error setting admin password:', error);
+      return false;
+    }
+  }
+
+  async loginUser(username, password, isGoogleLogin = false) {
+    try {
+      const response = await fetch('http://localhost:3001/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          username, 
+          password,
+          isGoogleLogin 
+        })
+      });
+      return response.ok;
+    } catch (error) {
+      console.error('Error logging in:', error);
+      return false;
+    }
   }
 }
 
