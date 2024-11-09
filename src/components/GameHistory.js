@@ -22,6 +22,16 @@ const formatGameResult = (game) => {
     return { message: `Invalid score data for ${game.player1} vs ${game.player2}: ${game.score}`, isSkunk: false };
   }
 
+  // Handle tie games
+  if (score1 === score2) {
+    const player1Name = game.player1Rank === 'Unranked' ? `${game.player1} (unranked)` : game.player1;
+    const player2Name = game.player2Rank === 'Unranked' ? `${game.player2} (unranked)` : game.player2;
+    return {
+      message: `<b>${player1Name}</b> and <b>${player2Name}</b> tied <b>[${score1} - ${score2}]</b>`,
+      isSkunk: false
+    };
+  }
+
   const winner = score1 > score2 ? game.player1 : game.player2;
   const loser = score1 > score2 ? game.player2 : game.player1;
   const winnerScore = Math.max(score1, score2);
