@@ -22,7 +22,7 @@ function InfoButton({ currentUser, onLogout }) {
                 <div className="version-info">
                   <span className="version-tag">Version 2.5</span>
                   <a 
-                    href="https://github.com/yourusername/ping-pong-scoreboard/releases" 
+                    href="https://github.com/adamnelsonarcher/Ping-Pong-Pi/tree/Webapp" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="changelog-link"
@@ -59,7 +59,7 @@ function InfoButton({ currentUser, onLogout }) {
                     See where my demos are hosted
                   </a>
                   <a 
-                    href="https://github.com/yourusername/ping-pong-scoreboard" 
+                    href="https://github.com/adamnelsonarcher/Ping-Pong-Pi/tree/Webapp" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="info-link"
