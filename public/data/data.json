@@ -238,59 +238,13 @@
         "ADMIN_PASSWORD": "1234"
       },
       "players": {
-        "123": {
-          "name": "123",
-          "score": 1053.715672765909,
-          "gamesPlayed": 5,
-          "wins": 2,
-          "losses": 3,
-          "password": "1",
-          "currentStreak": 1,
-          "maxWinStreak": 1,
-          "lifetimeGamesPlayed": 5,
-          "lifetimeWins": 2,
-          "lifetimeLosses": 3,
-          "lifetimeScore": 1053.715672765909,
-          "active": true,
-          "scoreHistory": [
-            1000,
-            949.14,
-            915.55,
-            993.96,
-            957.84,
-            1053.72
-          ]
-        },
-        "565": {
-          "name": "565",
-          "score": 1025.5007616868975,
-          "gamesPlayed": 5,
-          "wins": 3,
-          "losses": 2,
-          "password": "12",
-          "currentStreak": 0,
-          "maxWinStreak": 2,
-          "lifetimeGamesPlayed": 5,
-          "lifetimeWins": 3,
-          "lifetimeLosses": 2,
-          "lifetimeScore": 1025.5007616868975,
-          "active": true,
-          "scoreHistory": [
-            1000,
-            1060,
-            1098.21,
-            1045.27,
-            1086.13,
-            1025.5
-          ]
-        },
-        "test5": {
-          "name": "test5",
+        "4": {
+          "name": "4",
           "score": 1000,
           "gamesPlayed": 0,
           "wins": 0,
           "losses": 0,
-          "password": "123",
+          "password": "4",
           "currentStreak": 0,
           "maxWinStreak": 0,
           "lifetimeGamesPlayed": 0,
@@ -303,90 +257,56 @@
           ]
         }
       },
-      "gameHistory": [
-        {
-          "player1": "12",
-          "player2": "34",
-          "score": "Quit",
-          "pointChange1": 0,
-          "pointChange2": 0,
-          "date": "2024-11-08T07:25:14.045Z"
-        },
-        {
-          "player1": "123",
-          "player2": "565",
-          "score": "0 - 5",
-          "player1Rank": "Unranked",
-          "player2Rank": "Unranked",
-          "pointChange1": -50.86132831136928,
-          "pointChange2": 60,
-          "date": "2024-11-08T07:25:53.040Z"
-        },
-        {
-          "player1": "565",
-          "player2": "123",
-          "score": "3 - 0",
-          "player1Rank": "Unranked",
-          "player2Rank": "Unranked",
-          "pointChange1": 38.21336388750589,
-          "pointChange2": -33.58502735049159,
-          "date": "2024-11-08T08:17:15.479Z"
-        },
-        {
-          "player1": "565",
-          "player2": "123",
-          "score": "Quit",
-          "pointChange1": 0,
-          "pointChange2": 0,
-          "date": "2024-11-08T08:19:48.402Z"
-        },
-        {
-          "player1": "565",
-          "player2": "123",
-          "score": "0 - 0",
-          "player1Rank": 1,
-          "player2Rank": 2,
-          "pointChange1": -52.94402760968889,
-          "pointChange2": 78.40738959112713,
-          "date": "2024-11-08T08:19:52.977Z"
-        },
-        {
-          "player1": "565",
-          "player2": "123",
-          "score": "Quit",
-          "pointChange1": 0,
-          "pointChange2": 0,
-          "date": "2024-11-08T08:20:52.353Z"
-        },
-        {
-          "player1": "565",
-          "player2": "123",
-          "score": "4 - 0",
-          "player1Rank": 1,
-          "player2Rank": 2,
-          "pointChange1": 40.86557082271539,
-          "pointChange2": -36.117436997328454,
-          "date": "2024-11-08T08:21:21.973Z"
-        },
-        {
-          "player1": "565",
-          "player2": "123",
-          "score": "0 - 7",
-          "player1Rank": 2,
-          "player2Rank": 1,
-          "pointChange1": -60.63414541363501,
-          "pointChange2": 95.87207583397125,
-          "date": "2024-11-08T08:21:27.149Z"
-        },
-        {
-          "player1": "565",
-          "player2": "123",
-          "score": "Quit",
-          "pointChange1": 0,
-          "pointChange2": 0,
-          "date": "2024-11-08T08:22:09.557Z"
+      "gameHistory": []
+    },
+    "local_user": {
+      "settings": {
+        "SCORE_CHANGE_K_FACTOR": 70,
+        "POINT_DIFFERENCE_WEIGHT": 6,
+        "ACTIVITY_THRESHOLD": 3,
+        "DEFAULT_RANK": "Unranked",
+        "PLAYER1_SCOREBOARD_COLOR": "#4CAF50",
+        "PLAYER2_SCOREBOARD_COLOR": "#2196F3",
+        "GAME_HISTORY_KEEP": 30,
+        "ADDPLAYER_ADMINONLY": false,
+        "ADMIN_PASSWORD": "1234"
+      },
+      "players": {
+        "3": {
+          "name": "3",
+          "score": 1000,
+          "gamesPlayed": 0,
+          "wins": 0,
+          "losses": 0,
+          "password": "3",
+          "currentStreak": 0,
+          "maxWinStreak": 0,
+          "lifetimeGamesPlayed": 0,
+          "lifetimeWins": 0,
+          "lifetimeLosses": 0,
+          "lifetimeScore": 1000,
+          "active": false,
+          "scoreHistory": [
+            1000
+          ]
         }
-      ]
+      },
+      "gameHistory": []
+    },
+    "spam69420spam@gmail.com": {
+      "settings": {
+        "SCORE_CHANGE_K_FACTOR": 70,
+        "POINT_DIFFERENCE_WEIGHT": 6,
+        "ACTIVITY_THRESHOLD": 3,
+        "DEFAULT_RANK": "Unranked",
+        "PLAYER1_SCOREBOARD_COLOR": "#4CAF50",
+        "PLAYER2_SCOREBOARD_COLOR": "#2196F3",
+        "GAME_HISTORY_KEEP": 30,
+        "ADDPLAYER_ADMINONLY": false,
+        "ADMIN_PASSWORD": "5555"
+      },
+      "players": {},
+      "gameHistory": []
     }
   }
 }
