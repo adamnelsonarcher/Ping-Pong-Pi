@@ -240,11 +240,53 @@
       "players": {
         "4": {
           "name": "4",
+          "score": 879.7998296955001,
+          "gamesPlayed": 3,
+          "wins": 0,
+          "losses": 3,
+          "password": "4",
+          "currentStreak": 0,
+          "maxWinStreak": 0,
+          "lifetimeGamesPlayed": 3,
+          "lifetimeWins": 0,
+          "lifetimeLosses": 3,
+          "lifetimeScore": 879.7998296955001,
+          "active": true,
+          "scoreHistory": [
+            1000,
+            949.14,
+            911.66,
+            879.8
+          ]
+        },
+        "123": {
+          "name": "123",
+          "score": 1140.068742646494,
+          "gamesPlayed": 3,
+          "wins": 3,
+          "losses": 0,
+          "password": "1",
+          "currentStreak": 3,
+          "maxWinStreak": 3,
+          "lifetimeGamesPlayed": 3,
+          "lifetimeWins": 3,
+          "lifetimeLosses": 0,
+          "lifetimeScore": 1140.068742646494,
+          "active": true,
+          "scoreHistory": [
+            1000,
+            1060,
+            1103.42,
+            1140.07
+          ]
+        },
+        "234": {
+          "name": "234",
           "score": 1000,
           "gamesPlayed": 0,
           "wins": 0,
           "losses": 0,
-          "password": "4",
+          "password": "1",
           "currentStreak": 0,
           "maxWinStreak": 0,
           "lifetimeGamesPlayed": 0,
@@ -257,7 +299,38 @@
           ]
         }
       },
-      "gameHistory": []
+      "gameHistory": [
+        {
+          "player1": "4",
+          "player2": "123",
+          "score": "0 - 5",
+          "player1Rank": "Unranked",
+          "player2Rank": "Unranked",
+          "pointChange1": -50.86132831136928,
+          "pointChange2": 60,
+          "date": "2024-11-09T05:51:21.101Z"
+        },
+        {
+          "player1": "4",
+          "player2": "123",
+          "score": "0 - 5",
+          "player1Rank": "Unranked",
+          "player2Rank": "Unranked",
+          "pointChange1": -37.474227993699024,
+          "pointChange2": 43.42427714489306,
+          "date": "2024-11-09T05:51:24.109Z"
+        },
+        {
+          "player1": "4",
+          "player2": "123",
+          "score": "0 - 7",
+          "player1Rank": 2,
+          "player2Rank": 1,
+          "pointChange1": -31.864613999431576,
+          "pointChange2": 36.644465501601026,
+          "date": "2024-11-09T05:51:29.814Z"
+        }
+      ]
     },
     "local_user": {
       "settings": {
@@ -328,6 +401,30 @@
           "pointChange2": 0,
           "date": "2024-11-09T05:47:56.333Z",
           "isTie": true
+        },
+        {
+          "player1": "3",
+          "player2": "4",
+          "score": "Quit",
+          "pointChange1": 0,
+          "pointChange2": 0,
+          "date": "2024-11-09T05:50:23.124Z"
+        },
+        {
+          "player1": "3",
+          "player2": "4",
+          "score": "Quit",
+          "pointChange1": 0,
+          "pointChange2": 0,
+          "date": "2024-11-09T05:50:28.273Z"
+        },
+        {
+          "player1": "3",
+          "player2": "4",
+          "score": "Quit",
+          "pointChange1": 0,
+          "pointChange2": 0,
+          "date": "2024-11-09T05:50:49.265Z"
         }
       ]
     },

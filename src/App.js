@@ -124,15 +124,16 @@ function App() {
     }
   };
 
-  const handleQuitGame = async () => {
+  const handleQuitGame = async (result) => {
     try {
-      await quitGame(selectedPlayers.player1, selectedPlayers.player2);
-      updateGameHistory();
-    } catch (error) {
-      console.error('Error in handleQuitGame:', error);
-    } finally {
-      setCurrentScreen('main');
       setGameInProgress(false);
+      setCurrentScreen('main');
+      // Update game history if needed
+      //if (result) {
+      //  setGameHistory(prev => [...prev, result].slice(-gameHistoryKeep));
+      //}
+    } catch (error) {
+      console.error('Error handling quit game:', error);
     }
   };
 
@@ -356,7 +357,7 @@ function App() {
                   player1={selectedPlayers.player1} 
                   player2={selectedPlayers.player2}
                   onGameEnd={handleGameEnd}
-                  onQuit={handleQuitGame}
+                  onQuitGame={handleQuitGame}
                 />
               )}
               {currentScreen === 'admin' && (
