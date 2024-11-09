@@ -71,7 +71,7 @@ function LoginScreen({ onLogin }) {
       }
       
       const email = result.user.email;
-      
+      dataService.setLocalMode(false);
       localStorage.setItem('currentUser', email);
       onLogin(email);
     } catch (error) {
@@ -79,6 +79,7 @@ function LoginScreen({ onLogin }) {
       if (error.code !== 'auth/cancelled-popup-request') {
         alert('Failed to login with Google. Please try again.');
       }
+      dataService.currentUser = null;
       localStorage.removeItem('currentUser');
     }
   };
@@ -86,7 +87,10 @@ function LoginScreen({ onLogin }) {
   const handleLocalLogin = async () => {
     try {
       const localId = 'local_user';
+      dataService.setLocalMode(true);
+      localStorage.setItem('currentUser', localId);
       
+      // Initialize local storage if it doesn't exist
       if (!localStorage.getItem('localGameData')) {
         const defaultData = {
           settings: {
@@ -106,12 +110,13 @@ function LoginScreen({ onLogin }) {
         localStorage.setItem('localGameData', JSON.stringify(defaultData));
       }
       
-      localStorage.setItem('currentUser', localId);
       onLogin(localId);
     } catch (error) {
       console.error('Local login error:', error);
       alert('Failed to initialize local storage. Please try again.');
+      localStorage.removeItem('localGameData');
       localStorage.removeItem('currentUser');
+      localStorage.removeItem('isLocalMode');
     }
   };
 

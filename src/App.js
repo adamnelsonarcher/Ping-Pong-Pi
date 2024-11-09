@@ -257,22 +257,23 @@ function App() {
     setCurrentScreen('login');
   };
 
-  const handleLogin = async (username, isNewAccount) => {
-    setCurrentUser(username);
-    
-    try {
-      await dataService.loadData();
-      
-      // Only show admin password prompt for new accounts or empty passwords
-      if (isNewAccount || !dataService.settings?.ADMIN_PASSWORD) {
-        setShowAdminPasswordPrompt(true);
-      } else {
-        setCurrentScreen('main');
-      }
-    } catch (error) {
-      console.error('Error during login:', error);
-      handleLogout();
+  const handleLogin = async (username, password) => {
+    if (username === 'local_user') {
+      // Set local mode first
+      localStorage.setItem('isLocalMode', 'true');
+      dataService.setLocalMode(true);
+      setCurrentUser('local_user');
+      return true;
     }
+    
+    // Server authentication for non-local users
+    localStorage.setItem('isLocalMode', 'false');
+    dataService.setLocalMode(false);
+    const success = await dataService.login(username, password);
+    if (success) {
+      setCurrentUser(username);
+    }
+    return success;
   };
 
   const handleSetAdminPassword = async (password) => {
