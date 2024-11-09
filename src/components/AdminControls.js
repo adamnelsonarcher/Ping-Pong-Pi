@@ -3,6 +3,7 @@ import { getPlayers, editPlayerPassword, editPlayerScore, deletePlayer, resetAll
 import { useSettings } from '../contexts/SettingsContext';
 import './AdminControls.css';
 import dataService from '../services/dataService';
+import API_URL from '../config/api';
 
 function AdminControls({ onExit, onAddPlayer }) {
   const [players, setPlayers] = useState([]);
@@ -168,12 +169,12 @@ function AdminControls({ onExit, onAddPlayer }) {
           localStorage.removeItem('currentUser');
           localStorage.removeItem('isLocalMode');
         } else {
-          const response = await fetch('http://localhost:3001/api/getData');
+          const response = await fetch(`${API_URL}/api/getData`);
           const data = await response.json();
           
           delete data.users[dataService.currentUser];
           
-          const saveResponse = await fetch('http://localhost:3001/api/saveData', {
+          const saveResponse = await fetch(`${API_URL}/api/saveData`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -236,12 +237,12 @@ function AdminControls({ onExit, onAddPlayer }) {
           if (dataService.isLocalMode) {
             localStorage.setItem('localGameData', JSON.stringify(data));
           } else {
-            const response = await fetch('http://localhost:3001/api/getData');
+            const response = await fetch(`${API_URL}/api/getData`);
             const serverData = await response.json();
             
             serverData.users[dataService.currentUser] = data;
             
-            const saveResponse = await fetch('http://localhost:3001/api/saveData', {
+            const saveResponse = await fetch(`${API_URL}/api/saveData`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',

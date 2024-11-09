@@ -1,4 +1,5 @@
 import settings from '../settings1';
+import API_URL from '../config/api';
 
 class Player {
   constructor(name, score = 1000, password = "") {
@@ -146,7 +147,7 @@ class DataService {
       return false;
     } else {
       try {
-        const response = await fetch('http://localhost:3001/api/getData');
+        const response = await fetch(`${API_URL}/api/getData`);
         if (!response.ok) throw new Error('Failed to fetch data');
         const data = await response.json();
         
@@ -163,7 +164,7 @@ class DataService {
           };
           
           // Save the new user data structure
-          const saveResponse = await fetch('http://localhost:3001/api/saveData', {
+          const saveResponse = await fetch(`${API_URL}/api/saveData`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -211,7 +212,7 @@ class DataService {
       return true;
     } else {
       try {
-        const response = await fetch('http://localhost:3001/api/getData');
+        const response = await fetch(`${API_URL}/api/getData`);
         const data = await response.json();
         
         data.users[this.currentUser] = {
@@ -220,7 +221,7 @@ class DataService {
           gameHistory: this.gameHistory
         };
 
-        const saveResponse = await fetch('http://localhost:3001/api/saveData', {
+        const saveResponse = await fetch(`${API_URL}/api/saveData`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data)
@@ -388,7 +389,7 @@ class DataService {
 
   async saveSettings() {
     try {
-      const response = await fetch('/api/saveSettings', {
+      const response = await fetch(`${API_URL}/api/saveSettings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -433,7 +434,7 @@ class DataService {
         return false;
       }
 
-      const response = await fetch('http://localhost:3001/api/getData');
+      const response = await fetch(`${API_URL}/api/getData`);
       const data = await response.json();
       
       let isFirstUser = Object.keys(data.users).length === 0;
@@ -455,7 +456,7 @@ class DataService {
           gameHistory: []
         };
 
-        const saveResponse = await fetch('http://localhost:3001/api/saveData', {
+        const saveResponse = await fetch(`${API_URL}/api/saveData`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -492,7 +493,7 @@ class DataService {
 
   async loginUser(username, password, isGoogleLogin = false) {
     try {
-      const response = await fetch('http://localhost:3001/api/login', {
+      const response = await fetch(`${API_URL}/api/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
