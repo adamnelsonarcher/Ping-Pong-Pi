@@ -39,7 +39,7 @@ function Leaderboard({ players }) {
       <table>
         <thead>
           <tr>
-            <th>Name</th>
+            <th>Player Name</th>
             <th>Score</th>
             <th>W/L Ratio</th>
           </tr>
