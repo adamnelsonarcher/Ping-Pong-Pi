@@ -24,3 +24,5 @@ yarn-error.log*
 src/config/serviceAccountKey.json
 src/config/serviceAccountKey.json
 src/config/serviceAccountKey.json
+
+.vercel
