@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { endGame, quitGame } from '../services/dataService';
-import { useSettings } from '../contexts/SettingsContext';
+// import { useSettings } from '../contexts/SettingsContext';
 
 function Scoreboard({ player1, player2, onGameEnd, onQuitGame = () => {} }) {
   const [player1Score, setPlayer1Score] = useState(0);
@@ -8,7 +8,7 @@ function Scoreboard({ player1, player2, onGameEnd, onQuitGame = () => {} }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [message, setMessage] = useState('');
-  const { settings } = useSettings();
+  // const { settings } = useSettings();
 
   useEffect(() => {
     const handleFullscreenChange = () => {

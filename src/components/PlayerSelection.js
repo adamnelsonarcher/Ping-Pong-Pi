@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import './PlayerSelection.css';
-import { useSettings } from '../contexts/SettingsContext';
+//import { useSettings } from '../contexts/SettingsContext';
 
 function PlayerSelection({ players, selectedPlayers, onPlayerSelect }) {
   const [selectedPlayer1, setSelectedPlayer1] = useState(selectedPlayers.player1 || '');
   const [selectedPlayer2, setSelectedPlayer2] = useState(selectedPlayers.player2 || '');
-  const { settings } = useSettings();
+  //const { settings } = useSettings();
 
   useEffect(() => {
     setSelectedPlayer1(selectedPlayers.player1 || '');

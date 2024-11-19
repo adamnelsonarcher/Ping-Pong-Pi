@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './Leaderboard.css';
 import LifetimeStatsDialog from './LifetimeStatsDialog';
 import dataService from '../services/dataService';

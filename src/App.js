@@ -6,9 +6,8 @@ import Scoreboard from './components/Scoreboard';
 import PlayerSelection from './components/PlayerSelection';
 import AdminControls from './components/AdminControls';
 import InputModal from './components/InputModal';
-import dataService, { getPlayers, endGame, quitGame, getSettings } from './services/dataService';
+import dataService from './services/dataService';
 import { useSettings } from './contexts/SettingsContext';
-import UserAccount from './components/UserAccount';
 import LoginScreen from './components/LoginScreen';
 import AdminPasswordPrompt from './components/AdminPasswordPrompt';
 import InfoButton from './components/InfoButton';
@@ -22,10 +21,9 @@ function App() {
   const [players, setPlayers] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalConfig, setModalConfig] = useState({});
-  const [gameInProgress, setGameInProgress] = useState(false);
-  const [gameHistoryKeep, setGameHistoryKeep] = useState(10); // default value
+  const [, setGameInProgress] = useState(false);
+  const [gameHistoryKeep, setGameHistoryKeep] = useState(10);
   const { settings } = useSettings();
-  const [showAdminPrompt, setShowAdminPrompt] = useState(false);
   const [showAdminPasswordPrompt, setShowAdminPasswordPrompt] = useState(false);
 
   useEffect(() => {

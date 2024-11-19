@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getPlayers, editPlayerPassword, editPlayerScore, deletePlayer, resetAllScores, updateSettings, getSettings } from '../services/dataService';
-import { useSettings } from '../contexts/SettingsContext';
+//import { useSettings } from '../contexts/SettingsContext';
 import './AdminControls.css';
 import dataService from '../services/dataService';
 import API_URL from '../config/api';
@@ -13,8 +13,8 @@ function AdminControls({ onExit, onAddPlayer }) {
   const [gameSettings, setGameSettings] = useState(null);
   const [newAdminPassword, setNewAdminPassword] = useState('');
   const [showAdminPassword, setShowAdminPassword] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [settings, setSettings] = useState(dataService.settings);
+  //const [isAdmin, setIsAdmin] = useState(false);
+  //const [settings, setSettings] = useState(dataService.settings);
 
   useEffect(() => {
     const loadData = async () => {
