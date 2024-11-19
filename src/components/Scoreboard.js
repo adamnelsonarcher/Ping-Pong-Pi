@@ -67,6 +67,7 @@ function Scoreboard({ player1, player2, onGameEnd, onQuitGame = () => {} }) {
   const handleKeyPress = useCallback((event) => {
     switch (event.key) {
       case '1': handleEndGame(); break;
+      case '2': showTempMessage('Starting new game (placeholder)'); break;
       case '3': handleQuitGame(); break;
       case '4': handleScoreChange(1, 1); break;
       case '5': handleScoreChange(1, -1); break;
