@@ -376,7 +376,6 @@ class DataService {
   async resetAllScores() {
     Object.values(this.players).forEach(player => {
       player.score = 1000;
-      player.scoreHistory = [1000];
       player.gamesPlayed = 0;
       player.wins = 0;
       player.losses = 0;
