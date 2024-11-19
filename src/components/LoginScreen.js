@@ -64,6 +64,21 @@ function LoginScreen({ onLogin }) {
 
   const handleGoogleLogin = async () => {
     try {
+      // Check if local data exists
+      const localData = localStorage.getItem('localGameData');
+      if (localData) {
+        const confirmed = window.confirm(
+          'WARNING: Signing in with Google will remove your local save data. ' +
+          'Please download your save data from the admin panel first if you want to keep it.\n\n' +
+          'Do you want to continue?'
+        );
+        
+        if (!confirmed) {
+          return;
+        }
+      }
+      
+      // Proceed with Google login
       const result = await signInWithPopup(auth, googleProvider);
       
       if (!result.user || !result.user.email) {
