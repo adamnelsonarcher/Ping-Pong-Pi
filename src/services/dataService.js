@@ -509,6 +509,43 @@ class DataService {
       return false;
     }
   }
+
+  async testFirestoreConnection() {
+    try {
+      console.log('Testing Firestore connection...');
+      
+      const testData = {
+        users: {
+          admin: {
+            settings: this.settings,
+            players: {},
+            gameHistory: []
+          }
+        }
+      };
+      
+      console.log('Attempting to save test data...');
+      const saveResponse = await fetch(`${API_URL}/api/saveData`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(testData)
+      });
+
+      if (!saveResponse.ok) throw new Error('Failed to save test data');
+      console.log('Test data saved successfully');
+      
+      console.log('Attempting to read test data...');
+      const getResponse = await fetch(`${API_URL}/api/getData`);
+      if (!getResponse.ok) throw new Error('Failed to get test data');
+      
+      const data = await getResponse.json();
+      console.log('Firestore connection test result:', data);
+      return true;
+    } catch (error) {
+      console.error('Firestore connection test failed:', error);
+      return false;
+    }
+  }
 }
 
 const dataService = new DataService();
