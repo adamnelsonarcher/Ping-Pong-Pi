@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { endGame, quitGame } from '../services/dataService';
 // import { useSettings } from '../contexts/SettingsContext';
 
@@ -20,30 +20,28 @@ function Scoreboard({ player1, player2, onGameEnd, onQuitGame = () => {} }) {
     };
   }, []);
 
-  const handleScoreChange = (playerIndex, change) => {
-    const newScores = [...[player1Score, player2Score]];
-    newScores[playerIndex] = Math.max(0, newScores[playerIndex] + change);
+  const handleScoreChange = useCallback((playerIndex, change) => {
     if (playerIndex === 0) {
-      setPlayer1Score(newScores[0]);
+      setPlayer1Score(prev => Math.max(0, prev + change));
     } else {
-      setPlayer2Score(newScores[1]);
+      setPlayer2Score(prev => Math.max(0, prev + change));
     }
-  };
+  }, []);
 
-  const handleEndGame = async () => {
+  const handleEndGame = useCallback(async () => {
     const result = await endGame(player1, player2, player1Score, player2Score);
     if (result) {
       console.log('Game ended, passing result to parent:', result);
       onGameEnd(result);
     }
-  };
+  }, [player1, player2, player1Score, player2Score, onGameEnd]);
 
-  const handleQuitGame = async () => {
+  const handleQuitGame = useCallback(async () => {
     const result = await quitGame(player1, player2);
     if (result) {
       onQuitGame(result);
     }
-  };
+  }, [player1, player2, onQuitGame]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -61,15 +59,14 @@ function Scoreboard({ player1, player2, onGameEnd, onQuitGame = () => {} }) {
     setShowControls(!showControls);
   };
 
-  const showTempMessage = (msg) => {
+  const showTempMessage = useCallback((msg) => {
     setMessage(msg);
     setTimeout(() => setMessage(''), 2000);
-  };
+  }, []);
 
-  const handleKeyPress = (event) => {
+  const handleKeyPress = useCallback((event) => {
     switch (event.key) {
       case '1': handleEndGame(); break;
-      case '2': showTempMessage('Starting new game'); break;
       case '3': handleQuitGame(); break;
       case '4': handleScoreChange(1, 1); break;
       case '5': handleScoreChange(1, -1); break;
@@ -77,14 +74,14 @@ function Scoreboard({ player1, player2, onGameEnd, onQuitGame = () => {} }) {
       case '8': handleScoreChange(0, -1); break;
       default: break;
     }
-  };
+  }, [handleEndGame, handleQuitGame, handleScoreChange, showTempMessage]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyPress);
     return () => {
       window.removeEventListener('keydown', handleKeyPress);
     };
-  }, [player1Score, player2Score]);
+  }, [handleKeyPress]);
 
   return (
     <div className="Scoreboard game-transition-enter" tabIndex="0">

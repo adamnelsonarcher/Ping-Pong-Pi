@@ -75,7 +75,11 @@ function App() {
     const loadData = async () => {
       await dataService.loadData();
       updateLeaderboard();
-      updateGameHistory();
+      
+      // Move updateGameHistory logic inside
+      const fullHistory = dataService.getGameHistory();
+      setGameHistory(fullHistory.slice(-gameHistoryKeep));
+      
       const playerList = Object.values(dataService.players);
       setPlayers(playerList);
       
@@ -90,17 +94,12 @@ function App() {
       }
     };
     loadData();
-  }, []);
+  }, [gameHistoryKeep]);
 
   const updateLeaderboard = () => {
     const leaderboardData = dataService.getLeaderboard();
     setLeaderboard(leaderboardData);
     setPlayers(Object.values(dataService.players));
-  };
-
-  const updateGameHistory = () => {
-    const fullHistory = dataService.getGameHistory();
-    setGameHistory(fullHistory.slice(-gameHistoryKeep)); // Ensure slicing is applied here
   };
 
   const handleGameEnd = async (gameResult) => {
@@ -247,25 +246,6 @@ function App() {
     dataService.currentUser = null;
     setCurrentUser(null);
     setCurrentScreen('login');
-  };
-
-  const handleLogin = async (username, password) => {
-    if (username === 'local_user') {
-      // Set local mode first
-      localStorage.setItem('isLocalMode', 'true');
-      dataService.setLocalMode(true);
-      setCurrentUser('local_user');
-      return true;
-    }
-    
-    // Server authentication for non-local users
-    localStorage.setItem('isLocalMode', 'false');
-    dataService.setLocalMode(false);
-    const success = await dataService.login(username, password);
-    if (success) {
-      setCurrentUser(username);
-    }
-    return success;
   };
 
   const handleSetAdminPassword = async (password) => {
