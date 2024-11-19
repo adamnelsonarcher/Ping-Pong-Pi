@@ -97,6 +97,7 @@ function App() {
   const updateLeaderboard = () => {
     const leaderboardData = dataService.getLeaderboard();
     setLeaderboard(leaderboardData);
+    setPlayers(Object.values(dataService.players));
   };
 
   const updateGameHistory = () => {
@@ -105,22 +106,15 @@ function App() {
   };
 
   const handleGameEnd = async (gameResult) => {
-    console.log('handleGameEnd called with result:', gameResult);
-    
     try {
-      const result = await endGame(gameResult.player1, gameResult.player2, gameResult.score1, gameResult.score2);
-      if (result) {
-        // Update both leaderboard and game history at once
-        setLeaderboard(dataService.getLeaderboard());
-        setGameHistory(prev => [...prev, result].slice(-gameHistoryKeep));
-      }
+      // The game has already ended, just update the UI
+      // setGameHistory(prev => [...prev, gameResult].slice(-gameHistoryKeep));
+      updateLeaderboard();
     } catch (error) {
-      console.error('Error saving game data:', error);
+      console.error('Error handling game end:', error);
     } finally {
       setCurrentScreen('main');
       setGameInProgress(false);
-      localStorage.setItem('selectedPlayer1', selectedPlayers.player1);
-      localStorage.setItem('selectedPlayer2', selectedPlayers.player2);
     }
   };
 
@@ -128,7 +122,7 @@ function App() {
     try {
       setGameInProgress(false);
       setCurrentScreen('main');
-      // Update game history if needed
+      // Update game history if needed 
       //if (result) {
       //  setGameHistory(prev => [...prev, result].slice(-gameHistoryKeep));
       //}

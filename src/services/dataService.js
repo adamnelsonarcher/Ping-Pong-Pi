@@ -1,4 +1,4 @@
-import settings from '../settings1';
+// import settings from '../settings1';
 import API_URL from '../config/api';
 
 class Player {
@@ -559,7 +559,7 @@ export const endGame = async (player1Name, player2Name, player1Score, player2Sco
       console.error('Invalid scores:', player1Score, player2Score);
       return null;
     }
-
+    console.log('endGame called with scores:', score1, score2);
     const gameResult = dataService.recordGame(player1Name, player2Name, score1, score2);
     if (gameResult) {
       await dataService.saveGameHistory(gameResult);
