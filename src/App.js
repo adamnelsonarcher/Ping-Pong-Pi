@@ -23,7 +23,7 @@ function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalConfig, setModalConfig] = useState({});
   const [, setGameInProgress] = useState(false);
-  const [gameHistoryKeep, setGameHistoryKeep] = useState(10);
+  const [, setGameHistoryKeep] = useState(10);
   const { settings } = useSettings();
   const [showAdminPasswordPrompt, setShowAdminPasswordPrompt] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
