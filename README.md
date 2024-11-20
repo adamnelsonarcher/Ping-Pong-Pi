@@ -1,70 +1,58 @@
-# Getting Started with Create React App
+# Ping Pong Pi 🏓
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A real-time ping pong scoreboard and statistics tracker optimized for TV displays. Track matches, player rankings, and game history with a clean, modern interface.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- **Real-time Scoreboard**: Large, clear display designed for TV viewing
+- **Player Rankings**: ELO-based ranking system
+- **Game History**: Track recent matches and outcomes
+- **Dual Authentication**:
+  - Google Authentication with cloud sync
+  - Local Storage mode for offline use
+- **Customizable Settings**:
+  - Score change K-factor
+  - Point difference weight
+  - Activity threshold
+  - Custom scoreboard colors
+  - Game history retention
 
-### `npm start`
+## Screenshots
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+![Ping Pong Pi Interface](public/images/screenshot1.png)
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Tech Stack
 
-### `npm test`
+- React
+- Firebase Authentication
+- CSS3 with custom animations
+- Local Storage API
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Getting Started
 
-### `npm run build`
+### Prerequisites
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- Node.js (v14 or higher)
+- Firebase account (for cloud features)
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Usage
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+- Login: Choose between Google Authentication or Local Storage mode
+- Add Players: Create player profiles through the admin interface
+- Start Game: Select two players and begin tracking scores
+- View Stats: Check the leaderboard for rankings and game history
 
-### `npm run eject`
+### Customization
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+The app includes several customizable settings:
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+- Score change K-factor
+- Point difference weight
+- Activity threshold
+- Default rank
+- Scoreboard colors
+- Game history retention
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### Credits
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- Designed and developed entirely by Adam Nelson-Archer. Check out my other demos at [adamnelsonarcher.com/demos](https://adamnelsonarcher.com/demos).
