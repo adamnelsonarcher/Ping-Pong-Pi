@@ -1,10 +1,11 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './LoginScreen.css';
 import dataService from '../services/dataService';
 import { auth, googleProvider } from '../config/firebase';
 import { signInWithPopup } from 'firebase/auth';
 
 function LoginScreen({ onLogin }) {
+  const [isLoading, setIsLoading] = useState(false);
   const canvasRef = useRef(null);
   const ballRef = useRef({
     x: 100,
@@ -64,7 +65,7 @@ function LoginScreen({ onLogin }) {
 
   const handleGoogleLogin = async () => {
     try {
-      // Check if local data exists
+      setIsLoading(true);
       const localData = localStorage.getItem('localGameData');
       if (localData) {
         const confirmed = window.confirm(
@@ -74,11 +75,12 @@ function LoginScreen({ onLogin }) {
         );
         
         if (!confirmed) {
+          setIsLoading(false);
           return;
         }
       }
       
-      // Proceed with Google login
+      await auth.signOut();
       const result = await signInWithPopup(auth, googleProvider);
       
       if (!result.user || !result.user.email) {
@@ -91,21 +93,23 @@ function LoginScreen({ onLogin }) {
       onLogin(email);
     } catch (error) {
       console.error('Google login error:', error);
-      if (error.code !== 'auth/cancelled-popup-request') {
-        alert('Failed to login with Google. Please try again.');
+      if (error.code === 'auth/popup-closed-by-user') {
+        setIsLoading(false);
+        return;
       }
-      dataService.currentUser = null;
-      localStorage.removeItem('currentUser');
+      alert(`Failed to login with Google: ${error.message}`);
+      setIsLoading(false);
     }
   };
 
   const handleLocalLogin = async () => {
     try {
+      setIsLoading(true);
       const localId = 'local_user';
       dataService.setLocalMode(true);
       localStorage.setItem('currentUser', localId);
+      localStorage.setItem('isLocalMode', 'true');
       
-      // Initialize local storage if it doesn't exist
       if (!localStorage.getItem('localGameData')) {
         const defaultData = {
           settings: {
@@ -125,6 +129,7 @@ function LoginScreen({ onLogin }) {
         localStorage.setItem('localGameData', JSON.stringify(defaultData));
       }
       
+      await dataService.loadData();
       onLogin(localId);
     } catch (error) {
       console.error('Local login error:', error);
@@ -132,38 +137,50 @@ function LoginScreen({ onLogin }) {
       localStorage.removeItem('localGameData');
       localStorage.removeItem('currentUser');
       localStorage.removeItem('isLocalMode');
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="login-screen">
       <canvas ref={canvasRef} className="background-canvas" />
-      <div className="login-content">
-        <div className="logo-container">
-          <h1>🏓</h1>
-          <h2>Ping Pong Pi</h2>
-          <p className="subtitle">A scoreboard display to track ping pong scores and display stats</p>
-        </div>
-        <div className="login-buttons">
-          <button 
-            className="google-login-btn" 
-            onClick={handleGoogleLogin}
-          >
-            <span className="btn-icon">G</span>
-            <span className="btn-text">Login with Google</span>
-          </button>
-          <div className="divider">
-            <span>or</span>
+      {isLoading ? (
+        <div className="login-content">
+          <div className="loading-message">
+            <h2>Signing in...</h2>
           </div>
-          <button 
-            className="local-login-btn" 
-            onClick={handleLocalLogin}
-          >
-            <span className="btn-icon">💾</span>
-            <span className="btn-text">Use Local Storage</span>
-          </button>
         </div>
-      </div>
+      ) : (
+        <div className="login-content">
+          <div className="logo-container">
+            <h1>🏓</h1>
+            <h2>Ping Pong Pi</h2>
+            <p className="subtitle">A scoreboard display to track ping pong scores and display stats</p>
+          </div>
+          <div className="login-buttons">
+            <div className="login-button-container">
+              <button 
+                className="google-login-btn" 
+                onClick={handleGoogleLogin}
+              >
+                <span className="btn-icon">G</span>
+                <span className="btn-text">Login with Google</span>
+              </button>
+             {/* <span className="button-subtext">Will take a few seconds to sync with server</span> */}
+            </div>
+            <div className="divider">
+              <span>or</span>
+            </div>
+            <button 
+              className="local-login-btn" 
+              onClick={handleLocalLogin}
+            >
+              <span className="btn-icon">💾</span>
+              <span className="btn-text">Use Local Storage</span>
+            </button>
+          </div>
+        </div>
+      )}
       <div className="attribution">
         by <a href="https://nelsonarcher.com" target="_blank" rel="noopener noreferrer">Adam Nelson-Archer</a>
       </div>

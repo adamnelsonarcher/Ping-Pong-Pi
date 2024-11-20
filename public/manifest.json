@@ -1,14 +1,37 @@
 {
-  "short_name": "Ping Pong Pi",
-  "name": "Ping Pong Pi - Scoreboard and Stats for Ping Pong",
+  "name": "Ping Pong Pi",
+  "short_name": "PingPongPi",
+  "description": "Real-time ping pong scoreboard and statistics tracker",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#2196F3",
   "icons": [
     {
-      "src": "favicon.ico",
-      "type": "image/x-icon"
+      "src": "/favicon-16x16.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
     }
   ],
-  "start_url": ".",
-  "display": "standalone",
-  "theme_color": "#2196F3",
-  "background_color": "#1a1a1a"
+  "orientation": "any",
+  "categories": ["sports", "games", "utilities", "raspberry pi", "ping pong", "table tennis"],
+  "screenshots": [
+    {
+      "src": "/images/screenshot1.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Ping Pong Pi Scoreboard Interface"
+    }
+  ]
 }

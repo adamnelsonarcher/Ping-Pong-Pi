@@ -147,38 +147,14 @@ class DataService {
       return false;
     } else {
       try {
-        const response = await fetch(`${API_URL}/api/getData`);
-        if (!response.ok) throw new Error('Failed to fetch data');
-        const data = await response.json();
-        
-        // Check if this is a new user
-        if (!data.users[this.currentUser]) {
-          // Initialize with empty data structure and blank admin password
-          data.users[this.currentUser] = {
-            settings: { 
-              ...this.defaultSettings,
-              ADMIN_PASSWORD: "" // Explicitly set empty password for new accounts
-            },
-            players: {},
-            gameHistory: []
-          };
-          
-          // Save the new user data structure
-          const saveResponse = await fetch(`${API_URL}/api/saveData`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data)
-          });
-
-          if (!saveResponse.ok) {
-            throw new Error('Failed to initialize new user data');
-          }
+        if (!this.currentUser) {
+          throw new Error('No current user set');
         }
 
-        // Load the user's data
-        const userData = data.users[this.currentUser];
+        const response = await fetch(`${API_URL}/api/getData?userId=${this.currentUser}`);
+        if (!response.ok) throw new Error('Failed to fetch data');
+        const userData = await response.json();
+        
         this.settings = { ...this.defaultSettings, ...userData.settings };
         this.gameHistory = userData.gameHistory || [];
         this.players = {};

@@ -6,24 +6,101 @@
     <meta name="theme-color" content="#2196F3" />
     
     <!-- Primary Meta Tags -->
-    <title>Ping Pong Pi - Scoreboard and Stats for Ping Pong</title>
-    <meta name="title" content="Ping Pong Pi - Scoreboard and Stats for Ping Pong">
-    <meta name="description" content="A scoreboard display for TVs to track ping pong scores and display stats. Features player rankings, game history, and real-time score tracking.">
-    <meta name="keywords" content="ping pong, table tennis, scoreboard, score tracking, player rankings, game stats, sports display">
-    <meta name="image" content="%PUBLIC_URL%/images/og-image.png">
-
-    <meta property="og:image:type" content="image/png">
-
+    <title>Ping Pong Pi - Real-time Table Tennis Scoreboard</title>
+    <meta name="title" content="Ping Pong Pi - Real-time Table Tennis Scoreboard">
+    <meta name="description" content="Track ping pong matches, player rankings, and game history in real-time. Perfect for offices and recreational spaces with TV display optimization.">
+    <meta name="keywords" content="ping pong scoreboard, table tennis tracker, player rankings, game stats, real-time scores, office ping pong, recreational sports, tournament tracking">
+    <meta name="author" content="Adam Nelson-Archer">
+    
+    <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:title" content="Ping Pong Pi - Scoreboard and Stats for Ping Pong">
-    <meta property="og:description" content="A scoreboard display for TVs to track ping pong scores and display stats. Features player rankings, game history, and real-time score tracking.">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
+    <meta property="og:url" content="https://pingpongpi.com/">
+    <meta property="og:title" content="Ping Pong Pi - Real-time Table Tennis Scoreboard">
+    <meta property="og:description" content="Track ping pong matches, player rankings, and game history in real-time. Perfect for offices and recreational spaces with TV display optimization.">
+    <meta property="og:image" content="https://pingpongpi.com/images/pingpongpi_thumbnail.png">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://pingpongpi.com/">
+    <meta property="twitter:title" content="Ping Pong Pi - Real-time Table Tennis Scoreboard">
+    <meta property="twitter:description" content="Track ping pong matches, player rankings, and game history in real-time. Perfect for offices and recreational spaces with TV display optimization.">
+    <meta property="twitter:image" content="https://pingpongpi.com/images/pingpongpi_thumbnail.png">
 
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <!-- Preconnect to important third-party origins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://firebaseapp.com">
+    
+    <style>
+      #initial-loader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #1a1a1a 0%, #363636 100%);
+        z-index: 9999;
+      }
+      
+      #initial-loader .content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        padding: 3rem;
+        border-radius: 20px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      }
+      
+      #initial-loader h1 {
+        font-size: 4rem;
+        margin: 0 0 2rem 0;
+        color: white;
+      }
+      
+      #initial-loader .spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid rgba(255, 255, 255, 0.1);
+        border-top: 5px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 20px;
+      }
+      
+      #initial-loader h2 {
+        color: white;
+        font-size: 1.5rem;
+        margin: 0;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="initial-loader">
+      <div class="content">
+        <h1>🏓</h1>
+        <div class="spinner"></div>
+        <h2>Loading App...</h2>
+      </div>
+    </div>
     <div id="root"></div>
+    <script>
+      window.addEventListener('load', function() {
+        // Remove the loader when React mounts
+        const loader = document.getElementById('initial-loader');
+        loader.style.display = 'none';
+      });
+    </script>
   </body>
 </html>
