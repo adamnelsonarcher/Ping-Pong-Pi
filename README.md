@@ -9,7 +9,7 @@
 <li>This client code is now discontinued</li>
 <li>I have moved to a web app, www.pingpongpi.com</li>
 <li>The code for that is avaliable on this Github.</li>
-<li>The app was completley rebuilt, and it is better now. You can sync across devices.</li>
+<li>The app was completely rebuilt, and it is better now. You can sync across devices.</li>
 </ul>
 
 <p><span style="text-decoration: underline;"><span style="font-size: 12pt;"><strong>v2.2 - 9/27/24</strong></span></span></p>
