@@ -160,24 +160,29 @@ function LoginScreen({ onLogin }) {
           <div className="login-buttons">
             <div className="login-button-container">
               <button 
+                className="local-login-btn" 
+                onClick={handleLocalLogin}
+              >
+                <span className="btn-icon">💾</span>
+                <span className="btn-text">Use Local Storage</span>
+              </button>
+              <span className="button-subtext">Stores data on this device only</span>
+            </div>
+            
+            <div className="divider">
+              <span>or</span>
+            </div>
+            
+            <div className="login-button-container">
+              <button 
                 className="google-login-btn" 
                 onClick={handleGoogleLogin}
               >
                 <span className="btn-icon">G</span>
                 <span className="btn-text">Login with Google</span>
               </button>
-             {/* <span className="button-subtext">Will take a few seconds to sync with server</span> */}
+              <span className="button-subtext">Saves data to server, allows for sync between computers</span>
             </div>
-            <div className="divider">
-              <span>or</span>
-            </div>
-            <button 
-              className="local-login-btn" 
-              onClick={handleLocalLogin}
-            >
-              <span className="btn-icon">💾</span>
-              <span className="btn-text">Use Local Storage</span>
-            </button>
           </div>
         </div>
       )}
