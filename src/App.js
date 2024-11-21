@@ -31,32 +31,35 @@ function App() {
 
   useEffect(() => {
     const initializeApp = async () => {
-      if (currentUser) {
-        try {
-          const isLocalMode = localStorage.getItem('isLocalMode') === 'true';
-          if (isLocalMode) {
-            dataService.setLocalMode(true);
-          }
-          
-          await dataService.setCurrentUser(currentUser);
-          await dataService.loadData();
-          
-          setPlayers(Object.values(dataService.players));
-          setLeaderboard(dataService.getLeaderboard());
-          setGameHistory(dataService.gameHistory);
-          setGameHistoryKeep(dataService.settings.GAME_HISTORY_KEEP);
-          
-          if (!dataService.settings?.ADMIN_PASSWORD) {
-            setShowAdminPasswordPrompt(true);
-          } else {
-            setCurrentScreen('main');
-          }
-        } catch (error) {
-          console.error('Error initializing app:', error);
-          handleLogout();
-        }
-      } else {
+      if (!currentUser) {
         setCurrentScreen('login');
+        setIsInitialized(true);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const isLocalMode = localStorage.getItem('isLocalMode') === 'true';
+        if (isLocalMode) {
+          dataService.setLocalMode(true);
+        }
+        
+        await dataService.setCurrentUser(currentUser);
+        await dataService.loadData();
+        
+        setPlayers(Object.values(dataService.players));
+        setLeaderboard(dataService.getLeaderboard());
+        setGameHistory(dataService.gameHistory);
+        setGameHistoryKeep(dataService.settings.GAME_HISTORY_KEEP);
+        
+        if (!dataService.settings?.ADMIN_PASSWORD) {
+          setShowAdminPasswordPrompt(true);
+        } else {
+          setCurrentScreen('main');
+        }
+      } catch (error) {
+        console.error('Error initializing app:', error);
+        handleLogout();
       }
       setIsInitialized(true);
       setIsLoading(false);

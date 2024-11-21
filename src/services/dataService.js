@@ -104,7 +104,7 @@ class DataService {
     this.players = {};
     this.gameHistory = [];
     this.settings = { ...this.defaultSettings, ADMIN_PASSWORD: "" };
-    this.currentUser = localStorage.getItem('currentUser') || 'admin';
+    this.currentUser = localStorage.getItem('currentUser') || null;
     this.isLocalMode = localStorage.getItem('isLocalMode') === 'true';
     this.saveTimeout = null;
     this.SAVE_DELAY = 1000;
