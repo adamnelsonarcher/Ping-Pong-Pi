@@ -178,6 +178,7 @@ class DataService {
   }
 
   async saveData() {
+    console.log('Saving to URL:', `${API_URL}/api/saveData`);
     if (this.isLocalMode) {
       const dataToSave = {
         settings: this.settings,
@@ -188,22 +189,19 @@ class DataService {
       return true;
     } else {
       try {
-        const response = await fetch(`${API_URL}/api/getData`);
-        const data = await response.json();
-        
-        data.users[this.currentUser] = {
-          settings: this.settings,
-          players: this.players,
-          gameHistory: this.gameHistory
-        };
-
         const saveResponse = await fetch(`${API_URL}/api/saveData`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
+          body: JSON.stringify({
+            currentUser: this.currentUser,
+            settings: this.settings,
+            players: this.players,
+            gameHistory: this.gameHistory
+          })
         });
-
+  
         if (!saveResponse.ok) throw new Error('Failed to save data');
+        
         return true;
       } catch (error) {
         console.error('Error saving data:', error);

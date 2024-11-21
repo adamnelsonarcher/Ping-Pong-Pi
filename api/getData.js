@@ -3,23 +3,21 @@ const db = admin.firestore();
 
 module.exports = async (req, res) => {
   try {
-    const userId = req.query.userId;
-    if (!userId) {
-      return res.status(400).json({ error: 'userId is required' });
-    }
-
+    const encodedUser = req.query.userId.replace(/\./g, '_DOT_');
     const doc = await db.collection('pingpong').doc('data').get();
     const data = doc.exists ? doc.data() : { users: {} };
     
-    const userData = data.users[userId] || {
+    if (!data.users) {
+      data.users = {};
+    }
+    
+    res.json(data.users[encodedUser] || {
       settings: {},
       players: {},
       gameHistory: []
-    };
-    
-    res.status(200).json(userData);
+    });
   } catch (error) {
     console.error('Error reading data:', error);
-    res.status(500).json({ error: 'Failed to read data' });
+    res.status(500).json({ error: error.message });
   }
 }; 
