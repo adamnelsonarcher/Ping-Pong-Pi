@@ -11,7 +11,7 @@ function Scoreboard({ player1, player2, onGameEnd, onQuitGame = () => {} }) {
   const [endGameConfirmation, setEndGameConfirmation] = useState(false);
   const [confirmationTimer, setConfirmationTimer] = useState(null);
   const [quitGameConfirmation, setQuitGameConfirmation] = useState(false);
-  const [quitConfirmationTimer, setQuitConfirmationTimer] = useState(null);
+  const [quitConfirmationTimer] = useState(null);
   // const { settings } = useSettings();
 
   useEffect(() => {
