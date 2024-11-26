@@ -11,7 +11,7 @@
 }
 
 .Leaderboard td {
-  padding: 12px 20px;
+  padding: 16px 20px;
   font-size: 1.1em;
   line-height: 1.4;
 }
@@ -22,11 +22,11 @@
 }
 
 .Leaderboard tr:nth-child(even) {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: #f8f8f8;
 }
 
 .Leaderboard tr:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: #f0f0f0;
 }
 
 .Leaderboard .inactive {

@@ -8,6 +8,10 @@ function Scoreboard({ player1, player2, onGameEnd, onQuitGame = () => {} }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [message, setMessage] = useState('');
+  const [endGameConfirmation, setEndGameConfirmation] = useState(false);
+  const [confirmationTimer, setConfirmationTimer] = useState(null);
+  const [quitGameConfirmation, setQuitGameConfirmation] = useState(false);
+  const [quitConfirmationTimer, setQuitConfirmationTimer] = useState(null);
   // const { settings } = useSettings();
 
   useEffect(() => {
@@ -28,20 +32,71 @@ function Scoreboard({ player1, player2, onGameEnd, onQuitGame = () => {} }) {
     }
   }, []);
 
-  const handleEndGame = useCallback(async () => {
+  const handleEndGameClick = useCallback(async () => {
     const result = await endGame(player1, player2, player1Score, player2Score);
     if (result) {
-      console.log('Game ended, passing result to parent:', result);
       onGameEnd(result);
     }
   }, [player1, player2, player1Score, player2Score, onGameEnd]);
 
-  const handleQuitGame = useCallback(async () => {
+  const handleQuitGameClick = useCallback(async () => {
     const result = await quitGame(player1, player2);
     if (result) {
       onQuitGame(result);
     }
   }, [player1, player2, onQuitGame]);
+
+  const handleEndGameKey = useCallback(async () => {
+    if (!endGameConfirmation) {
+      setMessage('Press 1 again to confirm End Game');
+      setEndGameConfirmation(true);
+      
+      if (confirmationTimer) clearTimeout(confirmationTimer);
+      
+      const timer = setTimeout(() => {
+        setEndGameConfirmation(false);
+        setMessage('');
+      }, 3000);
+      
+      setConfirmationTimer(timer);
+      return;
+    }
+
+    setEndGameConfirmation(false);
+    setMessage('');
+    if (confirmationTimer) clearTimeout(confirmationTimer);
+
+    const result = await endGame(player1, player2, player1Score, player2Score);
+    if (result) {
+      onGameEnd(result);
+    }
+  }, [player1, player2, player1Score, player2Score, onGameEnd, endGameConfirmation, confirmationTimer]);
+
+  const handleQuitGameKey = useCallback(async () => {
+    if (!quitGameConfirmation) {
+      setMessage('Press 3 again to confirm Quit Game');
+      setQuitGameConfirmation(true);
+      
+      if (confirmationTimer) clearTimeout(confirmationTimer);
+      
+      const timer = setTimeout(() => {
+        setQuitGameConfirmation(false);
+        setMessage('');
+      }, 3000);
+      
+      setConfirmationTimer(timer);
+      return;
+    }
+
+    setQuitGameConfirmation(false);
+    setMessage('');
+    if (confirmationTimer) clearTimeout(confirmationTimer);
+
+    const result = await quitGame(player1, player2);
+    if (result) {
+      onQuitGame(result);
+    }
+  }, [player1, player2, onQuitGame, quitGameConfirmation, confirmationTimer]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -66,16 +121,16 @@ function Scoreboard({ player1, player2, onGameEnd, onQuitGame = () => {} }) {
 
   const handleKeyPress = useCallback((event) => {
     switch (event.key) {
-      case '1': handleEndGame(); break;
+      case '1': handleEndGameKey(); break;
       case '2': showTempMessage('Starting new game (placeholder)'); break;
-      case '3': handleQuitGame(); break;
+      case '3': handleQuitGameKey(); break;
       case '4': handleScoreChange(1, 1); break;
       case '5': handleScoreChange(1, -1); break;
       case '7': handleScoreChange(0, 1); break;
       case '8': handleScoreChange(0, -1); break;
       default: break;
     }
-  }, [handleEndGame, handleQuitGame, handleScoreChange, showTempMessage]);
+  }, [handleEndGameKey, handleQuitGameKey, handleScoreChange, showTempMessage]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyPress);
@@ -83,6 +138,14 @@ function Scoreboard({ player1, player2, onGameEnd, onQuitGame = () => {} }) {
       window.removeEventListener('keydown', handleKeyPress);
     };
   }, [handleKeyPress]);
+
+  // Clean up both timers on component unmount
+  useEffect(() => {
+    return () => {
+      if (confirmationTimer) clearTimeout(confirmationTimer);
+      if (quitConfirmationTimer) clearTimeout(quitConfirmationTimer);
+    };
+  }, [confirmationTimer, quitConfirmationTimer]);
 
   return (
     <div className="Scoreboard game-transition-enter" tabIndex="0">
@@ -101,8 +164,8 @@ function Scoreboard({ player1, player2, onGameEnd, onQuitGame = () => {} }) {
       <div className="game-controls">
         <button className="game-btn controls" onClick={toggleControls}>Controls</button>
         <div className="center-buttons">
-          <button className="game-btn end-game" onClick={handleEndGame}>End Game</button>
-          <button className="game-btn quit-game" onClick={handleQuitGame}>Quit Game</button>
+          <button className="game-btn end-game" onClick={handleEndGameClick}>End Game</button>
+          <button className="game-btn quit-game" onClick={handleQuitGameClick}>Quit Game</button>
         </div>
         <button className="game-btn fullscreen" onClick={toggleFullscreen}>
           {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
@@ -117,7 +180,7 @@ function Scoreboard({ player1, player2, onGameEnd, onQuitGame = () => {} }) {
           <button onClick={toggleControls}>Close</button>
         </div>
       )}
-      {message && <div className="temp-message">{message}</div>}
+      {message && <div className="temp-message confirmation-message">{message}</div>}
     </div>
   );
 }

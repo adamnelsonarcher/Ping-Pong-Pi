@@ -30,11 +30,6 @@ A real-time ping pong scoreboard and statistics tracker optimized for TV display
 
 ## Getting Started
 
-### Prerequisites
-
-- Node.js (v14 or higher)
-- Firebase account (for cloud features)
-
 ### Usage
 
 - Login: Choose between Google Authentication or Local Storage mode
@@ -55,4 +50,4 @@ The app includes several customizable settings:
 
 ### Credits
 
-- Designed and developed entirely by Adam Nelson-Archer. Check out my other demos at [adamnelsonarcher.com/demos](https://adamnelsonarcher.com/demos).
+- Designed and developed entirely by Adam Nelson-Archer. Check out my other web-based projects at [adamnelsonarcher.com/demos](https://adamnelsonarcher.com/demos).

@@ -40,11 +40,11 @@ body {
 }
 
 .leaderboard-column {
-  flex: 2;
+  flex: 5;
 }
 
 .history-column {
-  flex: 1;
+  flex: 3;
 }
 
 .App-footer {
@@ -390,4 +390,32 @@ input, select, textarea {
 
 .game-transition-exit {
   animation: gameEnd 0.3s ease-out;
+}
+
+.temp-message {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  color: #ffd700;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-size: 1.2em;
+  z-index: 1000;
+}
+
+.confirmation-message {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }

@@ -22,7 +22,7 @@ function InfoButton({ currentUser, onLogout }) {
                 <div className="version-info">
                   <span className="version-tag">Version 2.5</span>
                   <a 
-                    href="https://github.com/adamnelsonarcher/Ping-Pong-Pi/tree/Webapp" 
+                    href="https://github.com/adamnelsonarcher/Ping-Pong-Pi/releases" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="changelog-link"
