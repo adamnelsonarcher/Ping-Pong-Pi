@@ -20,7 +20,7 @@ function InfoButton({ currentUser, onLogout }) {
               <div className="version-header">
                 <h2>Ping Pong Pi</h2>
                 <div className="version-info">
-                  <span className="version-tag">Version 2.5</span>
+                  <span className="version-tag">Version 3.0.1</span>
                   <a 
                     href="https://github.com/adamnelsonarcher/Ping-Pong-Pi/releases" 
                     target="_blank" 
