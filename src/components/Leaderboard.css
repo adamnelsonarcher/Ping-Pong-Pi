@@ -1,4 +1,47 @@
+.Leaderboard table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.Leaderboard th {
+  padding: 12px 20px;
+  text-align: left;
+  font-size: 1.2em;
+  color: white;
+}
+
+.Leaderboard td {
+  padding: 12px 20px;
+  font-size: 1.1em;
+  line-height: 1.4;
+}
+
+.Leaderboard tr {
+  border-bottom: 1px solid #eee;
+  transition: background-color 0.2s ease;
+}
+
+.Leaderboard tr:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.Leaderboard tr:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
 .Leaderboard .inactive {
   color: #999;
   font-style: italic;
 }
+
+.Leaderboard td:nth-child(2) {
+  font-weight: 500;
+  font-size: 1.15em;
+}
+
+.Leaderboard span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
