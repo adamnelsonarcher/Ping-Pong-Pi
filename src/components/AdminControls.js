@@ -224,44 +224,44 @@ function AdminControls({ onExit, onAddPlayer }) {
   const handleUploadData = (event) => {
     const file = event.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        try {
-          const data = JSON.parse(e.target.result);
-          
-          // Validate the data structure
-          if (!data.settings || !data.players || !data.gameHistory) {
-            throw new Error('Invalid save file format');
-          }
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
 
-          if (dataService.isLocalMode) {
-            localStorage.setItem('localGameData', JSON.stringify(data));
-          } else {
-            const response = await fetch(`${API_URL}/api/getData`);
-            const serverData = await response.json();
-            
-            serverData.users[dataService.currentUser] = data;
-            
-            const saveResponse = await fetch(`${API_URL}/api/saveData`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(serverData)
-            });
+                // Validate the data structure
+                if (!data.settings || !data.players || !data.gameHistory) {
+                    throw new Error('Invalid save file format');
+                }
 
-            if (!saveResponse.ok) {
-              throw new Error('Failed to upload save data');
+                if (dataService.isLocalMode) {
+                    localStorage.setItem('localGameData', JSON.stringify(data));
+                } else {
+                    const saveResponse = await fetch(`${API_URL}/api/saveData`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            currentUser: dataService.currentUser,
+                            settings: data.settings,
+                            players: data.players,
+                            gameHistory: data.gameHistory
+                        })
+                    });
+
+                    if (!saveResponse.ok) {
+                        throw new Error('Failed to upload save data');
+                    }
+                }
+                
+                window.location.reload();
+            } catch (error) {
+                console.error('Error uploading data:', error);
+                alert('Failed to upload save file. Please ensure the file is valid.');
             }
-          }
-          
-          window.location.reload();
-        } catch (error) {
-          console.error('Error uploading data:', error);
-          alert('Failed to upload save file. Please ensure the file is valid.');
-        }
-      };
-      reader.readAsText(file);
+        };
+        reader.readAsText(file);
     }
   };
 
