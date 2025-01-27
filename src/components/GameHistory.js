@@ -37,6 +37,7 @@ const formatGameResult = (game) => {
   
   const winnerRank = score1 > score2 ? game.player1Rank : game.player2Rank;
   const loserRank = score1 > score2 ? game.player2Rank : game.player1Rank;
+  void(winnerRank, loserRank);
 
   const isSkunk = (winnerScore === 7 && loserScore === 0) || (winnerScore === 11 && loserScore === 1);
   const actionWord = isSkunk ? "skunked" : "beat";
