@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { endGame, quitGame } from '../services/dataService';
+import AnimatedScore from './AnimatedScore';
 // import { useSettings } from '../contexts/SettingsContext';
 
 function Scoreboard({ player1, player2, onGameEnd, onQuitGame = () => {} }) {
@@ -153,7 +154,7 @@ function Scoreboard({ player1, player2, onGameEnd, onQuitGame = () => {} }) {
         {[player1, player2].map((player, index) => (
           <div key={player} className={`player-score ${index === 0 ? 'green' : 'blue'}`}>
             <div className="player-name">{player}</div>
-            <div className="score">{index === 0 ? player1Score : player2Score}</div>
+            <AnimatedScore score={index === 0 ? player1Score : player2Score} index={index} />
             <div className="score-buttons">
               <button className="score-btn plus" onClick={() => handleScoreChange(index, 1)}>+1</button>
               <button className="score-btn minus" onClick={() => handleScoreChange(index, -1)}>-1</button>

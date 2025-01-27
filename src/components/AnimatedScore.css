@@ -1,0 +1,37 @@
+.score {
+  position: relative;
+  transition: transform 0.2s ease;
+  color: white;
+}
+
+.score-increase {
+  animation: scoreIncrease 0.5s ease;
+}
+
+.score-decrease {
+  animation: scoreDecrease 0.5s ease;
+}
+
+@keyframes scoreIncrease {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes scoreDecrease {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1);
+  }
+} 
