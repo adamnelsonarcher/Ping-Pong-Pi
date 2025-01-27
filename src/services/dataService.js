@@ -389,9 +389,47 @@ class DataService {
   }
 
   async saveGameHistory(gameResult) {
-    this.gameHistory.push(gameResult);
-    this.debouncedSave();
-    return true;
+    try {
+      if (!this.currentUser) {
+        console.error('No current user');
+        return false;
+      }
+
+      const response = await fetch(`${API_URL}/api/getData`);
+      const data = await response.json();
+
+      if (!data.users[this.currentUser]) {
+        console.error('User data not found');
+        return false;
+      }
+
+      // Add the new game to history
+      if (!data.users[this.currentUser].gameHistory) {
+        data.users[this.currentUser].gameHistory = [];
+      }
+      data.users[this.currentUser].gameHistory.push(gameResult);
+
+      // Save the updated data
+      const saveResponse = await fetch(`${API_URL}/api/saveData`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+      });
+
+      if (!saveResponse.ok) {
+        throw new Error('Failed to save game history');
+      }
+
+      // Immediately reload the data to update the UI
+      await this.loadData();
+      
+      return true;
+    } catch (error) {
+      console.error('Error saving game history:', error);
+      return false;
+    }
   }
 
   setCurrentUser(username) {
