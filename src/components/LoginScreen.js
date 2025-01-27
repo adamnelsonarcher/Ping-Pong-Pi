@@ -67,8 +67,11 @@ function LoginScreen({ onLogin }) {
     try {
       console.log('Starting Google login process...');
       setIsLoading(true);
+      
+      // Only show warning if currently in local mode
+      const isLocalMode = localStorage.getItem('isLocalMode') === 'true';
       const localData = localStorage.getItem('localGameData');
-      if (localData) {
+      if (isLocalMode && localData) {
         const confirmed = window.confirm(
           'WARNING: Signing in with Google will remove your local save data. ' +
           'Please download your save data from the admin panel first if you want to keep it.\n\n' +
@@ -79,6 +82,8 @@ function LoginScreen({ onLogin }) {
           setIsLoading(false);
           return;
         }
+        // Clear local data only if confirmed
+        localStorage.removeItem('localGameData');
       }
       
       console.log('Signing out of any existing session...');
@@ -103,12 +108,10 @@ function LoginScreen({ onLogin }) {
       const { success, isFirstUser } = await dataService.createUser(email);
       console.log('User creation result:', { success, isFirstUser });
       
-      if (!success) {
-        throw new Error('Failed to create/load user data');
+      if (success) {
+        await dataService.loadData(); // Load data after successful creation/verification
       }
       
-      await dataService.loadData();
-      console.log('Calling onLogin...');
       onLogin(email);
     } catch (error) {
       console.error('Google login error:', error);

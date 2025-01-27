@@ -439,51 +439,30 @@ class DataService {
     return this.loadData();
   }
 
-  async createUser(username, password) {
+  async createUser(username) {
     try {
       if (!username) {
         console.error('No username provided');
         return { success: false, isFirstUser: false };
       }
 
-      console.log('Fetching data from:', `${API_URL}/api/getData?userId=${encodeURIComponent(username)}`);
-      const response = await fetch(`${API_URL}/api/getData?userId=${encodeURIComponent(username)}`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        console.error('getData response not ok:', response.status, response.statusText);
-        const text = await response.text();
-        console.error('Response text:', text);
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        console.error('Invalid content type:', contentType);
-        const text = await response.text();
-        console.error('Response text:', text);
-        throw new Error("Server didn't return JSON");
-      }
-
+      // First check if user exists
+      const response = await fetch(`${API_URL}/api/getData?userId=${encodeURIComponent(username)}`);
       const data = await response.json();
-      console.log('Got existing data:', data);
       
-      // Set current user before saving data
-      this.currentUser = username;
-      
-      // Initialize default data for new user
+      // If user exists, just return success
+      if (data && Object.keys(data).length > 0) {
+        this.currentUser = username;
+        return { success: true, isFirstUser: false };
+      }
+
+      // If user doesn't exist, create new user data
       const userData = {
         settings: { ...this.defaultSettings },
         players: {},
         gameHistory: []
       };
 
-      console.log('Saving updated data...');
       const saveResponse = await fetch(`${API_URL}/api/saveData`, {
         method: 'POST',
         headers: {
@@ -496,16 +475,11 @@ class DataService {
       });
 
       if (!saveResponse.ok) {
-        console.error('saveData response not ok:', saveResponse.status, saveResponse.statusText);
-        const text = await saveResponse.text();
-        console.error('Save response text:', text);
         throw new Error('Failed to save new user data');
       }
 
-      // Load the saved data
-      await this.loadData();
-      
-      return { success: true, isFirstUser: false };
+      this.currentUser = username;
+      return { success: true, isFirstUser: true };
     } catch (error) {
       console.error('Error in createUser:', error);
       return { success: false, isFirstUser: false };
