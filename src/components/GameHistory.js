@@ -54,7 +54,7 @@ const formatGameResult = (game) => {
     const loserChange = score1 > score2 ? game.pointChange2 : game.pointChange1;
     const winnerChangeText = winnerChange > 0 ? `+${winnerChange.toFixed(2)}` : winnerChange.toFixed(2);
     const loserChangeText = loserChange > 0 ? `+${loserChange.toFixed(2)}` : loserChange.toFixed(2);
-    message += ` ${winnerChangeText} / ${loserChangeText}`;
+    message += `<br><span class="score-change">${winnerChangeText} / ${loserChangeText}</span>`;
   }
 
   return { message, isSkunk };
