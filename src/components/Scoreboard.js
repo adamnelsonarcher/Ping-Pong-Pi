@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { endGame, quitGame } from '../services/dataService';
 import AnimatedScore from './AnimatedScore';
 import VictoryAnimation from './VictoryAnimation';
-// import { useSettings } from '../contexts/SettingsContext';
+import { useSettings } from '../contexts/SettingsContext';
 
 function Scoreboard({ player1, player2, onGameEnd, onQuitGame = () => {} }) {
   const [player1Score, setPlayer1Score] = useState(0);
@@ -16,7 +16,7 @@ function Scoreboard({ player1, player2, onGameEnd, onQuitGame = () => {} }) {
   const [quitConfirmationTimer] = useState(null);
   const [showVictory, setShowVictory] = useState(false);
   const [winner, setWinner] = useState(null);
-  // const { settings } = useSettings();
+  const { settings } = useSettings();
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -38,22 +38,30 @@ function Scoreboard({ player1, player2, onGameEnd, onQuitGame = () => {} }) {
 
   const handleEndGameClick = useCallback(async () => {
     const winningPlayer = player1Score > player2Score ? player1 : player2;
-    setWinner(winningPlayer);
-    setShowVictory(true);
     
-    // End game and switch to leaderboard after 3 seconds (during animation)
-    const result = await endGame(player1, player2, player1Score, player2Score);
-    setTimeout(() => {
+    // Check if animation is disabled in settings
+    if (!settings?.DISABLE_WIN_ANIMATION) {
+      setWinner(winningPlayer);
+      setShowVictory(true);
+      
+      const result = await endGame(player1, player2, player1Score, player2Score);
+      setTimeout(() => {
+        if (result) {
+          onGameEnd(result);
+        }
+      }, 3000);
+      
+      setTimeout(() => {
+        setShowVictory(false);
+      }, 3500);
+    } else {
+      // If animation is disabled, just end the game immediately
+      const result = await endGame(player1, player2, player1Score, player2Score);
       if (result) {
         onGameEnd(result);
       }
-    }, 3000); // Switch during animation
-    
-    // Hide victory animation after it completes
-    setTimeout(() => {
-      setShowVictory(false);
-    }, 3500);
-  }, [player1, player2, player1Score, player2Score, onGameEnd]);
+    }
+  }, [player1, player2, player1Score, player2Score, onGameEnd, settings]);
 
   const handleQuitGameClick = useCallback(async () => {
     const result = await quitGame(player1, player2);

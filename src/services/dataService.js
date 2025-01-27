@@ -98,7 +98,8 @@ class DataService {
       PLAYER1_SCOREBOARD_COLOR: "#4CAF50",
       PLAYER2_SCOREBOARD_COLOR: "#2196F3",
       GAME_HISTORY_KEEP: 30,
-      ADDPLAYER_ADMINONLY: false
+      ADDPLAYER_ADMINONLY: false,
+      DISABLE_WIN_ANIMATION: false
     };
     
     this.players = {};

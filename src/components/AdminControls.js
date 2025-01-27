@@ -82,7 +82,8 @@ function AdminControls({ onExit, onAddPlayer }) {
     ADDPLAYER_ADMINONLY: "Moves the 'Add New Player' button to the admin controls section.",
     DEFAULT_RANK: "Text that shows instead of score for for unranked/inactive players.",
     PLAYER1_SCOREBOARD_COLOR: "Color of the scoreboard for Player 1.",
-    PLAYER2_SCOREBOARD_COLOR: "Color of the scoreboard for Player 2."
+    PLAYER2_SCOREBOARD_COLOR: "Color of the scoreboard for Player 2.",
+    DISABLE_WIN_ANIMATION: "Disables the victory animation when a game ends.",
   };
 
   const renderSettingInput = (key, value) => {
@@ -130,7 +131,8 @@ function AdminControls({ onExit, onAddPlayer }) {
         PLAYER1_SCOREBOARD_COLOR: '#4CAF50',
         PLAYER2_SCOREBOARD_COLOR: '#2196F3',
         GAME_HISTORY_KEEP: 30,
-        ADDPLAYER_ADMINONLY: false
+        ADDPLAYER_ADMINONLY: false,
+        DISABLE_WIN_ANIMATION: false
       };
 
       setGameSettings(defaultSettings);

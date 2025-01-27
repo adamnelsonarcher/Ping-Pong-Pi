@@ -84,8 +84,15 @@ function App() {
 
   const handleGameEnd = async (gameResult) => {
     try {
-      // The game has already ended, just update the UI
-      // setGameHistory(prev => [...prev, gameResult].slice(-gameHistoryKeep));
+      if (gameResult) {
+        const gameHistoryKeep = dataService.settings?.GAME_HISTORY_KEEP || 30;
+        if (dataService.isLocalMode) {
+          const localData = JSON.parse(localStorage.getItem('localGameData'));
+          localData.gameHistory = [...localData.gameHistory, gameResult].slice(-gameHistoryKeep);
+          localStorage.setItem('localGameData', JSON.stringify(localData));
+          setGameHistory(localData.gameHistory);
+        }
+      }
       updateLeaderboard();
     } catch (error) {
       console.error('Error handling game end:', error);
