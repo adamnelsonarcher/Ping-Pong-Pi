@@ -85,13 +85,7 @@ function App() {
   const handleGameEnd = async (gameResult) => {
     try {
       if (gameResult) {
-        const gameHistoryKeep = dataService.settings?.GAME_HISTORY_KEEP || 30;
-        if (dataService.isLocalMode) {
-          const localData = JSON.parse(localStorage.getItem('localGameData'));
-          localData.gameHistory = [...localData.gameHistory, gameResult].slice(-gameHistoryKeep);
-          localStorage.setItem('localGameData', JSON.stringify(localData));
-          setGameHistory(localData.gameHistory);
-        }
+        setGameHistory(dataService.gameHistory);
       }
       updateLeaderboard();
     } catch (error) {
