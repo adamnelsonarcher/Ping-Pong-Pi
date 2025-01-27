@@ -147,10 +147,6 @@ class DataService {
       }
       return false;
     } else {
-      try {
-        if (!this.currentUser) {
-          throw new Error('No current user set');
-        }
 
         const response = await fetch(`${API_URL}/api/getData?userId=${this.currentUser}`);
         if (!response.ok) throw new Error('Failed to fetch data');
@@ -171,10 +167,6 @@ class DataService {
         });
         
         return true;
-      } catch (error) {
-        console.error('Error loading data:', error);
-        throw error;
-      }
     }
   }
 
@@ -398,11 +390,6 @@ class DataService {
   }
 
   async saveGameHistory(gameResult) {
-    try {
-      if (!this.currentUser) {
-        console.error('No current user');
-        return false;
-      }
 
       const response = await fetch(`${API_URL}/api/getData`);
       const data = await response.json();
@@ -435,10 +422,7 @@ class DataService {
       await this.loadData();
       
       return true;
-    } catch (error) {
-      console.error('Error saving game history:', error);
-      return false;
-    }
+
   }
 
   setCurrentUser(username) {
@@ -451,49 +435,69 @@ class DataService {
     try {
       if (!username) {
         console.error('No username provided');
-        return false;
+        return { success: false, isFirstUser: false };
       }
 
-      const response = await fetch(`${API_URL}/api/getData`);
-      const data = await response.json();
-      
-      let isFirstUser = Object.keys(data.users).length === 0;
-      if (!data.users[username]) {
-        // Create new user with default settings
-        data.users[username] = {
-          settings: {
-            SCORE_CHANGE_K_FACTOR: 70,
-            POINT_DIFFERENCE_WEIGHT: 6,
-            ACTIVITY_THRESHOLD: 3,
-            DEFAULT_RANK: "Unranked",
-            PLAYER1_SCOREBOARD_COLOR: "#4CAF50",
-            PLAYER2_SCOREBOARD_COLOR: "#2196F3",
-            GAME_HISTORY_KEEP: 30,
-            ADDPLAYER_ADMINONLY: false,
-            ADMIN_PASSWORD: ""
-          },
-          players: {},
-          gameHistory: []
-        };
-
-        const saveResponse = await fetch(`${API_URL}/api/saveData`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(data)
-        });
-
-        if (!saveResponse.ok) {
-          throw new Error('Failed to save new user data');
+      console.log('Fetching data from:', `${API_URL}/api/getData?userId=${encodeURIComponent(username)}`);
+      const response = await fetch(`${API_URL}/api/getData?userId=${encodeURIComponent(username)}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
         }
+      });
+      
+      if (!response.ok) {
+        console.error('getData response not ok:', response.status, response.statusText);
+        const text = await response.text();
+        console.error('Response text:', text);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      // Set current user and load their data
-      await this.setCurrentUser(username);
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        console.error('Invalid content type:', contentType);
+        const text = await response.text();
+        console.error('Response text:', text);
+        throw new Error("Server didn't return JSON");
+      }
+
+      const data = await response.json();
+      console.log('Got existing data:', data);
+      
+      // Set current user before saving data
+      this.currentUser = username;
+      
+      // Initialize default data for new user
+      const userData = {
+        settings: { ...this.defaultSettings },
+        players: {},
+        gameHistory: []
+      };
+
+      console.log('Saving updated data...');
+      const saveResponse = await fetch(`${API_URL}/api/saveData`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          currentUser: username,
+          ...userData
+        })
+      });
+
+      if (!saveResponse.ok) {
+        console.error('saveData response not ok:', saveResponse.status, saveResponse.statusText);
+        const text = await saveResponse.text();
+        console.error('Save response text:', text);
+        throw new Error('Failed to save new user data');
+      }
+
+      // Load the saved data
       await this.loadData();
       
-      return { success: true, isFirstUser };
+      return { success: true, isFirstUser: false };
     } catch (error) {
       console.error('Error in createUser:', error);
       return { success: false, isFirstUser: false };

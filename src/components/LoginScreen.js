@@ -65,6 +65,7 @@ function LoginScreen({ onLogin }) {
 
   const handleGoogleLogin = async () => {
     try {
+      console.log('Starting Google login process...');
       setIsLoading(true);
       const localData = localStorage.getItem('localGameData');
       if (localData) {
@@ -80,16 +81,34 @@ function LoginScreen({ onLogin }) {
         }
       }
       
+      console.log('Signing out of any existing session...');
       await auth.signOut();
+      
+      console.log('Opening Google sign-in popup...');
       const result = await signInWithPopup(auth, googleProvider);
+      console.log('Google sign-in result:', result);
       
       if (!result.user || !result.user.email) {
         throw new Error('No user email found');
       }
       
       const email = result.user.email;
+      console.log('Got user email:', email);
+      
+      console.log('Setting up data service...');
       dataService.setLocalMode(false);
       localStorage.setItem('currentUser', email);
+      
+      console.log('Creating/loading user data...');
+      const { success, isFirstUser } = await dataService.createUser(email);
+      console.log('User creation result:', { success, isFirstUser });
+      
+      if (!success) {
+        throw new Error('Failed to create/load user data');
+      }
+      
+      await dataService.loadData();
+      console.log('Calling onLogin...');
       onLogin(email);
     } catch (error) {
       console.error('Google login error:', error);
