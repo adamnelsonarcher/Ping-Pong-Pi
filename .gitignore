@@ -14,6 +14,7 @@
 # misc
 .DS_Store
 .env.local
+.env
 .env.development.local
 .env.test.local
 .env.production.local
@@ -26,4 +27,3 @@ src/config/serviceAccountKey.json
 src/config/serviceAccountKey.json
 
 .vercel
-.env
