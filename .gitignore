@@ -26,3 +26,5 @@ src/config/serviceAccountKey.json
 src/config/serviceAccountKey.json
 
 .vercel
+.env
+.env

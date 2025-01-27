@@ -5,8 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#2196F3" />
     
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://pingpongpi.com/" />
+    
     <!-- Primary Meta Tags -->
-    <title>Ping Pong Pi - Real-time Table Tennis Scoreboard</title>
+    <title>Ping Pong Pi - Real-time Scoreboard</title>
     <meta name="title" content="Ping Pong Pi - Real-time Table Tennis Scoreboard">
     <meta name="description" content="Track ping pong matches, player rankings, and game history in real-time. Perfect for offices and recreational spaces with TV display optimization.">
     <meta name="keywords" content="ping pong scoreboard, table tennis tracker, player rankings, game stats, real-time scores, office ping pong, recreational sports, tournament tracking">
@@ -101,6 +104,28 @@
         const loader = document.getElementById('initial-loader');
         loader.style.display = 'none';
       });
+    </script>
+    <!-- JSON-LD Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Ping Pong Pi",
+      "description": "Real-time ping pong scoreboard and statistics tracker",
+      "applicationCategory": "SportsApplication",
+      "operatingSystem": "Any",
+      "url": "https://pingpongpi.com",
+      "author": {
+        "@type": "Person",
+        "name": "Adam Nelson-Archer",
+        "url": "https://nelsonarcher.com"
+      }
+      "screenshot": {
+        "@type": "ImageObject",
+        "url": "https://pingpongpi.com/images/screenshot1.png",
+        "caption": "Ping Pong Pi Scoreboard Interface"
+      }
+    }
     </script>
   </body>
 </html>

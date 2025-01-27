@@ -10,9 +10,10 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
-    "firebase": "^11.0.1",
+    "firebase": "^11.2.0",
     "firebase-admin": "^12.7.0",
     "framer-motion": "^11.11.11",
+    "ping-pong-react": "file:",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-scripts": "5.0.1",
@@ -20,8 +21,8 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "next start",
-    "build": "next build",
+    "start": "react-scripts start",
+    "build": "react-scripts build",
     "vercel-build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
