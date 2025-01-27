@@ -24,10 +24,8 @@ const formatGameResult = (game) => {
 
   // Handle tie games
   if (score1 === score2) {
-    const player1Name = game.player1Rank === 'Unranked' ? `${game.player1} (unranked)` : game.player1;
-    const player2Name = game.player2Rank === 'Unranked' ? `${game.player2} (unranked)` : game.player2;
     return {
-      message: `<b>${player1Name}</b> and <b>${player2Name}</b> tied <b>[${score1} - ${score2}]</b>`,
+      message: `<b>${game.player1}</b> and <b>${game.player2}</b> tied <b>[${score1} - ${score2}]</b>`,
       isSkunk: false
     };
   }
@@ -40,16 +38,15 @@ const formatGameResult = (game) => {
   const winnerRank = score1 > score2 ? game.player1Rank : game.player2Rank;
   const loserRank = score1 > score2 ? game.player2Rank : game.player1Rank;
 
-  const winnerName = winnerRank === 'Unranked' ? `${winner} (unranked)` : winner;
-  const loserName = loserRank === 'Unranked' ? `${loser} (unranked)` : loser;
-
   const isSkunk = (winnerScore === 7 && loserScore === 0) || (winnerScore === 11 && loserScore === 1);
   const actionWord = isSkunk ? "skunked" : "beat";
 
-  let message = `<b>${winnerName}</b> ${actionWord} <b>${loserName}</b> <b>[${winnerScore} - ${loserScore}]</b>`;
+  let message = `<b>${winner}</b> ${actionWord} <b>${loser}</b> <b>[${winnerScore} - ${loserScore}]</b>`;
 
-  // Add score changes only if both players are ranked
-  if (game.player1Rank !== 'Unranked' && game.player2Rank !== 'Unranked') {
+  // Add score changes or placement match message
+  if (game.player1Rank === 'Unranked' || game.player2Rank === 'Unranked') {
+    message += `<br><span class="placement-match">placement match</span>`;
+  } else {
     const winnerChange = score1 > score2 ? game.pointChange1 : game.pointChange2;
     const loserChange = score1 > score2 ? game.pointChange2 : game.pointChange1;
     const winnerChangeText = winnerChange > 0 ? `+${winnerChange.toFixed(2)}` : winnerChange.toFixed(2);
