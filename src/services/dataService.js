@@ -247,6 +247,14 @@ class DataService {
     const winnerScoreChange = winner.updateScore(loser, true, pointDifference, this.settings);
     const loserScoreChange = loser.updateScore(winner, false, pointDifference, this.settings);
 
+    // Save updated player data if in local mode
+    if (this.isLocalMode) {
+      const localData = JSON.parse(localStorage.getItem('localGameData'));
+      localData.players[player1Name] = player1;
+      localData.players[player2Name] = player2;
+      localStorage.setItem('localGameData', JSON.stringify(localData));
+    }
+
     // Create game history entry
     const gameResult = {
       player1: player1Name,
