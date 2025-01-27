@@ -1,0 +1,37 @@
+.victory-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: backgroundFlash 1.5s steps(1, end);
+}
+
+.victory-text {
+  font-size: 15vh;
+  font-weight: bold;
+  text-align: center;
+  animation: textFlash 1.5s steps(1, end);
+}
+
+@keyframes backgroundFlash {
+  0%, 33.33%, 66.66% {
+    background-color: white;
+  }
+  16.66%, 50%, 83.33% {
+    background-color: black;
+  }
+}
+
+@keyframes textFlash {
+  0%, 33.33%, 66.66% {
+    color: black;
+  }
+  16.66%, 50%, 83.33% {
+    color: white;
+  }
+} 

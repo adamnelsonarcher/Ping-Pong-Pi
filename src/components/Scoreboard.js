@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { endGame, quitGame } from '../services/dataService';
 import AnimatedScore from './AnimatedScore';
+import VictoryAnimation from './VictoryAnimation';
 // import { useSettings } from '../contexts/SettingsContext';
 
 function Scoreboard({ player1, player2, onGameEnd, onQuitGame = () => {} }) {
@@ -13,6 +14,8 @@ function Scoreboard({ player1, player2, onGameEnd, onQuitGame = () => {} }) {
   const [confirmationTimer, setConfirmationTimer] = useState(null);
   const [quitGameConfirmation, setQuitGameConfirmation] = useState(false);
   const [quitConfirmationTimer] = useState(null);
+  const [showVictory, setShowVictory] = useState(false);
+  const [winner, setWinner] = useState(null);
   // const { settings } = useSettings();
 
   useEffect(() => {
@@ -34,10 +37,22 @@ function Scoreboard({ player1, player2, onGameEnd, onQuitGame = () => {} }) {
   }, []);
 
   const handleEndGameClick = useCallback(async () => {
+    const winningPlayer = player1Score > player2Score ? player1 : player2;
+    setWinner(winningPlayer);
+    setShowVictory(true);
+    
+    // End game and switch to leaderboard after 1 second (during animation)
     const result = await endGame(player1, player2, player1Score, player2Score);
-    if (result) {
-      onGameEnd(result);
-    }
+    setTimeout(() => {
+      if (result) {
+        onGameEnd(result);
+      }
+    }, 1000); // Switch during animation
+    
+    // Hide victory animation after it completes
+    setTimeout(() => {
+      setShowVictory(false);
+    }, 1500);
   }, [player1, player2, player1Score, player2Score, onGameEnd]);
 
   const handleQuitGameClick = useCallback(async () => {
@@ -182,6 +197,12 @@ function Scoreboard({ player1, player2, onGameEnd, onQuitGame = () => {} }) {
         </div>
       )}
       {message && <div className="temp-message confirmation-message">{message}</div>}
+      {showVictory && (
+        <VictoryAnimation 
+          winner={winner} 
+          onAnimationEnd={() => setShowVictory(false)} 
+        />
+      )}
     </div>
   );
 }
