@@ -41,18 +41,18 @@ function Scoreboard({ player1, player2, onGameEnd, onQuitGame = () => {} }) {
     setWinner(winningPlayer);
     setShowVictory(true);
     
-    // End game and switch to leaderboard after 1 second (during animation)
+    // End game and switch to leaderboard after 3 seconds (during animation)
     const result = await endGame(player1, player2, player1Score, player2Score);
     setTimeout(() => {
       if (result) {
         onGameEnd(result);
       }
-    }, 1000); // Switch during animation
+    }, 3000); // Switch during animation
     
     // Hide victory animation after it completes
     setTimeout(() => {
       setShowVictory(false);
-    }, 1500);
+    }, 3500);
   }, [player1, player2, player1Score, player2Score, onGameEnd]);
 
   const handleQuitGameClick = useCallback(async () => {

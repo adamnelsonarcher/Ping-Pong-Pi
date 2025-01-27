@@ -5,7 +5,7 @@ function VictoryAnimation({ winner, onAnimationEnd }) {
   useEffect(() => {
     const timer = setTimeout(() => {
       onAnimationEnd();
-    }, 2000);
+    }, 3500);
 
     return () => clearTimeout(timer);
   }, [onAnimationEnd]);
