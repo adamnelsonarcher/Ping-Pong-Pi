@@ -239,14 +239,6 @@ class DataService {
     const winnerScoreChange = winner.updateScore(loser, true, pointDifference, this.settings);
     const loserScoreChange = loser.updateScore(winner, false, pointDifference, this.settings);
 
-    // Save updated player data if in local mode
-    if (this.isLocalMode) {
-      const localData = JSON.parse(localStorage.getItem('localGameData'));
-      localData.players[player1Name] = player1;
-      localData.players[player2Name] = player2;
-      localStorage.setItem('localGameData', JSON.stringify(localData));
-    }
-
     // Create game history entry
     const gameResult = {
       player1: player1Name,
@@ -258,6 +250,22 @@ class DataService {
       pointChange2: player2 === winner ? winnerScoreChange : loserScoreChange,
       date: new Date().toISOString()
     };
+
+    // Update game history
+    const gameHistoryKeep = this.settings?.GAME_HISTORY_KEEP || 30;
+    this.gameHistory = [...this.gameHistory, gameResult].slice(-gameHistoryKeep);
+
+    // Save the updated data
+    if (this.isLocalMode) {
+      const localData = {
+        settings: this.settings,
+        players: this.players,
+        gameHistory: this.gameHistory
+      };
+      localStorage.setItem('localGameData', JSON.stringify(localData));
+    } else {
+      this.debouncedSave();
+    }
 
     return gameResult;
   }
@@ -611,22 +619,30 @@ export const getGameHistory = () => {
   return dataService.gameHistory;
 };
 
-export const endGame = async (player1Name, player2Name, player1Score, player2Score) => {
+export const endGame = async (player1, player2, player1Score, player2Score) => {
   try {
-    const score1 = parseInt(player1Score, 10);
-    const score2 = parseInt(player2Score, 10);
+    console.log('Ending game with scores:', player1Score, player2Score);
+    const result = dataService.recordGame(player1, player2, player1Score, player2Score);
     
-    if (isNaN(score1) || isNaN(score2)) {
-      console.error('Invalid scores:', player1Score, player2Score);
+    if (!result) {
+      console.error('Failed to record game');
       return null;
     }
-    console.log('endGame called with scores:', score1, score2);
-    const gameResult = dataService.recordGame(player1Name, player2Name, score1, score2);
-    if (gameResult) {
-      await dataService.saveGameHistory(gameResult);
-      return gameResult;
+
+    // Save data if in local mode
+    if (dataService.isLocalMode) {
+      const localData = {
+        settings: dataService.settings,
+        players: dataService.players,
+        gameHistory: dataService.gameHistory
+      };
+      localStorage.setItem('localGameData', JSON.stringify(localData));
+    } else {
+      // Save to server
+      await dataService.debouncedSave();
     }
-    return null;
+
+    return result;
   } catch (error) {
     console.error('Error ending game:', error);
     return null;
