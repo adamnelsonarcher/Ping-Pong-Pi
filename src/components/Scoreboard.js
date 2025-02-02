@@ -36,7 +36,7 @@ function Scoreboard({ player1, player2, onGameEnd, onQuitGame = () => {} }) {
     }
   }, []);
 
-  const handleEndGameClick = useCallback(async () => {
+  const handleGameEnd = useCallback(async () => {
     const winningPlayer = player1Score > player2Score ? player1 : player2;
     
     // Check if animation is disabled in settings
@@ -62,6 +62,10 @@ function Scoreboard({ player1, player2, onGameEnd, onQuitGame = () => {} }) {
       }
     }
   }, [player1, player2, player1Score, player2Score, onGameEnd, settings]);
+
+  const handleEndGameClick = useCallback(async () => {
+    handleGameEnd();
+  }, [handleGameEnd]);
 
   const handleQuitGameClick = useCallback(async () => {
     const result = await quitGame(player1, player2);
@@ -90,11 +94,8 @@ function Scoreboard({ player1, player2, onGameEnd, onQuitGame = () => {} }) {
     setMessage('');
     if (confirmationTimer) clearTimeout(confirmationTimer);
 
-    const result = await endGame(player1, player2, player1Score, player2Score);
-    if (result) {
-      onGameEnd(result);
-    }
-  }, [player1, player2, player1Score, player2Score, onGameEnd, endGameConfirmation, confirmationTimer]);
+    handleGameEnd();
+  }, [endGameConfirmation, confirmationTimer, handleGameEnd]);
 
   const handleQuitGameKey = useCallback(async () => {
     if (!quitGameConfirmation) {
