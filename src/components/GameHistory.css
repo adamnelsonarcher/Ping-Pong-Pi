@@ -26,6 +26,8 @@
   cursor: pointer;
   font-size: 1.1em;
   line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .game-history-item:last-child {
@@ -68,4 +70,24 @@
   color: #666;
   font-size: 0.9em;
   font-style: italic;
+}
+
+.game-history-item.long-names {
+  font-size: 0.9em;
+}
+
+.game-history-item.very-long-names {
+  font-size: 0.8em;
+}
+
+.game-history-item .game-result {
+  overflow: hidden;
+}
+
+.game-history-item.long-names .game-result {
+  font-size: 0.9em;
+}
+
+.game-history-item.very-long-names .game-result {
+  font-size: 0.8em;
 }

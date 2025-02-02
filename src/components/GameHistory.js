@@ -3,30 +3,46 @@ import './GameHistory.css';
 
 const formatGameResult = (game) => {
   if (!game) {
-    return { message: 'Invalid game data: game is undefined', isSkunk: false };
+    return { message: 'Invalid game data: game is undefined', isSkunk: false, className: '' };
+  }
+
+  // Calculate total length of player names
+  const totalNameLength = game.player1.length + game.player2.length;
+  let className = '';
+  
+  if (totalNameLength > 20) {
+    className = 'long-names';
+  }
+  if (totalNameLength > 30) {
+    className = 'very-long-names';
   }
 
   if (game.score === 'Quit') {
-    return { message: `Game between <b>${game.player1}</b> and <b>${game.player2}</b> was quit`, isSkunk: false };
+    return { 
+      message: `Game between <b>${game.player1}</b> and <b>${game.player2}</b> was quit`,
+      isSkunk: false,
+      className 
+    };
   }
 
   // Check if score is undefined or not a string
   if (typeof game.score !== 'string') {
-    return { message: `Invalid game data for ${game.player1} vs ${game.player2}`, isSkunk: false };
+    return { message: `Invalid game data for ${game.player1} vs ${game.player2}`, isSkunk: false, className };
   }
 
   const [score1, score2] = game.score.split(' - ').map(Number);
   
   // Check if scores are valid numbers
   if (isNaN(score1) || isNaN(score2)) {
-    return { message: `Invalid score data for ${game.player1} vs ${game.player2}: ${game.score}`, isSkunk: false };
+    return { message: `Invalid score data for ${game.player1} vs ${game.player2}: ${game.score}`, isSkunk: false, className };
   }
 
   // Handle tie games
   if (score1 === score2) {
     return {
       message: `<b>${game.player1}</b> and <b>${game.player2}</b> tied <b>[${score1} - ${score2}]</b>`,
-      isSkunk: false
+      isSkunk: false,
+      className
     };
   }
 
@@ -42,7 +58,7 @@ const formatGameResult = (game) => {
   const isSkunk = (winnerScore === 7 && loserScore === 0) || (winnerScore === 11 && loserScore === 1);
   const actionWord = isSkunk ? "skunked" : "beat";
 
-  let message = `<b>${winner}</b> ${actionWord} <b>${loser}</b> <b>[${winnerScore} - ${loserScore}]</b>`;
+  let message = `<span class="game-result"><b>${winner}</b> ${actionWord} <b>${loser}</b> <b>[${winnerScore} - ${loserScore}]</b></span>`;
 
   // Add score changes or placement match message
   if (game.player1Rank === 'Unranked' || game.player2Rank === 'Unranked') {
@@ -55,7 +71,7 @@ const formatGameResult = (game) => {
     message += `<br><span class="score-change">${winnerChangeText} / ${loserChangeText}</span>`;
   }
 
-  return { message, isSkunk };
+  return { message, isSkunk, className };
 };
 
 function GameHistory({ gameHistory }) {
@@ -73,11 +89,11 @@ function GameHistory({ gameHistory }) {
       <div className="game-history-list" ref={historyListRef}>
         {gameHistory && gameHistory.length > 0 ? (
           gameHistory.map((game, index) => {
-            const { message, isSkunk } = formatGameResult(game);
+            const { message, isSkunk, className } = formatGameResult(game);
             return (
               <div
                 key={index}
-                className={`game-history-item ${isSkunk ? 'skunk' : ''}`}
+                className={`game-history-item ${isSkunk ? 'skunk' : ''} ${className}`}
               >
                 <span dangerouslySetInnerHTML={{ __html: message }} />
               </div>
