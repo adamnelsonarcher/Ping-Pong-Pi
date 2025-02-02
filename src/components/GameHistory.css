@@ -91,3 +91,17 @@
 .game-history-item.very-long-names .game-result {
   font-size: 0.8em;
 }
+
+.game-history-item .score-change {
+  display: block;
+  color: #666;
+  font-style: italic;
+  font-size: 1em;
+}
+
+.game-history-item .placement-match {
+  display: block;
+  color: #666;
+  font-style: italic;
+  font-size: 1em;
+}
