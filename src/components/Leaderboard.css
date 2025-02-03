@@ -17,20 +17,24 @@
 }
 
 .Leaderboard tr {
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border-color);
   transition: background-color 0.2s ease;
 }
 
 .Leaderboard tr:nth-child(even) {
-  background-color: #f8f8f8;
+  background-color: #262626;
 }
 
 .Leaderboard tr:hover {
-  background-color: #f0f0f0;
+  background-color: #3d3d3d;
+}
+
+.Leaderboard tr.selected {
+  background-color: #404040;
 }
 
 .Leaderboard .inactive {
-  color: #999;
+  color: var(--text-secondary);
   font-style: italic;
 }
 
