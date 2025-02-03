@@ -34,12 +34,28 @@
   border-bottom: none;
 }
 
-.game-history-item:hover {
+[data-theme="light"] .game-history-item:hover {
+  background-color: #f0f0f0;
+}
+
+[data-theme="light"] .game-history-item.selected {
+  background-color: #e0e0e0;
+}
+
+[data-theme="light"] .game-history-item:nth-child(even) {
+  background-color: #f8f8f8;
+}
+
+[data-theme="dark"] .game-history-item:hover {
   background-color: #3d3d3d;
 }
 
-.game-history-item.selected {
+[data-theme="dark"] .game-history-item.selected {
   background-color: #404040;
+}
+
+[data-theme="dark"] .game-history-item:nth-child(even) {
+  background-color: #262626;
 }
 
 .game-history-item .underdog {
@@ -58,10 +74,6 @@
 
 .game-history-item + .game-history-item {
   margin-top: 4px;
-}
-
-.game-history-item:nth-child(even) {
-  background-color: #262626;
 }
 
 .placement-match {

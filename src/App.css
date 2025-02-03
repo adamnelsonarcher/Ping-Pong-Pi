@@ -1,11 +1,37 @@
 :root {
+  /* Common colors */
   --primary-color: #3498db;
   --secondary-color: #2ecc71;
-  --background-color: #1a1a1a;
-  --surface-color: #2d2d2d;
-  --text-color: #e0e0e0;
-  --text-secondary: #a0a0a0;
-  --border-color: #404040;
+
+  /* Light theme */
+  --light-background: #f4f4f4;
+  --light-surface: #ffffff;
+  --light-text: #333333;
+  --light-text-secondary: #666666;
+  --light-border: #e0e0e0;
+
+  /* Dark theme */
+  --dark-background: #1a1a1a;
+  --dark-surface: #2d2d2d;
+  --dark-text: #e0e0e0;
+  --dark-text-secondary: #a0a0a0;
+  --dark-border: #404040;
+}
+
+[data-theme="light"] {
+  --background-color: var(--light-background);
+  --surface-color: var(--light-surface);
+  --text-color: var(--light-text);
+  --text-secondary: var(--light-text-secondary);
+  --border-color: var(--light-border);
+}
+
+[data-theme="dark"] {
+  --background-color: var(--dark-background);
+  --surface-color: var(--dark-surface);
+  --text-color: var(--dark-text);
+  --text-secondary: var(--dark-text-secondary);
+  --border-color: var(--dark-border);
 }
 
 body {

@@ -4,6 +4,7 @@ import { getPlayers, editPlayerPassword, editPlayerScore, deletePlayer, resetAll
 import './AdminControls.css';
 import dataService from '../services/dataService';
 import API_URL from '../config/api';
+import { useTheme } from '../contexts/ThemeContext';
 
 function AdminControls({ onExit, onAddPlayer }) {
   const [players, setPlayers] = useState([]);
@@ -13,6 +14,7 @@ function AdminControls({ onExit, onAddPlayer }) {
   const [gameSettings, setGameSettings] = useState(null);
   const [newAdminPassword, setNewAdminPassword] = useState('');
   const [showAdminPassword, setShowAdminPassword] = useState(false);
+  const { isDarkMode, setIsDarkMode } = useTheme();
   //const [isAdmin, setIsAdmin] = useState(false);
   //const [settings, setSettings] = useState(dataService.settings);
 
@@ -396,6 +398,21 @@ function AdminControls({ onExit, onAddPlayer }) {
               onChange={handleUploadData}
             />
           </label>
+        </div>
+      </div>
+
+      <div className="admin-section">
+        <h3>Display Settings</h3>
+        <div className="theme-toggle">
+          <label htmlFor="theme-select">Theme:</label>
+          <select 
+            id="theme-select"
+            value={isDarkMode ? 'dark' : 'light'}
+            onChange={(e) => setIsDarkMode(e.target.value === 'dark')}
+          >
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
         </div>
       </div>
 

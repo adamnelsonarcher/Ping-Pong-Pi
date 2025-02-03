@@ -304,3 +304,26 @@ button[type="button"].delete-player-btn {
   margin-bottom: 15px;
   color: #333;
 }
+
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: var(--surface-color);
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+
+.theme-toggle label {
+  color: var(--text-color);
+  font-weight: 500;
+}
+
+.theme-toggle select {
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background: var(--surface-color);
+  color: var(--text-color);
+}
