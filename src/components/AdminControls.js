@@ -23,10 +23,15 @@ function AdminControls({ onExit, onAddPlayer }) {
       const playerList = await getPlayers();
       setPlayers(playerList);
       const settings = await getSettings();
-      setGameSettings(settings);
+      // Add dark mode to settings if it doesn't exist
+      const updatedSettings = {
+        ...settings,
+        DARK_MODE: isDarkMode // Use current theme state
+      };
+      setGameSettings(updatedSettings);
     };
     loadData();
-  }, []);
+  }, [isDarkMode]);
 
   const handleEditPassword = async (e) => {
     e.preventDefault();
@@ -86,9 +91,26 @@ function AdminControls({ onExit, onAddPlayer }) {
     PLAYER1_SCOREBOARD_COLOR: "Color of the scoreboard for Player 1.",
     PLAYER2_SCOREBOARD_COLOR: "Color of the scoreboard for Player 2.",
     DISABLE_WIN_ANIMATION: "Disables the victory animation when a game ends.",
+    DARK_MODE: "Toggle between light and dark theme for the application",
   };
 
   const renderSettingInput = (key, value) => {
+    if (key === 'DARK_MODE') {
+      return (
+        <select
+          value={value ? 'dark' : 'light'}
+          onChange={(e) => {
+            const isDark = e.target.value === 'dark';
+            handleSettingChange(key, isDark);
+            setIsDarkMode(isDark);
+          }}
+        >
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+      );
+    }
+    
     if (key.includes('COLOR')) {
       return (
         <div className="color-input-container">
@@ -123,7 +145,6 @@ function AdminControls({ onExit, onAddPlayer }) {
 
   const handleResetToDefaults = async () => {
     if (window.confirm('Are you sure you want to reset all settings to their defaults?')) {
-      // Import default values from settings1.js
       const defaultSettings = {
         TIMER_INTERVAL: 5,
         SCORE_CHANGE_K_FACTOR: 70,
@@ -134,7 +155,8 @@ function AdminControls({ onExit, onAddPlayer }) {
         PLAYER2_SCOREBOARD_COLOR: '#2196F3',
         GAME_HISTORY_KEEP: 30,
         ADDPLAYER_ADMINONLY: false,
-        DISABLE_WIN_ANIMATION: false
+        DISABLE_WIN_ANIMATION: false,
+        DARK_MODE: true // Add default dark mode setting
       };
 
       setGameSettings(defaultSettings);
@@ -398,21 +420,6 @@ function AdminControls({ onExit, onAddPlayer }) {
               onChange={handleUploadData}
             />
           </label>
-        </div>
-      </div>
-
-      <div className="admin-section">
-        <h3>Display Settings</h3>
-        <div className="theme-toggle">
-          <label htmlFor="theme-select">Theme:</label>
-          <select 
-            id="theme-select"
-            value={isDarkMode ? 'dark' : 'light'}
-            onChange={(e) => setIsDarkMode(e.target.value === 'dark')}
-          >
-            <option value="light">Light</option>
-            <option value="dark">Dark</option>
-          </select>
         </div>
       </div>
 
