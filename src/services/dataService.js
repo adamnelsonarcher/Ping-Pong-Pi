@@ -105,7 +105,8 @@ class DataService {
     this.players = {};
     this.gameHistory = [];
     this.settings = { ...this.defaultSettings, ADMIN_PASSWORD: "" };
-    this.currentUser = localStorage.getItem('currentUser') || null;
+    const encodedUser = localStorage.getItem('currentUser');
+    this.currentUser = encodedUser ? atob(encodedUser) : null;
     this.isLocalMode = localStorage.getItem('isLocalMode') === 'true';
     this.saveTimeout = null;
     this.SAVE_DELAY = 1000;
@@ -186,7 +187,7 @@ class DataService {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            currentUser: this.currentUser,
+            currentUser: btoa(this.currentUser),
             settings: this.settings,
             players: this.players,
             gameHistory: this.gameHistory
@@ -435,7 +436,7 @@ class DataService {
 
   setCurrentUser(username) {
     this.currentUser = username;
-    localStorage.setItem('currentUser', username);
+    localStorage.setItem('currentUser', btoa(username));
     return this.loadData();
   }
 
@@ -551,6 +552,20 @@ class DataService {
     } catch (error) {
       console.error('Firestore connection test failed:', error);
       return false;
+    }
+  }
+
+  // Add helper methods for encoding/decoding
+  encodeUser(username) {
+    return btoa(username);
+  }
+
+  decodeUser(encoded) {
+    try {
+      return encoded ? atob(encoded) : null;
+    } catch (e) {
+      console.error('Error decoding user:', e);
+      return null;
     }
   }
 }

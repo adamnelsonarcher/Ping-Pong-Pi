@@ -15,7 +15,10 @@ import LoadingScreen from './components/LoadingScreen';
 import { ThemeProvider } from './contexts/ThemeContext';
 
 function App() {
-  const [currentUser, setCurrentUser] = useState(localStorage.getItem('currentUser'));
+  const [currentUser, setCurrentUser] = useState(() => {
+    const encoded = localStorage.getItem('currentUser');
+    return encoded ? atob(encoded) : null;
+  });
   const [currentScreen, setCurrentScreen] = useState('login');
   const [selectedPlayers, setSelectedPlayers] = useState({ player1: null, player2: null });
   const [leaderboard, setLeaderboard] = useState([]);
