@@ -34,36 +34,153 @@
 
 /* Admin Sections */
 .admin-section {
-  margin-bottom: 2rem;
   background: #fff;
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-bottom: 15px;
 }
 
 .admin-section h3 {
-  margin-top: 0;
-  color: #333;
-  font-size: 1.2rem;
-  margin-bottom: 1rem;
+  margin: 0;
+  padding: 10px 0;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-/* Buttons */
-.admin-controls button {
-  padding: 8px 16px;
-  margin-right: 10px;
-  margin-bottom: 10px;
+.admin-section h3:after {
+  content: '▼';
+  font-size: 0.8em;
+  transition: transform 0.3s ease;
+}
+
+.admin-section.collapsed h3:after {
+  transform: rotate(-90deg);
+}
+
+.admin-section-content {
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+  max-height: 1000px;
+}
+
+.admin-section.collapsed .admin-section-content {
+  max-height: 0;
+  padding: 0;
+}
+
+/* Updated Button Base Styles */
+.admin-controls button,
+.admin-controls .btn {
+  padding: 10px 20px;
+  min-width: 160px;
+  height: 40px;
   font-size: 1rem;
   font-weight: 600;
-  border: none;
+  border: 2px solid transparent;
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 5px;
+  text-align: center;
+}
+
+/* Button Colors */
+.standard-btn {
+  background-color: #4CAF50;
+  border-color: #45a049;
+}
+
+.delete-btn {
+  background-color: #e74c3c;
+  border-color: #c0392b;
+}
+
+.reset-btn {
+  background-color: #f39c12;
+  border-color: #e67e22;
+}
+
+.save-btn {
+  background-color: #2196F3;
+  border-color: #1976D2;
+}
+
+.danger-btn {
+  background-color: #dc3545;
+  border-color: #c82333;
+}
+
+.exit-btn {
+  background-color: #e74c3c;
+  border-color: #c0392b;
+  width: 100%;
+  margin-top: 20px;
+}
+
+/* Button Hover States */
+.standard-btn:hover {
+  background-color: #45a049;
+  border-color: #4CAF50;
+}
+
+.delete-btn:hover {
+  background-color: #c0392b;
+  border-color: #e74c3c;
+}
+
+.reset-btn:hover {
+  background-color: #e67e22;
+  border-color: #f39c12;
+}
+
+.save-btn:hover {
+  background-color: #1976D2;
+  border-color: #2196F3;
+}
+
+.danger-btn:hover {
+  background-color: #c82333;
+  border-color: #dc3545;
 }
 
 .exit-btn:hover {
   background-color: #c0392b;
+  border-color: #e74c3c;
+}
+
+/* Button Group Layout */
+.button-group {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  margin: 10px 0;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.data-management-buttons {
+  display: flex;
+  gap: 10px;
+  margin: 15px 0;
+  flex-wrap: wrap;
+}
+
+/* Form Button Layout */
+.admin-controls form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-controls form button {
+  align-self: flex-start;
 }
 
 /* Settings List */
@@ -95,11 +212,6 @@
   margin-bottom: 10px;
 }
 
-.exit-btn {
-  margin-top: 20px;
-  width: 100%;
-}
-
 .password-input-container {
   display: flex;
   align-items: center;
@@ -124,28 +236,6 @@
 
 .password-toggle-btn:hover {
   opacity: 0.8;
-}
-
-/* Button styles */
-.standard-btn {
-  background-color: #4CAF50;
-  color: white;
-  margin: 5px 0;
-}
-
-.reset-defaults-btn {
-  background-color: #f39c12;
-  color: white;
-}
-
-.save-btn {
-  background-color: #2196F3;
-  color: white;
-}
-
-.exit-btn {
-  background-color: #e74c3c;
-  color: white;
 }
 
 /* Text colors */
@@ -178,18 +268,8 @@ button[type="button"].delete-player-btn {
   color: white;
 }
 
-.button-group {
-  display: flex;
-  gap: 10px;
-  margin: 10px 0;
-}
-
 .standard-btn:hover {
   background-color: #45a049;
-}
-
-.delete-btn:hover {
-  background-color: #c0392b;
 }
 
 .reset-btn:hover {
@@ -211,13 +291,12 @@ button[type="button"].delete-player-btn {
 .admin-controls select,
 .admin-controls input[type="email"] {
   width: 100%;
+  max-width: 300px;
   padding: 8px 12px;
   margin-bottom: 10px;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 1rem;
-  transition: border-color 0.3s ease;
-  box-sizing: border-box;
 }
 
 .admin-controls input[type="text"]:focus,
@@ -262,21 +341,6 @@ button[type="button"].delete-player-btn {
 .admin-controls *::before,
 .admin-controls *::after {
   box-sizing: border-box;
-}
-
-.data-management-buttons {
-  display: flex;
-  gap: 10px;
-  margin: 15px 0;
-  flex-wrap: wrap;
-}
-
-.danger-btn {
-  background-color: #dc3545;
-}
-
-.danger-btn:hover {
-  background-color: #c82333;
 }
 
 .upload-btn {
@@ -326,4 +390,26 @@ button[type="button"].delete-player-btn {
   border: 1px solid var(--border-color);
   background: var(--surface-color);
   color: var(--text-color);
+}
+
+/* Specific styles for download and upload buttons */
+.download-btn, .upload-btn {
+  background-color: white !important;  /* Changed from #f8f9fa to white */
+  border: 2px solid #000 !important;
+  color: #000 !important;
+}
+
+.download-btn:hover, .upload-btn:hover {
+  background-color: #f8f9fa !important;  /* Lighter hover state */
+  border: 2px solid #000 !important;
+  color: #000 !important;
+}
+
+/* Button alignment */
+.button-group {
+  display: flex;
+  gap: 10px;
+  margin: 10px 0;
+  flex-wrap: wrap;
+  justify-content: flex-start;  /* Explicitly set left alignment */
 }

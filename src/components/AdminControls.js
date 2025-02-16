@@ -15,6 +15,7 @@ function AdminControls({ onExit, onAddPlayer }) {
   const [newAdminPassword, setNewAdminPassword] = useState('');
   const [showAdminPassword, setShowAdminPassword] = useState(false);
   const { isDarkMode, setIsDarkMode } = useTheme();
+  const [collapsedSections, setCollapsedSections] = useState({});
   //const [isAdmin, setIsAdmin] = useState(false);
   //const [settings, setSettings] = useState(dataService.settings);
 
@@ -129,15 +130,23 @@ function AdminControls({ onExit, onAddPlayer }) {
       );
     }
     
+    if (typeof value === 'number') {
+      return (
+        <input
+          type="number"
+          value={value}
+          onChange={(e) => handleSettingChange(key, parseFloat(e.target.value) || 0)}
+        />
+      );
+    }
+    
     return (
       <input
         type={typeof value === 'boolean' ? 'checkbox' : 'text'}
         checked={typeof value === 'boolean' ? value : undefined}
         value={typeof value === 'boolean' ? undefined : value}
         onChange={(e) => handleSettingChange(key, 
-          typeof value === 'boolean' ? e.target.checked : 
-          typeof value === 'number' ? parseFloat(e.target.value) : 
-          e.target.value
+          typeof value === 'boolean' ? e.target.checked : e.target.value
         )}
       />
     );
@@ -291,83 +300,94 @@ function AdminControls({ onExit, onAddPlayer }) {
     }
   };
 
+  const toggleSection = (sectionName) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [sectionName]: !prev[sectionName]
+    }));
+  };
+
   return (
     <div className="admin-controls">
       <h2>Admin Controls</h2>
       
       {gameSettings?.ADDPLAYER_ADMINONLY && (
-        <div className="admin-section">
-          <h3>Add New Player</h3>
-          <button className="standard-btn" onClick={onAddPlayer}>
-            Add New Player
-          </button>
+        <div className={`admin-section ${collapsedSections['newPlayer'] ? 'collapsed' : ''}`}>
+          <h3 onClick={() => toggleSection('newPlayer')}>Add New Player</h3>
+          <div className="admin-section-content">
+            <button className="btn standard-btn" onClick={onAddPlayer}>
+              Add New Player
+            </button>
+          </div>
         </div>
       )}
 
-      <div className="admin-section">
-        <h3>Player Management</h3>
-        <select 
-          value={selectedPlayer} 
-          onChange={(e) => setSelectedPlayer(e.target.value)}
-          style={{ marginBottom: '20px' }}
-        >
-          <option value="">Select Player</option>
-          {players.map(player => (
-            <option key={player.name} value={player.name}>{player.name}</option>
-          ))}
-        </select>
+      <div className={`admin-section ${collapsedSections['playerManagement'] ? 'collapsed' : ''}`}>
+        <h3 onClick={() => toggleSection('playerManagement')}>Player Management</h3>
+        <div className="admin-section-content">
+          <select 
+            value={selectedPlayer} 
+            onChange={(e) => setSelectedPlayer(e.target.value)}
+          >
+            <option value="">Select Player</option>
+            {players.map(player => (
+              <option key={player.name} value={player.name}>{player.name}</option>
+            ))}
+          </select>
 
-        <form onSubmit={handleEditPassword}>
-          <input
-            type="password"
-            placeholder="New Password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-          />
-          <button type="submit" className="standard-btn">Update Password</button>
-        </form>
+          <form onSubmit={handleEditPassword}>
+            <input
+              type="password"
+              placeholder="New Password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+            />
+            <button type="submit" className="btn standard-btn">Update Password</button>
+          </form>
 
-        <form onSubmit={handleEditScore}>
-          <input
-            type="number"
-            placeholder="New Score"
-            value={newScore}
-            onChange={(e) => setNewScore(e.target.value)}
-          />
-          <button type="submit" className="standard-btn">Update Score</button>
-        </form>
+          <form onSubmit={handleEditScore}>
+            <input
+              type="number"
+              placeholder="New Score"
+              value={newScore}
+              onChange={(e) => setNewScore(e.target.value)}
+            />
+            <button type="submit" className="btn standard-btn">Update Score</button>
+          </form>
 
-        <div className="button-group">
-          <button className="delete-btn" onClick={handleDeletePlayer}>Delete Player</button>
-          <button className="reset-btn" onClick={handleResetAllScores}>Reset All Scores</button>
+          <div className="button-group">
+            <button className="btn delete-btn" onClick={handleDeletePlayer}>Delete Player</button>
+            <button className="btn reset-btn" onClick={handleResetAllScores}>Reset All Scores</button>
+          </div>
         </div>
       </div>
 
-      <div className="admin-section">
-        <h3>Admin Password</h3>
-        <div className="setting-item">
-          <label>Change Admin Password</label>
-          <div className="password-input-container">
-            <input
-              type={showAdminPassword ? "text" : "password"}
-              value={newAdminPassword}
-              onChange={(e) => setNewAdminPassword(e.target.value)}
-              placeholder="New Admin Password"
-            />
+      <div className={`admin-section ${collapsedSections['adminPassword'] ? 'collapsed' : ''}`}>
+        <h3 onClick={() => toggleSection('adminPassword')}>Admin Password</h3>
+        <div className="admin-section-content">
+          <div className="setting-item">
+            <div className="password-input-container">
+              <input
+                type={showAdminPassword ? "text" : "password"}
+                value={newAdminPassword}
+                onChange={(e) => setNewAdminPassword(e.target.value)}
+                placeholder="New Admin Password"
+              />
+              <button 
+                type="button"
+                className="password-toggle-btn"
+                onClick={() => setShowAdminPassword(!showAdminPassword)}
+              >
+                {showAdminPassword ? '🙈' : '👁️'}
+              </button>
+            </div>
             <button 
-              type="button"
-              className="password-toggle-btn"
-              onClick={() => setShowAdminPassword(!showAdminPassword)}
+              className="btn standard-btn"
+              onClick={handleChangeAdminPassword}
             >
-              {showAdminPassword ? '🙈' : '👁️'}
+              Update Admin Password
             </button>
           </div>
-          <button 
-            className="standard-btn"
-            onClick={handleChangeAdminPassword}
-          >
-            Update Admin Password
-          </button>
         </div>
       </div>
 
@@ -385,7 +405,6 @@ function AdminControls({ onExit, onAddPlayer }) {
                 </div>
             ))}
             <div className="button-group">
-              <button type="submit" className="save-btn">Save Settings</button>
               <button type="button" onClick={handleResetToDefaults} className="reset-defaults-btn">
                 Reset to Defaults
               </button>
@@ -394,36 +413,38 @@ function AdminControls({ onExit, onAddPlayer }) {
         )}
       </div>
 
-      <div className="admin-section">
-        <h3>Data Management</h3>
-        <div className="data-management-buttons">
-          <button 
-            className="btn danger-btn"
-            onClick={handleEraseAccount}
-          >
-            Erase Account Data
-          </button>
-          
-          <button 
-            className="btn"
-            onClick={handleDownloadData}
-          >
-            Download Save Data
-          </button>
-          
-          <label className="btn upload-btn">
-            Upload Save File
-            <input
-              type="file"
-              accept=".json"
-              style={{ display: 'none' }}
-              onChange={handleUploadData}
-            />
-          </label>
+      <div className={`admin-section ${collapsedSections['dataManagement'] ? 'collapsed' : ''}`}>
+        <h3 onClick={() => toggleSection('dataManagement')}>Data Management</h3>
+        <div className="admin-section-content">
+          <div className="button-group">
+            <button className="btn danger-btn" onClick={handleEraseAccount}>
+              Erase Account Data
+            </button>
+            <button className="btn download-btn" onClick={handleDownloadData}>
+              Download Save Data
+            </button>
+            <label className="btn upload-btn">
+              Upload Save File
+              <input
+                type="file"
+                accept=".json"
+                style={{ display: 'none' }}
+                onChange={handleUploadData}
+              />
+            </label>
+          </div>
         </div>
       </div>
 
-      <button className="btn exit-btn" onClick={onExit}>Exit Admin Controls</button>
+      <button className="btn exit-btn" onClick={async (e) => {
+        e.preventDefault();
+        if (gameSettings) {
+          await updateSettings(gameSettings);
+        }
+        onExit();
+      }}>
+        Save and Exit Admin Controls
+      </button>
     </div>
   );
 }
