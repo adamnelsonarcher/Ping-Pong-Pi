@@ -4,6 +4,20 @@ import dataService from '../services/dataService';
 import { useTheme } from '../contexts/ThemeContext';
 import { useSettings } from '../contexts/SettingsContext';
 
+// Readable names for the raw setting keys, so the form does not shout
+// "SCORE CHANGE K FACTOR" at you.
+const SETTING_LABELS = {
+  SCORE_CHANGE_K_FACTOR: 'K-factor',
+  POINT_DIFFERENCE_WEIGHT: 'Point-difference weight',
+  ACTIVITY_THRESHOLD: 'Games to become ranked',
+  GAME_HISTORY_KEEP: 'Games shown in history',
+  ADDPLAYER_ADMINONLY: 'Add players from admin only',
+  DEFAULT_RANK: 'Unranked label',
+  PLAYER1_SCOREBOARD_COLOR: 'Player 1 colour',
+  PLAYER2_SCOREBOARD_COLOR: 'Player 2 colour',
+  DISABLE_WIN_ANIMATION: 'Disable win animation',
+};
+
 const SETTING_DESCRIPTIONS = {
   SCORE_CHANGE_K_FACTOR:
     'Maximum points that can be won or lost in a game, before the point difference is factored in.',
@@ -11,16 +25,18 @@ const SETTING_DESCRIPTIONS = {
     'Multiplier for the point difference at the end of a game. Increases K by the point difference times this value.',
   ACTIVITY_THRESHOLD: 'Number of games a player needs to play to become ranked/active.',
   GAME_HISTORY_KEEP:
-    'Number of games to show in the game history. Older games are kept, just not displayed.',
-  ADDPLAYER_ADMINONLY: "Moves the 'Add New Player' button to the admin controls section.",
-  DEFAULT_RANK: 'Text shown instead of a score for unranked/inactive players.',
+    'How many games the history shows. Older games are kept, just not displayed.',
+  ADDPLAYER_ADMINONLY: 'Moves the "Add Player" button off the main screen and into here.',
+  DEFAULT_RANK: 'Text shown instead of a score for unranked players.',
   PLAYER1_SCOREBOARD_COLOR: 'Colour of the scoreboard for Player 1.',
   PLAYER2_SCOREBOARD_COLOR: 'Colour of the scoreboard for Player 2.',
-  DISABLE_WIN_ANIMATION: 'Disables the victory animation when a game ends.',
+  DISABLE_WIN_ANIMATION: 'Turns off the victory animation when a game ends.',
 };
 
-/** Never render these in the generic settings form. */
+/** Never render this in the generic settings form; it has its own section. */
 const HIDDEN_SETTINGS = ['ADMIN_PASSWORD'];
+
+const labelFor = (key) => SETTING_LABELS[key] || key.replace(/_/g, ' ').toLowerCase();
 
 function AdminControls({ onExit, onAddPlayer, onNotify = () => {}, onAccountErased = () => {} }) {
   const { settings } = useSettings();
@@ -31,12 +47,10 @@ function AdminControls({ onExit, onAddPlayer, onNotify = () => {}, onAccountEras
   const [newScore, setNewScore] = useState('');
   const [newAdminPassword, setNewAdminPassword] = useState('');
   const [showAdminPassword, setShowAdminPassword] = useState(false);
-  const [collapsedSections, setCollapsedSections] = useState({});
 
-  // Local edits, applied on save. Reading `settings` straight from the context
-  // means this no longer re-fetches from the server on every render — the old
-  // effect re-ran on each dark-mode toggle and discarded whatever you had typed
-  // (docs/AUDIT.md D-04).
+  // Settings edits are held in a draft and applied on Save. Reading `settings`
+  // straight from the context (rather than re-fetching) is what stopped the old
+  // panel from discarding your edits on a dark-mode toggle (docs/AUDIT.md D-04).
   const [draft, setDraft] = useState(null);
   const effective = draft ?? settings;
   const isDirty = draft !== null;
@@ -56,14 +70,16 @@ function AdminControls({ onExit, onAddPlayer, onNotify = () => {}, onAccountEras
   const setSetting = (key, value) => setDraft({ ...effective, [key]: value });
 
   const saveSettings = async () => {
-    if (!isDirty) return;
+    if (!isDirty) return true;
     try {
       await dataService.updateSettings(draft);
       setDraft(null);
       onNotify('Settings saved.', 'success');
+      return true;
     } catch (error) {
       console.error('Error saving settings:', error);
       onNotify('Failed to save settings.', 'error');
+      return false;
     }
   };
 
@@ -138,9 +154,6 @@ function AdminControls({ onExit, onAddPlayer, onNotify = () => {}, onAccountEras
 
   const handleResetToDefaults = async () => {
     if (!window.confirm('Reset all settings to their defaults?')) return;
-    // TIMER_INTERVAL used to be re-added here even though nothing ever read it,
-    // so "Reset to Defaults" introduced a setting that did nothing
-    // (docs/AUDIT.md L-08).
     setDraft({ ...dataService.defaultSettings });
     await dataService.updateSettings(dataService.defaultSettings);
     setDraft(null);
@@ -204,33 +217,31 @@ function AdminControls({ onExit, onAddPlayer, onNotify = () => {}, onAccountEras
     event.target.value = '';
   };
 
-  const toggleSection = (name) =>
-    setCollapsedSections((prev) => ({ ...prev, [name]: !prev[name] }));
-
-  /** Section headers are buttons so they can be reached from the keyboard. */
-  const SectionHeader = ({ name, children }) => (
-    <h3>
-      <button
-        type="button"
-        className="section-toggle"
-        onClick={() => toggleSection(name)}
-        aria-expanded={!collapsedSections[name]}
-      >
-        {children}
-      </button>
-    </h3>
-  );
+  const handleExit = async () => {
+    if (isDirty) {
+      const ok = await saveSettings();
+      if (!ok) return; // keep the user here so they don't lose the edit
+    }
+    onExit();
+  };
 
   const renderSettingInput = (key, value) => {
+    const id = `setting-${key}`;
+
     if (key.includes('COLOR')) {
       return (
-        <div className="color-input-container">
-          <input type="color" value={value} onChange={(e) => setSetting(key, e.target.value)} />
+        <div className="color-input">
+          <input
+            id={id}
+            type="color"
+            value={value}
+            onChange={(e) => setSetting(key, e.target.value)}
+          />
           <input
             type="text"
             value={value}
+            aria-label={`${labelFor(key)} hex value`}
             onChange={(e) => setSetting(key, e.target.value)}
-            style={{ marginLeft: '10px' }}
           />
         </div>
       );
@@ -238,17 +249,22 @@ function AdminControls({ onExit, onAddPlayer, onNotify = () => {}, onAccountEras
 
     if (typeof value === 'boolean') {
       return (
-        <input
-          type="checkbox"
-          checked={value}
-          onChange={(e) => setSetting(key, e.target.checked)}
-        />
+        <label className="switch">
+          <input
+            id={id}
+            type="checkbox"
+            checked={value}
+            onChange={(e) => setSetting(key, e.target.checked)}
+          />
+          <span>{value ? 'On' : 'Off'}</span>
+        </label>
       );
     }
 
     if (typeof value === 'number') {
       return (
         <input
+          id={id}
           type="number"
           value={value}
           onChange={(e) => setSetting(key, parseFloat(e.target.value) || 0)}
@@ -256,215 +272,204 @@ function AdminControls({ onExit, onAddPlayer, onNotify = () => {}, onAccountEras
       );
     }
 
-    return <input type="text" value={value} onChange={(e) => setSetting(key, e.target.value)} />;
+    return (
+      <input id={id} type="text" value={value} onChange={(e) => setSetting(key, e.target.value)} />
+    );
   };
 
   return (
     <div className="admin-controls">
-      <h2>Admin Controls</h2>
+      <header className="admin-top">
+        <h2>Admin</h2>
+        <button type="button" className="admin-btn subtle" onClick={handleExit}>
+          {isDirty ? 'Save & close' : 'Close'}
+        </button>
+      </header>
 
       {effective.ADDPLAYER_ADMINONLY && (
-        <div className={`admin-section ${collapsedSections.newPlayer ? 'collapsed' : ''}`}>
-          <SectionHeader name="newPlayer">Add New Player</SectionHeader>
-          <div className="admin-section-content">
-            <button className="btn standard-btn" onClick={onAddPlayer}>
-              Add New Player
-            </button>
-          </div>
-        </div>
+        <section className="admin-section">
+          <h3>Players</h3>
+          <button type="button" className="admin-btn primary" onClick={onAddPlayer}>
+            Add New Player
+          </button>
+        </section>
       )}
 
-      <div className={`admin-section ${collapsedSections.playerManagement ? 'collapsed' : ''}`}>
-        <SectionHeader name="playerManagement">Player Management</SectionHeader>
-        <div className="admin-section-content">
-          <select value={selectedPlayer} onChange={(e) => setSelectedPlayer(e.target.value)}>
-            <option value="">Select Player</option>
+      <section className="admin-section">
+        <h3>Player management</h3>
+
+        <div className="admin-field">
+          <label htmlFor="player-select">Player</label>
+          <select
+            id="player-select"
+            value={selectedPlayer}
+            onChange={(e) => setSelectedPlayer(e.target.value)}
+          >
+            <option value="">Select a player…</option>
             {players.map((player) => (
               <option key={player.name} value={player.name}>
                 {player.name}
               </option>
             ))}
           </select>
-
-          <form onSubmit={handleEditPassword}>
-            <input
-              type="password"
-              placeholder="New Password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-            />
-            <button type="submit" className="btn standard-btn">
-              Update Password
-            </button>
-          </form>
-
-          <form onSubmit={handleEditScore}>
-            <input
-              type="number"
-              step="any"
-              placeholder="New Score"
-              value={newScore}
-              onChange={(e) => setNewScore(e.target.value)}
-            />
-            <button type="submit" className="btn standard-btn">
-              Update Score
-            </button>
-          </form>
-
-          <div className="button-group">
-            <button className="btn delete-btn" onClick={handleDeletePlayer}>
-              Delete Player
-            </button>
-            <button className="btn reset-btn" onClick={handleResetAllScores}>
-              Reset All Scores
-            </button>
-            <button className="btn standard-btn" onClick={handleUndoLastGame}>
-              Undo Last Game
-            </button>
-          </div>
         </div>
-      </div>
 
-      <div className={`admin-section ${collapsedSections.adminPassword ? 'collapsed' : ''}`}>
-        <SectionHeader name="adminPassword">Admin Password</SectionHeader>
-        <div className="admin-section-content">
-          <div className="setting-item">
-            <div className="password-input-container">
-              <input
-                type={showAdminPassword ? 'text' : 'password'}
-                value={newAdminPassword}
-                onChange={(e) => setNewAdminPassword(e.target.value)}
-                placeholder="New Admin Password"
-              />
-              <button
-                type="button"
-                className="password-toggle-btn"
-                onClick={() => setShowAdminPassword((v) => !v)}
-                aria-label={showAdminPassword ? 'Hide password' : 'Show password'}
-              >
-                {showAdminPassword ? '🙈' : '👁️'}
-              </button>
-            </div>
-            <button className="btn standard-btn" onClick={handleChangeAdminPassword}>
-              Update Admin Password
-            </button>
-          </div>
+        <form className="inline-field" onSubmit={handleEditPassword}>
+          <input
+            type="password"
+            placeholder="New password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+          />
+          <button type="submit" className="admin-btn primary">
+            Update password
+          </button>
+        </form>
+
+        <form className="inline-field" onSubmit={handleEditScore}>
+          <input
+            type="number"
+            step="any"
+            placeholder="New score"
+            value={newScore}
+            onChange={(e) => setNewScore(e.target.value)}
+          />
+          <button type="submit" className="admin-btn primary">
+            Update score
+          </button>
+        </form>
+
+        <div className="admin-btn-row">
+          <button type="button" className="admin-btn danger" onClick={handleDeletePlayer}>
+            Delete player
+          </button>
+          <button type="button" className="admin-btn subtle" onClick={handleUndoLastGame}>
+            Undo last game
+          </button>
+          <button type="button" className="admin-btn subtle" onClick={handleResetAllScores}>
+            End season / reset scores
+          </button>
         </div>
-      </div>
+      </section>
 
-      <div className="admin-section">
+      <section className="admin-section">
+        <h3>Game settings</h3>
+        {editableSettings.map(([key, value]) => (
+          <div key={key} className="admin-field">
+            <label htmlFor={`setting-${key}`}>{labelFor(key)}</label>
+            {SETTING_DESCRIPTIONS[key] && (
+              <p className="field-help">{SETTING_DESCRIPTIONS[key]}</p>
+            )}
+            {renderSettingInput(key, value)}
+          </div>
+        ))}
+        <div className="admin-btn-row">
+          <button type="button" className="admin-btn subtle" onClick={handleResetToDefaults}>
+            Reset to defaults
+          </button>
+          <button
+            type="button"
+            className="admin-btn primary"
+            onClick={saveSettings}
+            disabled={!isDirty}
+          >
+            Save settings
+          </button>
+          {isDirty && <span className="dirty-note">Unsaved changes</span>}
+        </div>
+      </section>
+
+      <section className="admin-section">
         <h3>Appearance</h3>
-        <div className="admin-section-content">
-          <div className="setting-item">
-            <label htmlFor="theme-select">Theme</label>
-            <p className="setting-description">
-              Applies to this device only, so a wall display and a phone can differ.
-            </p>
-            <select
-              id="theme-select"
-              value={isDarkMode ? 'dark' : 'light'}
-              onChange={(e) => setIsDarkMode(e.target.value === 'dark')}
-            >
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
-            </select>
-          </div>
+        <div className="admin-field">
+          <label htmlFor="theme-select">Theme</label>
+          <p className="field-help">
+            Applies to this device only, so a wall display and a phone can differ.
+          </p>
+          <select
+            id="theme-select"
+            value={isDarkMode ? 'dark' : 'light'}
+            onChange={(e) => setIsDarkMode(e.target.value === 'dark')}
+          >
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
         </div>
-      </div>
+      </section>
 
-      <div className="admin-section">
-        <h3>Game Settings</h3>
-        <div className="settings-list">
-          {editableSettings.map(([key, value]) => (
-            <div key={key} className="setting-item">
-              <label>{key.replace(/_/g, ' ')}</label>
-              <p className="setting-description">{SETTING_DESCRIPTIONS[key]}</p>
-              {renderSettingInput(key, value)}
-            </div>
-          ))}
-          <div className="button-group">
-            <button type="button" onClick={handleResetToDefaults} className="reset-defaults-btn">
-              Reset to Defaults
+      <section className="admin-section">
+        <h3>Admin password</h3>
+        <div className="admin-field">
+          <div className="password-field">
+            <input
+              type={showAdminPassword ? 'text' : 'password'}
+              value={newAdminPassword}
+              onChange={(e) => setNewAdminPassword(e.target.value)}
+              placeholder="New admin password"
+            />
+            <button
+              type="button"
+              className="reveal-btn"
+              onClick={() => setShowAdminPassword((v) => !v)}
+              aria-label={showAdminPassword ? 'Hide password' : 'Show password'}
+            >
+              {showAdminPassword ? '🙈' : '👁️'}
             </button>
           </div>
+          <button type="button" className="admin-btn primary" onClick={handleChangeAdminPassword}>
+            Update admin password
+          </button>
         </div>
-      </div>
+      </section>
 
       {seasons.length > 0 && (
-        <div className={`admin-section ${collapsedSections.seasons ? 'collapsed' : ''}`}>
-          <SectionHeader name="seasons">Past Seasons</SectionHeader>
-          <div className="admin-section-content">
-            {/* "Reset All Scores" used to throw the final table away with no
-                record that a season had happened at all (docs/AUDIT.md L-10). */}
-            <ul className="season-list">
-              {[...seasons].reverse().map((season) => (
-                <li key={season.id} className="season-entry">
-                  <div className="season-headline">
-                    <strong>{season.name}</strong>
-                    <span className="season-date">
-                      ended {new Date(season.endedAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="season-champion">
-                    🏆 {season.champion} — {season.standings.length} ranked player
-                    {season.standings.length === 1 ? '' : 's'}
-                  </div>
-                  <ol className="season-standings">
-                    {season.standings.slice(0, 3).map((entry) => (
-                      <li key={entry.name}>
-                        {entry.name} <span className="season-score">{entry.score}</span>
-                      </li>
-                    ))}
-                  </ol>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
+        <section className="admin-section">
+          <h3>Past seasons</h3>
+          <ul className="season-list">
+            {[...seasons].reverse().map((season) => (
+              <li key={season.id} className="season-entry">
+                <div className="season-headline">
+                  <strong>{season.name}</strong>
+                  <span className="season-date">
+                    ended {new Date(season.endedAt).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="season-champion">
+                  🏆 {season.champion} — {season.standings.length} ranked player
+                  {season.standings.length === 1 ? '' : 's'}
+                </div>
+                <ol className="season-standings">
+                  {season.standings.slice(0, 3).map((entry) => (
+                    <li key={entry.name}>
+                      {entry.name} <span className="season-score">{entry.score}</span>
+                    </li>
+                  ))}
+                </ol>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
-      <div className={`admin-section ${collapsedSections.dataManagement ? 'collapsed' : ''}`}>
-        <SectionHeader name="dataManagement">Data Management</SectionHeader>
-        <div className="admin-section-content">
-          <div className="button-group">
-            <button className="btn danger-btn" onClick={handleEraseAccount}>
-              Erase Account Data
-            </button>
-            <button className="btn download-btn" onClick={handleDownloadData}>
-              Download Save Data
-            </button>
-            <label className="btn upload-btn">
-              Upload Save File
-              <input
-                type="file"
-                accept=".json"
-                style={{ display: 'none' }}
-                onChange={handleUploadData}
-              />
-            </label>
-          </div>
+      <section className="admin-section">
+        <h3>Data management</h3>
+        <div className="admin-btn-row">
+          <button type="button" className="admin-btn subtle" onClick={handleDownloadData}>
+            Download backup
+          </button>
+          <label className="admin-btn subtle upload-btn">
+            Upload backup
+            <input type="file" accept=".json" onChange={handleUploadData} />
+          </label>
+          <button type="button" className="admin-btn danger" onClick={handleEraseAccount}>
+            Erase account data
+          </button>
         </div>
-      </div>
+      </section>
 
-      {/* The settings form previously had no submit button at all: the only way
-          to save was this exit button, or pressing Enter inside a text field. */}
       <div className="admin-footer">
-        {isDirty && <span className="unsaved-indicator">You have unsaved changes</span>}
-        <button
-          className="btn standard-btn"
-          onClick={saveSettings}
-          disabled={!isDirty}
-        >
-          Save Settings
-        </button>
-        <button
-          className="btn exit-btn"
-          onClick={async () => {
-            if (isDirty) await saveSettings();
-            onExit();
-          }}
-        >
-          {isDirty ? 'Save and Exit' : 'Exit Admin Controls'}
+        <button type="button" className="admin-btn primary" onClick={handleExit}>
+          {isDirty ? 'Save & close' : 'Close'}
         </button>
       </div>
     </div>
