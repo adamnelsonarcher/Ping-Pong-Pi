@@ -125,7 +125,13 @@ function App() {
       title: 'Add New Player',
       fields: [
         { name: 'playerName', label: 'Player Name' },
-        { name: 'password', label: 'Password', type: 'password' },
+        {
+          name: 'password',
+          label: 'Password (optional)',
+          type: 'password',
+          required: false,
+          hint: 'Stops someone picking your name by mistake. Leave blank to skip.',
+        },
       ],
       onSubmit: (values) => {
         const result = dataService.addPlayer(values.playerName, values.password);

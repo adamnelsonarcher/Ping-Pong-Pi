@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './AdminPasswordPrompt.css';
 
-function AdminPasswordPrompt({ onSubmit }) {
+function AdminPasswordPrompt({ onSubmit, message }) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -28,6 +28,7 @@ function AdminPasswordPrompt({ onSubmit }) {
         </div>
         
         <div className="info-section">
+          {message && <p className="prompt-message">{message}</p>}
           <div className="info-card">
             <h3>What is this for?</h3>
             <p>The admin settings panel lets you:</p>
