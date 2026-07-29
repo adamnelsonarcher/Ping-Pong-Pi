@@ -1,10 +1,11 @@
-# Ping Pong Pi — Architecture (as-built)
+# Ping Pong Pi — Architecture
 
-> This document describes how the app **actually works today**, not how it was
-> intended to work. Where the two differ, the gap is marked ⚠ and cross-referenced
-> to [AUDIT.md](AUDIT.md).
->
-> Audited at commit `5653345` on branch `Webapp`.
+How the app works. Where a design has a history worth knowing, it is noted inline
+with a pointer to [AUDIT.md](AUDIT.md); [FIXES.md](FIXES.md) tracks what has been
+addressed.
+
+Structural work that is still outstanding is marked ⚠ and cross-referenced to
+[ROADMAP.md](ROADMAP.md).
 
 ---
 
@@ -12,8 +13,8 @@
 
 A single-page React app that acts as a ping-pong scoreboard for a TV, plus an
 ELO-style leaderboard and match history. It began life as a Python program on a
-Raspberry Pi (vestiges: `__pycache__/settings.cpython-312.pyc`, `src/settings1.js`)
-and was rewritten as a React web app deployed to Vercel at `pingpongpi.com`.
+Raspberry Pi and was rewritten as a React web app deployed to Vercel at
+`pingpongpi.com`.
 
 The intended physical setup is a Pi wired to a TV with a numeric keypad or button
 box: keys `7`/`8` and `4`/`5` adjust the two scores, `1` ends the game, `3` quits.
@@ -27,109 +28,122 @@ box: keys `7`/`8` and `4`/`5` adjust the two scores, `1` ends the game, `3` quit
    Browser / TV     │  React SPA (CRA 5, React 18)             │
                     │                                          │
                     │  index.js                                │
-                    │   └─ SettingsProvider ──┐                │
-                    │       └─ App            │ two independent│
-                    │           └─ ThemeProvider   reads of    │
-                    │               └─ screens     the same    │
-                    │                             data ⚠ D-07  │
-                    │  dataService  ← module-level singleton   │
+                    │   └─ ErrorBoundary                       │
+                    │       └─ ThemeProvider                   │
+                    │           └─ SettingsProvider ──┐        │
+                    │               └─ App            │ both   │
+                    │                   └─ screens    │ read   │
+                    │                                 │ from   │
+                    │  dataService ◄──────────────────┘ one    │
+                    │   (singleton + subscribe/notify)  source  │
                     └───────┬──────────────────────┬───────────┘
                             │                      │
             isLocalMode=true│                      │isLocalMode=false
                             ▼                      ▼
                  ┌──────────────────┐   ┌────────────────────────────┐
-                 │ localStorage     │   │ GET  /api/getData?userId=  │
-                 │  localGameData   │   │ POST /api/saveData         │
-                 │  (whole DB blob) │   │        (no auth ⚠ S-03)    │
+                 │ localStorage     │   │ Authorization: Bearer <ID> │
+                 │  localGameData   │   │  GET  /api/getData         │
+                 │  (whole DB blob) │   │  POST /api/saveData        │
+                 │                  │   │  POST /api/deleteAccount   │
                  └──────────────────┘   └─────────────┬──────────────┘
                                                       │
                                         ┌─────────────▼──────────────┐
                                         │ Vercel serverless          │
                                         │  api/index.js (express)    │
-                                        │  firebase-admin SDK        │
+                                        │  _auth.js verifies token   │
+                                        │  → account key from email  │
                                         └─────────────┬──────────────┘
                                                       │
                                         ┌─────────────▼──────────────┐
                                         │ Firestore                  │
-                                        │  collection "pingpong"     │
-                                        │   └ doc "data"             │
-                                        │      └ users: { … }        │
-                                        │   ONE DOC FOR EVERY USER   │
+                                        │  pingpong/data             │
+                                        │   └ users: { <key>: {…} }  │
+                                        │   ⚠ still one doc, ROADMAP§3│
                                         └────────────────────────────┘
 ```
 
-Firebase Auth (Google popup) runs **entirely in the browser**. The server never
-sees or verifies an ID token. Auth is a UI gate, not a security boundary. ⚠ S-03
+**Identity comes from the token, never from the request.** Every API call carries a
+Firebase ID token; `api/_auth.js` verifies it and returns the decoded claims, and
+the handlers derive the storage key from `decoded.email` via `api/userKey.js`.
+There is no `userId` query parameter and no `currentUser` body field — a client
+cannot name an account, only prove which one it is.
+
+This is the single most important structural property of the current design. It
+closes S-03 (anyone could read or overwrite any account) and makes D-01 (reads and
+writes using different key encodings) impossible rather than merely fixed, because
+there is now exactly one place the key is computed.
 
 ---
 
 ## 3. Source map
 
-| Path | Role | Notes |
-|---|---|---|
-| `src/index.js` | Mount point | Uses legacy `ReactDOM.render` ⚠ Q-01 |
-| `src/App.js` | Screen router + all top-level state | `login` / `main` / `game` / `admin` |
-| `src/services/dataService.js` | **Everything**: model, persistence, ELO, HTTP | 658 lines, singleton |
-| `src/contexts/SettingsContext.js` | Boot-time settings snapshot | Never refreshes ⚠ L-03 |
-| `src/contexts/ThemeContext.js` | Dark/light, writes `data-theme` on `<html>` | |
-| `src/context/ThemeContext.js` | **Dead duplicate** of the above | ⚠ Q-06 |
-| `src/config/api.js` | Base URL selection | Wrong dev port ⚠ L-15 |
-| `src/config/firebase.js` | Firebase client init | |
-| `src/components/Scoreboard.js` | The game screen, keyboard handler | |
-| `src/components/Leaderboard.js` | Ranked + unranked tables | |
-| `src/components/GameHistory.js` | Match feed | Renders raw HTML ⚠ S-05 |
-| `src/components/AdminControls.js` | Settings, player edits, import/export | |
-| `src/components/LoginScreen.js` | Google vs. local-storage choice | |
-| `src/components/LifetimeStatsDialog.js` | Per-player stats + recharts graph | |
-| `api/index.js` | Express app (Vercel entry) | `cors: *` ⚠ S-04 |
-| `api/getData.js` / `api/saveData.js` | The entire backend, 65 lines total | |
-| `server.js` | Local dev server on :3001 | |
-| `public/data/data.json` | **A production database dump** | ⚠ S-02 |
+| Path | Role |
+|---|---|
+| `src/index.js` | `createRoot`, provider stack, removes the static loader |
+| `src/App.js` | Screen router, top-level UI state, subscribes to `dataService` |
+| `src/services/rating.js` | **Pure** rating maths. No I/O, no mutation. Fully tested. |
+| `src/services/dataService.js` | State + persistence singleton, with subscribe/notify |
+| `src/contexts/SettingsContext.js` | Live mirror of `dataService.settings` |
+| `src/contexts/ThemeContext.js` | Dark/light, writes `data-theme` on `<html>` |
+| `src/config/api.js` | Base URL (relative in both environments) |
+| `src/config/firebase.js` | Firebase client init + `authReady` |
+| `src/components/ErrorBoundary.js` | Root crash handler with recovery actions |
+| `src/components/Toast.js` | Transient messages (replaced every `alert()`) |
+| `src/components/Scoreboard.js` | The game screen and keyboard handler |
+| `src/components/Leaderboard.js` | Ranked + unranked tables; lazy-loads the stats dialog |
+| `src/components/GameHistory.js` | Match feed, rendered as JSX |
+| `src/components/AdminControls.js` | Settings, player edits, undo, import/export |
+| `src/components/LifetimeStatsDialog.js` | Per-player stats + chart (lazy chunk) |
+| `api/_auth.js` | Token verification |
+| `api/userKey.js` | **The** account-key encoding, shared by handlers and tests |
+| `api/getData.js` / `saveData.js` / `deleteAccount.js` | The backend |
+| `api/index.js` | Express app (Vercel entry, CORS) |
+| `server.js` | Local dev server; serves the same express app |
 
-**Dead weight** (imported by nothing): `src/settings1.js`, `src/logo.svg` (0 bytes),
-`src/reportWebVitals.js`, `src/components/UserAccount.{js,css}`,
-`src/styles/InputModal.css`, `src/context/ThemeContext.js`, `__pycache__/`, `.idea/`.
+Tests live next to what they test: `src/services/rating.test.js` and
+`src/services/dataService.test.js`.
 
 ---
 
 ## 4. Data model
 
-One Firestore document (`pingpong/data`) holds every user of the entire product:
+One Firestore document (`pingpong/data`) holds every account. ⚠ This is the main
+piece of structural debt left — see [ROADMAP.md §3](ROADMAP.md).
 
 ```jsonc
 {
   "users": {
-    "someone@gmail_DOT_com": {          // '.' → '_DOT_' so it's a legal map key
+    "someone@gmail_DOT_com": {          // api/userKey.js: '.' → '_DOT_'
       "settings": {
         "SCORE_CHANGE_K_FACTOR": 70,    // base ELO K
         "POINT_DIFFERENCE_WEIGHT": 6,   // K += pointDiff * this
-        "ACTIVITY_THRESHOLD": 3,        // ⚠ L-04 ignored, hardcoded to 3
+        "ACTIVITY_THRESHOLD": 3,        // games needed to become ranked
         "DEFAULT_RANK": "Unranked",
-        "PLAYER1_SCOREBOARD_COLOR": "#4CAF50",  // ⚠ L-05 never read
-        "PLAYER2_SCOREBOARD_COLOR": "#2196F3",  // ⚠ L-05 never read
-        "GAME_HISTORY_KEEP": 30,
+        "PLAYER1_SCOREBOARD_COLOR": "#4CAF50",
+        "PLAYER2_SCOREBOARD_COLOR": "#2196F3",
+        "GAME_HISTORY_KEEP": 30,        // display limit only
         "ADDPLAYER_ADMINONLY": false,
         "DISABLE_WIN_ANIMATION": false,
-        "ADMIN_PASSWORD": "hunter2"     // ⚠ S-06 plaintext, served to any client
+        "ADMIN_PASSWORD": "hunter2"     // ⚠ plaintext, AUDIT S-06
       },
       "players": {
         "Alice": {
           "name": "Alice",
-          "password": "1234",           // ⚠ S-06 plaintext
-          "score": 1043.7,              // season score, reset by "Reset All Scores"
+          "password": "1234",           // optional; anti-misclick, not security
+          "score": 1043.7,              // season score, cleared by "Reset All Scores"
           "lifetimeScore": 1102.4,      // never reset, floored at 100
           "gamesPlayed": 12, "wins": 8, "losses": 4,
           "lifetimeGamesPlayed": 40, "lifetimeWins": 25, "lifetimeLosses": 15,
           "currentStreak": 3, "maxWinStreak": 6,
-          "active": true,               // derived: gamesPlayed >= 3
+          "active": true,               // derived from ACTIVITY_THRESHOLD on load
           "scoreHistory": [1000, 1012.3, …]   // lifetimeScore over time
         }
       },
       "gameHistory": [
         { "player1": "Alice", "player2": "Bob", "score": "11 - 7",
-          "player1Rank": 1, "player2Rank": 4,
-          "pointChange1": 21.4, "pointChange2": -19.8,
-          "date": "2025-02-15T18:04:11.000Z" }
+          "player1Rank": 1, "player2Rank": 4,     // pre-match standings
+          "pointChange1": 21.4, "pointChange2": -21.4,
+          "date": "2026-07-29T18:04:11.000Z" }
       ]
     }
   }
@@ -138,66 +152,70 @@ One Firestore document (`pingpong/data`) holds every user of the entire product:
 
 Notes on the shape:
 
-- **A "user" is an account owner** (the person who logs in with Google). A
-  **"player"** is a name on the leaderboard. One user owns many players.
-- `players` is a **map keyed by display name**, so renaming a player is impossible
-  and two people can never share a name.
-- `gameHistory` is truncated to `GAME_HISTORY_KEEP` on every write
-  (`dataService.js:257`). Lowering that setting **permanently destroys** the
-  trimmed matches on the next save — there is no archive.
-- Player objects are rehydrated into the `Player` class on load via
-  `Object.assign(new Player(...), playerData)` (`dataService.js:139-146`), which is
-  what keeps old records working when new fields are added.
+- **A "user" is an account owner** (whoever signs in with Google). A **"player"** is
+  a name on the leaderboard. One user owns many players.
+- `players` is keyed by display name, so a player cannot be renamed and two people
+  cannot share a name. ⚠ [ROADMAP.md §3](ROADMAP.md).
+- `gameHistory` keeps everything. `GAME_HISTORY_KEEP` is applied at render time by
+  `getGameHistory()`; `MAX_STORED_HISTORY` (1000) is a document-size guard, not a
+  user setting.
+- `active` is recomputed from the current `ACTIVITY_THRESHOLD` every time data
+  loads or settings change, rather than trusting the stored flag.
+- Player records are rehydrated into the `Player` class by `_hydrate()`, which also
+  normalises fields added in later versions. That is what keeps old saves working.
 
 ---
 
 ## 5. The two storage modes
 
 `dataService.isLocalMode` (mirrored in `localStorage.isLocalMode`) switches every
-read and write between two completely separate code paths.
+read and write.
 
 | | **Local mode** | **Cloud mode** |
 |---|---|---|
-| Chosen at | "Use Local Storage" button | "Login with Google" button |
-| Identity | literal string `local_user` | Google account email |
-| Store | `localStorage.localGameData` | Firestore `pingpong/data` |
-| Write timing | synchronous, immediate | debounced 1000 ms ⚠ D-02 |
-| Multi-device | no | yes, but last-write-wins ⚠ D-03 |
-| Quit Game | broken ⚠ L-01 | broken ⚠ L-01 |
-| Erase Account | works | broken ⚠ D-05 |
+| Chosen at | "Use Local Storage" | "Login with Google" |
+| Identity | literal `local_user` | verified Google account |
+| Store | `localStorage.localGameData` | Firestore, keyed by verified email |
+| Write timing | debounced 1s, then synchronous | debounced 1s, retried twice |
+| Flush on unload | yes | yes, via `fetch(keepalive)` |
+| Multi-device | no | yes; ⚠ same-account writes still last-wins |
+| Erase account | clears localStorage | scoped server-side delete |
 
-Switching from local to Google **deletes** `localGameData` after a `confirm()`
-(`LoginScreen.js:74-87`). Switching back is not offered; there is no merge or
-migration path in either direction other than the manual JSON download/upload in
-Admin → Data Management.
+Switching from local to Google leaves the local save in place but unused, after a
+confirmation. To move data between modes, use Admin → Data Management → Download,
+then Upload in the other mode.
 
 ---
 
-## 6. Boot sequence (what actually happens on load)
+## 6. Boot sequence
 
 ```
-1. index.html paints #initial-loader (hidden on window 'load', not on React mount)
+1. index.html paints #initial-loader
 2. dataService.js module executes
      └─ new DataService()
-          └─ atob(localStorage.currentUser)   ⚠ D-06 unguarded, can throw here
-                                                 and brick the whole bundle
-3. SettingsProvider mounts, fires its effect  ──┐
-4. App mounts, fires its effect                 ├─ both call dataService.loadData()
-                                                │  concurrently, and both write to
-                                                │  the SAME singleton ⚠ L-03 / D-07
-     App effect:
-       - no currentUser?  → render <LoginScreen>, stop
-       - dataService.setCurrentUser(user)   → localStorage.currentUser = btoa(user)
-       - dataService.loadData()             → fills players/settings/gameHistory
-       - copy into React state
+          └─ readStoredUser()  — guarded; migrates legacy base64; never throws
+3. React renders; index.js removes #initial-loader
+     ErrorBoundary → ThemeProvider → SettingsProvider → App
+
+     SettingsProvider: subscribes to dataService. Loads nothing.
+     App effect (the only loader):
+       - no currentUser?  → <LoginScreen>, stop
+       - setLocalMode from localStorage
+       - dataService.setCurrentUser(user) → loadData()
+            cloud: await authReady, then GET /api/getData with a Bearer token
+            local: read localGameData
        - no ADMIN_PASSWORD? → <AdminPasswordPrompt>
-       - else                → screen 'main'
+       - else → screen 'main'
 ```
 
-`SettingsProvider`'s copy of `settings` is captured **once, here, forever**. Nothing
-invalidates it. Everything that reads `useSettings()` — `ADDPLAYER_ADMINONLY` in
-`App.js:307`, `DISABLE_WIN_ANIMATION` in `Scoreboard.js:43`, `DEFAULT_RANK` in
-`Leaderboard.js:20` — is reading a boot-time snapshot. ⚠ L-03
+`App` reads players, leaderboard and history straight from `dataService` on every
+render, re-rendering via `useSyncExternalStore`. There is no second copy to drift
+out of sync — which is what used to make admin edits invisible on the leaderboard
+and settings changes appear to do nothing (AUDIT L-03, D-04, D-07).
+
+`authReady` matters: Firebase restores a persisted session asynchronously, so
+`auth.currentUser` is null for the first moments after a reload. Requests await it
+before reading a token.
 
 ---
 
@@ -205,8 +223,8 @@ invalidates it. Everything that reads `useSettings()` — `ADDPLAYER_ADMINONLY` 
 
 ```
         ┌──────────────┐
-        │ LoginScreen  │  (rendered by an early return in App.js:75-77,
-        └──────┬───────┘   outside ThemeProvider)
+        │ LoginScreen  │
+        └──────┬───────┘
                │ Google  /  Local
                ▼
      ┌────────────────────┐   first run, no ADMIN_PASSWORD
@@ -216,119 +234,125 @@ invalidates it. Everything that reads `useSettings()` — `ADDPLAYER_ADMINONLY` 
         ┌──────────────┐  "Admin" + password        ┌─────┴──────────┐
         │  main        │ ─────────────────────────► │ AdminControls  │
         │  leaderboard │ ◄───────────────────────── │                │
-        │  + history   │      "Save and Exit"       └────────────────┘
+        │  + history   │        "Exit"              └────────────────┘
         └──────┬───────┘
-               │ pick 2 players (each needs its own password), "Start Game"
+               │ pick 2 players (password only if that player set one)
                ▼
         ┌──────────────┐
-        │  Scoreboard  │  keys 7/8 = P1 ±1, 4/5 = P2 ±1
-        │              │  key 1 ×2 = End Game  → records result, ELO, history
-        │              │  key 3 ×2 = Quit Game → ⚠ L-01 does nothing
+        │  Scoreboard  │  7/8 = P1 ±1, 4/5 = P2 ±1
+        │              │  1 ×2 = End Game  → records result, ELO, history
+        │              │  3 ×2 = Quit Game → records an abandoned game
         └──────────────┘
 ```
 
-`currentScreen` also has a `'login'` value that is set but never rendered — the
-login screen is selected by the `!currentUser` early return instead. The
-`!currentUser` and loading branches inside the main `return` (`App.js:265-274`) are
-**unreachable**, because the early returns above them already handled those cases.
+Both End and Quit return to the main screen and clear the player selection.
 
 ---
 
 ## 8. The rating system
 
-Implemented in `Player.updateScore` / `Player.calculateScoreChange`
-(`dataService.js:22-80`).
+Implemented in `src/services/rating.js` as pure functions.
 
 ```
 expected   = 1 / (1 + 10^((opponentScore - myScore) / 450))
 K          = SCORE_CHANGE_K_FACTOR + pointDifference × POINT_DIFFERENCE_WEIGHT
 change     = K × (result − expected)
-if upset (expected < 0.45 and won) or (expected > 0.65 and lost):
-             change × 1.3
+if upset:    change × 1.3
 ```
 
-Modifiers layered on top of `K`:
+An upset is a win where your expectation was below 0.45, or a loss where it was
+above 0.65. K is modified per player:
 
-| Situation | K becomes |
+| Situation | K |
 |---|---|
-| both players unranked | `K × 1.2` |
-| I am unranked, opponent ranked | `K × 1.2` |
-| I am ranked, opponent unranked | `20` (flat — discards point difference) |
+| I am unranked | `K × 1.2` |
+| I am ranked, opponent unranked | `20` (flat) |
+| both ranked | `K` |
 
-Two ratings are maintained per player: `score` (the season number, wiped by "Reset
-All Scores") and `lifetimeScore` (never wiped, floored at 100, plotted in the stats
-dialog). `active` — whether you appear in the ranked table at all — is
-`gamesPlayed >= 3`, hardcoded. ⚠ L-04
+Two ratings are maintained: `score` (the season number, cleared by "Reset All
+Scores") and `lifetimeScore` (never cleared, floored at 100, plotted in the stats
+dialog). `active` — whether you appear in the ranked table — is
+`gamesPlayed >= ACTIVITY_THRESHOLD`.
 
-The divisor `450` (vs. chess's 400) flattens the curve slightly, so upsets cost the
-favourite a little less than standard ELO. Combined with `K = 70 + 6×pointDiff`, an
-11–0 blowout can swing **136 points**, which is why ratings move so violently.
+**Matches are computed from a snapshot.** `computeMatchDeltas` takes plain
+`{score, lifetimeScore, active}` views of both players captured *before* either is
+modified, so the result is symmetric and does not depend on evaluation order. This
+is the fix for AUDIT L-02, where updating the winner first meant the loser was
+scored against the winner's already-updated rating — inventing about 4.3 points of
+rating on every evenly-matched game and systematically favouring winners.
 
-⚠ **The implementation is not zero-sum.** `recordGame` updates the winner first,
-then the loser — and the loser's expectation is computed against the winner's
-*already-updated* rating (`dataService.js:240-241`). Two evenly matched active
-players trading an 11–9 game create **+4.29 points out of nothing**. See L-02.
+Outside the upset band the system is exactly zero-sum, and there is a test pinning
+that. Inside the band — roughly a 40-to-120-point rating gap — the underdog
+receives the 1.3× bonus while the favourite does not yet pay it, so a small amount
+of rating enters the pool. That asymmetry is intentional; the test
+`leaks rating into the pool only when one side qualifies for the bonus` documents
+both edges of it so nobody mistakes it for the old bug.
+
+The `450` divisor (chess uses 400) slightly flattens the curve. With
+`K = 70 + 6 × pointDiff`, an 11-0 can swing 136 points, which is why ratings move
+so fast.
 
 ---
 
 ## 9. Persistence lifecycle
 
 ```
-recordGame()
-  ├─ mutate both Player objects in place
-  ├─ append to gameHistory, slice(-GAME_HISTORY_KEEP)
-  └─ local?  localStorage.setItem(...)          ← synchronous, safe
-     cloud?  debouncedSave()                    ← setTimeout 1000ms
-                └─ saveData()
-                     └─ POST /api/saveData with the ENTIRE user document
-                          └─ server: read whole doc, spread, write whole doc
+recordGame()  /  quitGame()  /  addPlayer()  /  updateSettings()  …
+  ├─ mutate in-memory state
+  ├─ _emit()          → bumps version, notifies subscribers, React re-renders
+  └─ scheduleSave()   → debounced 1s, returns a promise that resolves on write
+
+     saveData()
+       local: localStorage.setItem
+       cloud: POST /api/saveData with a Bearer token, 2 retries with backoff
+                └─ server: scoped merge write to users.<key> only
+
+     flush()          → write now; called on pagehide with keepalive:true
 ```
 
-Consequences of this design, all of which show up in the commit log as "fixed
-critical data wipe bug" / "fixed duplicate game history bug" / "fixed player save
-data bug":
+Properties worth knowing:
 
-- **Nothing is atomic.** Every save is a full-document overwrite of everything the
-  user owns. Two browsers on the same account silently overwrite each other. ⚠ D-03
-- **A 1-second loss window** on every write, with no `beforeunload` flush. Turn the
-  TV off right after a match and the match is gone. ⚠ D-02
-- **Re-reads clobber unsaved work.** `getPlayers()` / `getSettings()` call
-  `loadData()`, which replaces the in-memory singleton wholesale. `AdminControls`
-  does this on every dark-mode toggle. ⚠ D-04
-- ⚠ **In cloud mode, saves currently land in a different Firestore key than reads.**
-  The write key is `btoa(email)`; the read key is `email.replace('.','_DOT_')`.
-  They have not matched since commit `7378d8d`, so every cloud-mode match is
-  written to an orphan document and lost on reload. This is the single most
-  damaging bug in the codebase. ⚠ **D-01**
+- **Saves are awaitable.** `scheduleSave()` returns a real promise. The old
+  `debouncedSave()` returned `undefined`, so `await debouncedSave()` waited for
+  nothing (AUDIT D-02).
+- **The last match before shutdown survives.** A `pagehide` listener flushes with
+  `keepalive: true`, so a game recorded seconds before the TV goes off still lands.
+- **Failures surface.** After two retries, `lastSaveError` is set and subscribers
+  are notified, rather than the error being swallowed.
+- **Writes are scoped.** The server merges into `users.<key>` only. It no longer
+  reads the whole document into memory and writes it back, so one account can no
+  longer clobber another.
+- ⚠ **Same-account concurrency is still last-write-wins.** Two browsers signed into
+  the same account will overwrite each other's matches. That needs the per-entity
+  model in [ROADMAP.md §3](ROADMAP.md).
 
 ---
 
 ## 10. Build & deploy
 
-- `npm start` — CRA dev server on :3000, proxying `/api/*` to :3001 via the
-  `proxy` field. `npm run dev` runs that plus `server.js` concurrently.
-- `npm run build` → `build/`, ~215 KB gzipped JS.
-- Vercel: legacy `builds` config in `vercel.json`; `api/index.js` becomes a Node
-  serverless function, everything else is static, with a catch-all rewrite to
-  `index.html`.
-- Secrets come from Vercel project env vars in production and `.env` / `.env.local`
-  locally. ⚠ `.env` is committed and public — see S-01.
+- `npm start` — CRA dev server on :3000, proxying `/api/*` to :3001.
+- `npm run dev` — that plus `server.js`, which serves the same express app as
+  production.
+- `npm test` — 44 tests. `npm run build` → `build/`, ~93 KB gzipped initial JS plus
+  a ~104 KB chart chunk loaded on demand.
+- Vercel: `api/index.js` becomes a Node serverless function; everything else is
+  static, with a catch-all rewrite to `index.html`.
+- Secrets come from Vercel project env vars in production and `.env.local` locally.
+  See `.env.example`. ⚠ The previously committed key must still be rotated — see
+  [FIXES.md](FIXES.md).
 
 ---
 
 ## 11. What's good here
 
-Worth stating plainly, since the rest of this document is a list of problems:
-
-- The **local-storage mode is a genuinely good idea** — the app is fully usable with
-  zero backend, which is exactly right for a device bolted to a wall.
-- **Player rehydration via `Object.assign` onto a fresh `Player`** is a simple,
-  effective schema-migration strategy that has clearly saved older saves more than once.
-- The **keyboard-first control scheme** (single digits, double-press to confirm
-  destructive actions, on-screen confirmation text) is well matched to a keypad
-  bolted next to a TV.
-- **JSON export/import** in the admin panel is the reason the data-loss bugs have
-  been survivable.
-- The **two-tier rating** (season `score` + `lifetimeScore`) is a thoughtful design
-  that most hobby leaderboards get wrong.
-- `vh`-based sizing throughout the scoreboard means it genuinely scales to any TV.
+- The **local-storage mode** is a genuinely good idea — fully usable with no
+  backend, which is right for a device bolted to a wall.
+- **Player rehydration through a constructor plus field normalisation** is a simple,
+  effective schema-migration strategy that has repeatedly saved older data.
+- The **keyboard-first control scheme** — single digits, double-press to confirm
+  destructive actions, on-screen confirmation text — is well matched to a keypad
+  next to a TV.
+- **JSON export/import** is why the historical data-loss bugs were survivable.
+- The **two-tier rating** (season + lifetime) is a thoughtful design most hobby
+  leaderboards get wrong.
+- `vh`-based sizing throughout the scoreboard means it scales to any TV.
