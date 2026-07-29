@@ -182,3 +182,58 @@
   text-align: center;
   padding: 2rem 1rem;
 }
+
+/* ---------------------------------------------------------------------------
+   Head-to-head records. Derived from gameHistory by services/stats.js — no new
+   stored data was needed, it had simply never been surfaced.
+   --------------------------------------------------------------------------- */
+.h2h-section {
+  margin-top: 1.5rem;
+}
+
+.h2h-section h3 {
+  margin-bottom: 0.5rem;
+}
+
+.h2h-empty {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.h2h-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.h2h-table th {
+  text-align: left;
+  padding: 0.4rem 0.6rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.85rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.h2h-table td {
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.h2h-table tr:last-child td {
+  border-bottom: none;
+}
+
+.h2h-table td:not(:first-child) {
+  font-variant-numeric: tabular-nums;
+}
+
+.h2h-up {
+  color: #2ecc71;
+  font-weight: 600;
+}
+
+.h2h-down {
+  color: #e74c3c;
+  font-weight: 600;
+}

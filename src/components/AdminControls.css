@@ -469,3 +469,56 @@ button[type="button"].delete-player-btn {
   font-style: italic;
   font-size: 0.9em;
 }
+
+/* ---------------------------------------------------------------------------
+   Archived seasons. "Reset All Scores" used to discard the final table with no
+   record a season had happened (docs/AUDIT.md L-10).
+   --------------------------------------------------------------------------- */
+.season-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.season-entry {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.season-headline {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.season-date {
+  color: var(--text-secondary);
+  font-size: 0.85em;
+}
+
+.season-champion {
+  margin-top: 0.25rem;
+  font-size: 0.9em;
+  color: var(--text-secondary);
+}
+
+.season-standings {
+  margin: 0.5rem 0 0;
+  padding-left: 1.5rem;
+  font-size: 0.9em;
+}
+
+.season-standings li {
+  padding: 0.15rem 0;
+}
+
+.season-score {
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}

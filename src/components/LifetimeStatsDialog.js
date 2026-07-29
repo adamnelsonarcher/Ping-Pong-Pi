@@ -9,6 +9,8 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import './LifetimeStatsDialog.css';
+import dataService from '../services/dataService';
+import { headToHead } from '../services/stats';
 
 /**
  * Per-player lifetime stats.
@@ -44,6 +46,7 @@ function LifetimeStatsDialog({ player, onClose }) {
   // and — with no error boundary — took the whole app down (docs/AUDIT.md L-12).
   const scoreHistory = Array.isArray(player.scoreHistory) ? player.scoreHistory : [];
   const chartData = scoreHistory.map((score, index) => ({ game: index + 1, score }));
+  const records = headToHead(dataService.gameHistory, player.name);
 
   const formatValue = (value) => {
     if (typeof value === 'number') {
@@ -115,6 +118,48 @@ function LifetimeStatsDialog({ player, onClose }) {
               </tr>
             </tbody>
           </table>
+        </div>
+
+        {/* Head-to-head is what people actually argue about, and every field it
+            needs has been in gameHistory all along — it was just never shown. */}
+        <div className="h2h-section">
+          <h3>Head to Head</h3>
+          {records.length === 0 ? (
+            <p className="h2h-empty">No completed games yet.</p>
+          ) : (
+            <table className="h2h-table">
+              <thead>
+                <tr>
+                  <th>Opponent</th>
+                  <th>W–L</th>
+                  <th>Games</th>
+                  <th>Points</th>
+                </tr>
+              </thead>
+              <tbody>
+                {records.map((record) => (
+                  <tr key={record.opponent}>
+                    <td>{record.opponent}</td>
+                    <td
+                      className={
+                        record.wins > record.losses
+                          ? 'h2h-up'
+                          : record.wins < record.losses
+                            ? 'h2h-down'
+                            : ''
+                      }
+                    >
+                      {record.wins}–{record.losses}
+                    </td>
+                    <td>{record.played}</td>
+                    <td>
+                      {record.pointsFor}–{record.pointsAgainst}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
 
         <div className="chart-section">

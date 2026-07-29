@@ -20,6 +20,9 @@ import {
  */
 export const MAX_STORED_HISTORY = 1000;
 
+/** Ceiling on archived seasons, for the same document-size reason. */
+export const MAX_STORED_SEASONS = 50;
+
 /** How long to wait for more changes before writing. */
 const SAVE_DELAY = 1000;
 
@@ -104,6 +107,7 @@ class DataService {
 
     this.players = {};
     this.gameHistory = [];
+    this.seasons = [];
     this.settings = { ...this.defaultSettings, ADMIN_PASSWORD: '' };
     this.currentUser = readStoredUser();
     this.isLocalMode = localStorage.getItem('isLocalMode') === 'true';
@@ -183,6 +187,7 @@ class DataService {
     this.currentUser = null;
     this.players = {};
     this.gameHistory = [];
+    this.seasons = [];
     this.settings = { ...this.defaultSettings, ADMIN_PASSWORD: '' };
     this._emit();
   }
@@ -242,6 +247,7 @@ class DataService {
       // contents, so conflict merging can tell them apart.
       (game) => (game.id ? game : { ...game, id: derivedGameId(game) })
     );
+    this.seasons = Array.isArray(data.seasons) ? data.seasons : [];
     this.revision = Number.isFinite(data.revision) ? data.revision : 0;
     this.players = {};
 
@@ -281,6 +287,7 @@ class DataService {
       settings: this.settings,
       players: this.players,
       gameHistory: this.gameHistory,
+      seasons: this.seasons,
     };
   }
 
@@ -592,7 +599,38 @@ class DataService {
     return true;
   }
 
-  async resetAllScores() {
+  /**
+   * End the current season: archive the final table, then clear season scores.
+   *
+   * The reset itself was already correct — lifetime figures and maxWinStreak
+   * survive on purpose, because the confirmation promises a season reset and not
+   * a wipe. What was missing is any record that a season happened at all, so
+   * every past table was thrown away and there was no way to say when the
+   * current one started (docs/AUDIT.md L-10).
+   *
+   * Note the stats graph plots lifetimeScore, which is never reset — so it is
+   * genuinely continuous across a season boundary rather than hiding a
+   * discontinuity. The original finding was imprecise on that point.
+   */
+  async resetAllScores({ name } = {}) {
+    const standings = this.getLeaderboard()
+      .filter((entry) => entry.active)
+      .map((entry) => ({ name: entry.name, score: entry.score, ratio: entry.ratio }));
+
+    if (standings.length > 0) {
+      this.seasons = [
+        ...this.seasons,
+        {
+          id: newGameId(),
+          name: name || `Season ${this.seasons.length + 1}`,
+          endedAt: new Date().toISOString(),
+          champion: standings[0]?.name || null,
+          standings,
+          games: this.gameHistory.length,
+        },
+      ].slice(-MAX_STORED_SEASONS);
+    }
+
     Object.values(this.players).forEach((player) => {
       player.score = STARTING_SCORE;
       player.gamesPlayed = 0;
@@ -600,12 +638,15 @@ class DataService {
       player.losses = 0;
       player.currentStreak = 0;
       player.active = false;
-      // maxWinStreak and everything lifetime-prefixed survive on purpose: the
-      // confirmation dialog promises a season reset, not a wipe.
     });
+
     this._emit();
     this.scheduleSave();
-    return true;
+    return { ok: true, archived: standings.length > 0 };
+  }
+
+  getSeasons() {
+    return this.seasons;
   }
 
   // ---------------------------------------------------------------------------

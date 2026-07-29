@@ -47,6 +47,8 @@ function AdminControls({ onExit, onAddPlayer, onNotify = () => {}, onAccountEras
     [settings]
   );
 
+  const seasons = dataService.getSeasons();
+
   const editableSettings = Object.entries(effective).filter(
     ([key]) => !HIDDEN_SETTINGS.includes(key)
   );
@@ -95,13 +97,20 @@ function AdminControls({ onExit, onAddPlayer, onNotify = () => {}, onAccountEras
   const handleResetAllScores = async () => {
     if (
       !window.confirm(
-        'Reset all season scores? This affects every player, but not lifetime stats.'
+        'End the current season?\n\n' +
+          'The final table is archived below and every player starts fresh. ' +
+          'Lifetime stats are not affected.'
       )
     ) {
       return;
     }
-    await dataService.resetAllScores();
-    onNotify('All season scores have been reset.', 'success');
+    const result = await dataService.resetAllScores();
+    onNotify(
+      result.archived
+        ? 'Season ended and archived. All season scores reset.'
+        : 'All season scores have been reset.',
+      'success'
+    );
   };
 
   const handleUndoLastGame = async () => {
@@ -380,6 +389,39 @@ function AdminControls({ onExit, onAddPlayer, onNotify = () => {}, onAccountEras
           </div>
         </div>
       </div>
+
+      {seasons.length > 0 && (
+        <div className={`admin-section ${collapsedSections.seasons ? 'collapsed' : ''}`}>
+          <SectionHeader name="seasons">Past Seasons</SectionHeader>
+          <div className="admin-section-content">
+            {/* "Reset All Scores" used to throw the final table away with no
+                record that a season had happened at all (docs/AUDIT.md L-10). */}
+            <ul className="season-list">
+              {[...seasons].reverse().map((season) => (
+                <li key={season.id} className="season-entry">
+                  <div className="season-headline">
+                    <strong>{season.name}</strong>
+                    <span className="season-date">
+                      ended {new Date(season.endedAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="season-champion">
+                    🏆 {season.champion} — {season.standings.length} ranked player
+                    {season.standings.length === 1 ? '' : 's'}
+                  </div>
+                  <ol className="season-standings">
+                    {season.standings.slice(0, 3).map((entry) => (
+                      <li key={entry.name}>
+                        {entry.name} <span className="season-score">{entry.score}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
 
       <div className={`admin-section ${collapsedSections.dataManagement ? 'collapsed' : ''}`}>
         <SectionHeader name="dataManagement">Data Management</SectionHeader>

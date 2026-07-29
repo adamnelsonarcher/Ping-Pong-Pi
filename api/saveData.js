@@ -6,6 +6,7 @@ const db = admin.firestore();
 /** Refuse absurd payloads rather than letting one account fill the document. */
 const MAX_PLAYERS = 500;
 const MAX_HISTORY = 1000;
+const MAX_SEASONS = 50;
 
 /**
  * Overwrite the authenticated caller's account.
@@ -28,7 +29,7 @@ module.exports = async (req, res) => {
   const user = await requireUser(req, res);
   if (!user) return;
 
-  const { settings, players, gameHistory, baseRevision } = req.body || {};
+  const { settings, players, gameHistory, seasons, baseRevision } = req.body || {};
 
   if (typeof settings !== 'object' || settings === null) {
     return res.status(400).json({ error: 'settings must be an object' });
@@ -44,6 +45,12 @@ module.exports = async (req, res) => {
   }
   if (gameHistory.length > MAX_HISTORY) {
     return res.status(413).json({ error: `Too much history (max ${MAX_HISTORY})` });
+  }
+  if (seasons !== undefined && !Array.isArray(seasons)) {
+    return res.status(400).json({ error: 'seasons must be an array' });
+  }
+  if (Array.isArray(seasons) && seasons.length > MAX_SEASONS) {
+    return res.status(413).json({ error: `Too many seasons (max ${MAX_SEASONS})` });
   }
 
   const key = userKey(user.email);
@@ -73,6 +80,7 @@ module.exports = async (req, res) => {
               settings,
               players,
               gameHistory,
+              seasons: Array.isArray(seasons) ? seasons : [],
               revision: next,
               updatedAt: new Date().toISOString(),
             },

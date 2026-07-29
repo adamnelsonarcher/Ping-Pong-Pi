@@ -8,7 +8,7 @@ jest.mock('../config/firebase', () => ({
 }));
 
 const EMAIL = 'someone@example.com';
-const EMPTY_ACCOUNT = { settings: {}, players: {}, gameHistory: [] };
+const EMPTY_ACCOUNT = { settings: {}, players: {}, gameHistory: [], seasons: [] };
 
 /**
  * An in-memory stand-in for api/getData + api/saveData.
@@ -37,7 +37,9 @@ function createFakeServer(email = EMAIL) {
       if (!options.headers?.Authorization) {
         return { ok: false, status: 401, json: async () => ({ error: 'unauthenticated' }) };
       }
-      const { settings, players, gameHistory, baseRevision } = JSON.parse(options.body);
+      const { settings, players, gameHistory, seasons, baseRevision } = JSON.parse(
+        options.body
+      );
       const currentRevision = documents[key]?.revision ?? 0;
 
       // Mirrors the transaction in api/saveData.js.
@@ -59,7 +61,13 @@ function createFakeServer(email = EMAIL) {
 
       const revision = currentRevision + 1;
       documents[key] = JSON.parse(
-        JSON.stringify({ settings, players, gameHistory, revision })
+        JSON.stringify({
+          settings,
+          players,
+          gameHistory,
+          seasons: Array.isArray(seasons) ? seasons : [],
+          revision,
+        })
       );
       return { ok: true, status: 200, json: async () => ({ message: 'ok', revision }) };
     }
@@ -574,6 +582,65 @@ describe('legacy session values', () => {
     localStorage.setItem('currentUser', btoa('someone@example.com'));
     expect(new DataService().currentUser).toBe('someone@example.com');
     expect(localStorage.getItem('currentUser')).toBe('someone@example.com');
+  });
+});
+
+describe('seasons', () => {
+  /** docs/AUDIT.md L-10 — a reset discarded the final table with no record of it. */
+  const seasonService = async () => {
+    const s = localService();
+    await s.addPlayer('Alice', '');
+    await s.addPlayer('Bob', '');
+    for (let i = 0; i < 3; i += 1) s.recordGame('Alice', 'Bob', 11, 5);
+    return s;
+  };
+
+  it('archives the final table when a season ends', async () => {
+    const s = await seasonService();
+    expect(s.getSeasons()).toHaveLength(0);
+
+    const result = await s.resetAllScores();
+
+    expect(result.archived).toBe(true);
+    const [season] = s.getSeasons();
+    expect(season.name).toBe('Season 1');
+    expect(season.champion).toBe('Alice');
+    expect(season.standings.map((e) => e.name)).toEqual(['Alice', 'Bob']);
+    expect(season.endedAt).toBeTruthy();
+  });
+
+  it('numbers seasons as they accumulate', async () => {
+    const s = await seasonService();
+    await s.resetAllScores();
+    for (let i = 0; i < 3; i += 1) s.recordGame('Bob', 'Alice', 11, 5);
+    await s.resetAllScores();
+
+    expect(s.getSeasons().map((x) => x.name)).toEqual(['Season 1', 'Season 2']);
+    expect(s.getSeasons()[1].champion).toBe('Bob');
+  });
+
+  it('does not archive an empty season', async () => {
+    const s = localService();
+    await s.addPlayer('Alice', '');
+    const result = await s.resetAllScores();
+
+    expect(result.archived).toBe(false);
+    expect(s.getSeasons()).toHaveLength(0);
+  });
+
+  it('survives a save and reload', async () => {
+    const server = createFakeServer();
+    const writer = cloudService(server);
+    await writer.addPlayer('Alice', '');
+    await writer.addPlayer('Bob', '');
+    for (let i = 0; i < 3; i += 1) writer.recordGame('Alice', 'Bob', 11, 5);
+    await writer.resetAllScores();
+    await writer.flushNow();
+
+    const reader = cloudService(server);
+    await reader.loadData();
+    expect(reader.getSeasons()).toHaveLength(1);
+    expect(reader.getSeasons()[0].champion).toBe('Alice');
   });
 });
 
