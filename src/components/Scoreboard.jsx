@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import dataService from '../services/dataService';
 import AnimatedScore from './AnimatedScore';
 import VictoryAnimation from './VictoryAnimation';

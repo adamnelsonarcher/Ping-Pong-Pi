@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import './LoginScreen.css';
 import dataService from '../services/dataService';
 import { auth, googleProvider } from '../config/firebase';

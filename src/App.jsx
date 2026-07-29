@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, useSyncExternalStore } from 'react';
+import { useState, useEffect, useCallback, useRef, useSyncExternalStore } from 'react';
 import './App.css';
 import Leaderboard from './components/Leaderboard';
 import GameHistory from './components/GameHistory';

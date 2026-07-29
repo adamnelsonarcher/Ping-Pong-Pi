@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import './GameHistory.css';
 
 /** A shutout at 7, or 11-1, counts as a skunk. */

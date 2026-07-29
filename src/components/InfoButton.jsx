@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import './InfoButton.css';
 // Read the version from the one place it is defined, rather than hand-copying it
 // into the JSX — the two had drifted to 3.1.0 vs 0.1.0 (docs/AUDIT.md Q-09).

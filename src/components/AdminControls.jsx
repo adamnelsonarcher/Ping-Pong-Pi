@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import './AdminControls.css';
 import dataService from '../services/dataService';
 import { useTheme } from '../contexts/ThemeContext';

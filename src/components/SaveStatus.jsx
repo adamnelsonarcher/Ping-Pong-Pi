@@ -1,4 +1,4 @@
-import React, { useSyncExternalStore, useState } from 'react';
+import { useSyncExternalStore, useState } from 'react';
 import dataService from '../services/dataService';
 import './SaveStatus.css';
 
