@@ -74,7 +74,7 @@ function App() {
         await dataService.setCurrentUser(currentUser);
         if (cancelled) return;
 
-        setShowAdminPasswordPrompt(!dataService.settings?.ADMIN_PASSWORD);
+        setShowAdminPasswordPrompt(!dataService.hasAdminPassword());
         setCurrentScreen('main');
       } catch (error) {
         if (cancelled) return;
@@ -105,7 +105,7 @@ function App() {
       <AdminPasswordPrompt
         onSubmit={async (password) => {
           try {
-            await dataService.updateSettings({ ADMIN_PASSWORD: password });
+            await dataService.setAdminPasswordValue(password);
             setShowAdminPasswordPrompt(false);
             setCurrentScreen('main');
           } catch (error) {
@@ -133,8 +133,8 @@ function App() {
           hint: 'Stops someone picking your name by mistake. Leave blank to skip.',
         },
       ],
-      onSubmit: (values) => {
-        const result = dataService.addPlayer(values.playerName, values.password);
+      onSubmit: async (values) => {
+        const result = await dataService.addPlayer(values.playerName, values.password);
         if (!result.ok) {
           // Previously this failure was swallowed and the modal closed as if it
           // had worked (docs/AUDIT.md L-13).
@@ -185,8 +185,8 @@ function App() {
     setModalConfig({
       title: `Enter Password for ${playerName}`,
       fields: [{ name: 'password', label: 'Password', type: 'password' }],
-      onSubmit: (values) => {
-        if (values.password === player.password) {
+      onSubmit: async (values) => {
+        if (await dataService.checkPlayerPassword(playerName, values.password)) {
           setPlayerAt(index, playerName);
           closeModal();
         } else {
@@ -202,8 +202,8 @@ function App() {
     setModalConfig({
       title: 'Enter Admin Password',
       fields: [{ name: 'password', label: 'Password', type: 'password' }],
-      onSubmit: (values) => {
-        if (values.password === dataService.settings?.ADMIN_PASSWORD) {
+      onSubmit: async (values) => {
+        if (await dataService.checkAdminPassword(values.password)) {
           setCurrentScreen('admin');
           closeModal();
         } else {
@@ -251,7 +251,7 @@ function App() {
                   Add Player
                 </button>
               )}
-              <button className="btn admin-controls" onClick={handleAdminClick}>
+              <button className="btn admin-open-btn" onClick={handleAdminClick}>
                 Admin
               </button>
               <InfoButton currentUser={currentUser} onLogout={handleLogout} />

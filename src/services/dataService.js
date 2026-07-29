@@ -1,5 +1,6 @@
 import API_URL from '../config/api';
 import { auth, authReady } from '../config/firebase';
+import { hash as hashCredential, verify as verifyCredential } from './credentials';
 import {
   computeMatchDeltas,
   isActive,
@@ -125,6 +126,7 @@ class DataService {
     this._saveTimer = null;
     this._pendingSave = null;
     this._replaying = false;
+    this._disposed = false;
     this._listeners = new Set();
 
     // Bumped on every change. useSyncExternalStore needs a snapshot value that
@@ -292,7 +294,7 @@ class DataService {
   scheduleSave() {
     // Replaying matches during a conflict merge goes through the normal record
     // path, which would otherwise schedule a save from inside a save.
-    if (this._replaying) return Promise.resolve(true);
+    if (this._replaying || this._disposed) return Promise.resolve(true);
 
     if (this._saveTimer) clearTimeout(this._saveTimer);
 
@@ -321,6 +323,21 @@ class DataService {
   /** True if there are changes waiting to be written. */
   hasPendingSave() {
     return this._saveTimer !== null;
+  }
+
+  /**
+   * Abandon pending work and drop subscribers.
+   *
+   * The app's singleton never needs this — it lives as long as the page. Tests
+   * do: a debounced save from one test would otherwise fire during a later one
+   * and write through whatever `fetch` happened to be installed by then.
+   */
+  dispose() {
+    if (this._saveTimer) clearTimeout(this._saveTimer);
+    this._saveTimer = null;
+    this._pendingSave = null;
+    this._disposed = true;
+    this._listeners.clear();
   }
 
   /**
@@ -478,14 +495,25 @@ class DataService {
    * false on a duplicate name and every caller ignored it, so adding a duplicate
    * player looked like it had worked (docs/AUDIT.md L-13).
    */
-  addPlayer(name, password) {
+  async addPlayer(name, password) {
     const trimmed = (name || '').trim();
     if (!trimmed) return { ok: false, reason: 'Player name cannot be empty.' };
     if (trimmed in this.players) {
       return { ok: false, reason: `There is already a player called "${trimmed}".` };
     }
 
-    this.players[trimmed] = new Player(trimmed, STARTING_SCORE, password);
+    // Await the hash rather than attaching the result later. A floating promise
+    // here would schedule a save ~100ms after the call returns, which nothing
+    // could await — so adding a player and immediately closing the tab could
+    // drop the password, and in tests it fired a save into an unrelated test.
+    const hashed = await hashCredential(password);
+
+    // Re-check: an await means another caller could have taken the name.
+    if (trimmed in this.players) {
+      return { ok: false, reason: `There is already a player called "${trimmed}".` };
+    }
+
+    this.players[trimmed] = new Player(trimmed, STARTING_SCORE, hashed);
     this._emit();
     this.scheduleSave();
     return { ok: true };
@@ -494,10 +522,50 @@ class DataService {
   async editPlayerPassword(playerName, newPassword) {
     const player = this.players[playerName];
     if (!player) return false;
-    player.password = newPassword;
+    player.password = await hashCredential(newPassword);
     this._emit();
     this.scheduleSave();
     return true;
+  }
+
+  /**
+   * Check a player's password, upgrading a legacy plaintext value on success.
+   *
+   * @returns {Promise<boolean>}
+   */
+  async checkPlayerPassword(playerName, password) {
+    const player = this.players[playerName];
+    if (!player) return false;
+    if (!player.password) return true; // no password set
+
+    const { valid, needsUpgrade } = await verifyCredential(password, player.password);
+    if (valid && needsUpgrade) {
+      player.password = await hashCredential(password);
+      this.scheduleSave();
+    }
+    return valid;
+  }
+
+  /** Check the admin password, upgrading a legacy plaintext value on success. */
+  async checkAdminPassword(password) {
+    const stored = this.settings?.ADMIN_PASSWORD;
+    if (!stored) return false;
+
+    const { valid, needsUpgrade } = await verifyCredential(password, stored);
+    if (valid && needsUpgrade) {
+      this.settings = { ...this.settings, ADMIN_PASSWORD: await hashCredential(password) };
+      this.scheduleSave();
+    }
+    return valid;
+  }
+
+  /** True once an admin password has been set, whatever form it is stored in. */
+  hasAdminPassword() {
+    return !!this.settings?.ADMIN_PASSWORD;
+  }
+
+  async setAdminPasswordValue(password) {
+    return this.updateSettings({ ADMIN_PASSWORD: await hashCredential(password) });
   }
 
   /**
@@ -713,10 +781,6 @@ class DataService {
     this._recomputeActiveStatus();
     this._emit();
     return this.scheduleSave();
-  }
-
-  async setAdminPassword(password) {
-    return this.updateSettings({ ADMIN_PASSWORD: password });
   }
 
   // ---------------------------------------------------------------------------

@@ -75,24 +75,43 @@ function createFakeServer(email = EMAIL) {
   return { documents, requests, fetchImpl };
 }
 
+/**
+ * Every service a test creates, so its debounced saves can be cancelled
+ * afterwards. Without this a pending save from one test fires during a later one
+ * and writes through whichever fake server is installed by then — which looks
+ * exactly like a merge bug and is not one.
+ */
+let liveServices = [];
+
+function track(service) {
+  liveServices.push(service);
+  return service;
+}
+
 function cloudService(server) {
   global.fetch = server.fetchImpl;
   const service = new DataService();
   service.setLocalMode(false);
   service.currentUser = EMAIL;
-  return service;
+  return track(service);
 }
 
 function localService() {
   const service = new DataService();
   service.setLocalMode(true);
   service.currentUser = 'local_user';
-  return service;
+  return track(service);
 }
 
 beforeEach(() => {
   localStorage.clear();
   jest.useRealTimers();
+  liveServices = [];
+});
+
+afterEach(() => {
+  liveServices.forEach((service) => service.dispose());
+  liveServices = [];
 });
 
 // -----------------------------------------------------------------------------
@@ -110,8 +129,8 @@ describe('cloud persistence round-trip', () => {
     const server = createFakeServer();
     const writer = cloudService(server);
 
-    writer.addPlayer('Alice', 'pw1');
-    writer.addPlayer('Bob', 'pw2');
+    await writer.addPlayer('Alice', 'pw1');
+    await writer.addPlayer('Bob', 'pw2');
     const result = writer.recordGame('Alice', 'Bob', 11, 7);
     expect(result.ok).toBe(true);
     await writer.flushNow();
@@ -129,7 +148,7 @@ describe('cloud persistence round-trip', () => {
   it('never sends an account identifier in the request body', async () => {
     const server = createFakeServer();
     const service = cloudService(server);
-    service.addPlayer('Alice', '');
+    await service.addPlayer('Alice', '');
     await service.flushNow();
 
     const save = server.requests.find((r) => r.url.endsWith('/api/saveData'));
@@ -142,7 +161,7 @@ describe('cloud persistence round-trip', () => {
     const server = createFakeServer();
     const service = cloudService(server);
     await service.loadData();
-    service.addPlayer('Alice', '');
+    await service.addPlayer('Alice', '');
     await service.flushNow();
 
     expect(server.requests.length).toBeGreaterThan(0);
@@ -162,8 +181,8 @@ describe('cloud persistence round-trip', () => {
       const server = createFakeServer();
 
       const tv = cloudService(server);
-      tv.addPlayer('Alice', '');
-      tv.addPlayer('Bob', '');
+      await tv.addPlayer('Alice', '');
+      await tv.addPlayer('Bob', '');
       await tv.flushNow();
 
       // A second device loads the same account.
@@ -194,8 +213,8 @@ describe('cloud persistence round-trip', () => {
     it('tells the caller a merge happened', async () => {
       const server = createFakeServer();
       const tv = cloudService(server);
-      tv.addPlayer('Alice', '');
-      tv.addPlayer('Bob', '');
+      await tv.addPlayer('Alice', '');
+      await tv.addPlayer('Bob', '');
       await tv.flushNow();
 
       const phone = cloudService(server);
@@ -215,8 +234,8 @@ describe('cloud persistence round-trip', () => {
     it('does not duplicate a game both devices already have', async () => {
       const server = createFakeServer();
       const tv = cloudService(server);
-      tv.addPlayer('Alice', '');
-      tv.addPlayer('Bob', '');
+      await tv.addPlayer('Alice', '');
+      await tv.addPlayer('Bob', '');
       tv.recordGame('Alice', 'Bob', 11, 4);
       await tv.flushNow();
 
@@ -259,13 +278,13 @@ describe('cloud persistence round-trip', () => {
     it('skips the revision check on the unload flush', async () => {
       const server = createFakeServer();
       const service = cloudService(server);
-      service.addPlayer('Alice', '');
+      await service.addPlayer('Alice', '');
       await service.flushNow();
 
       // Pretend another device moved the revision on.
       server.documents[userKey(EMAIL)].revision = 99;
 
-      service.addPlayer('Bob', '');
+      await service.addPlayer('Bob', '');
       await service.flush({ keepalive: true });
 
       const save = server.requests.filter((r) => r.url.endsWith('/api/saveData')).pop();
@@ -290,8 +309,8 @@ describe('cloud persistence round-trip', () => {
 describe('local persistence round-trip', () => {
   it('reads back exactly what it wrote', async () => {
     const writer = localService();
-    writer.addPlayer('Alice', 'pw');
-    writer.addPlayer('Bob', 'pw');
+    await writer.addPlayer('Alice', 'pw');
+    await writer.addPlayer('Bob', 'pw');
     writer.recordGame('Alice', 'Bob', 11, 3);
     await writer.saveData();
 
@@ -312,42 +331,42 @@ describe('local persistence round-trip', () => {
 });
 
 describe('recordGame', () => {
-  const service = () => {
+  const service = async () => {
     const s = localService();
-    s.addPlayer('Alice', '');
-    s.addPlayer('Bob', '');
+    await s.addPlayer('Alice', '');
+    await s.addPlayer('Bob', '');
     return s;
   };
 
   /** docs/AUDIT.md L-06 — a tie used to be recorded, handing the win to player 2. */
-  it('refuses a tie', () => {
-    const result = service().recordGame('Alice', 'Bob', 10, 10);
+  it('refuses a tie', async () => {
+    const result = (await service()).recordGame('Alice', 'Bob', 10, 10);
     expect(result.ok).toBe(false);
     expect(result.reason).toMatch(/tie/i);
   });
 
-  it('refuses a game nobody has scored in', () => {
-    expect(service().recordGame('Alice', 'Bob', 0, 0).ok).toBe(false);
+  it('refuses a game nobody has scored in', async () => {
+    expect((await service()).recordGame('Alice', 'Bob', 0, 0).ok).toBe(false);
   });
 
-  it('refuses non-numeric scores', () => {
-    expect(service().recordGame('Alice', 'Bob', '11', 9).ok).toBe(false);
+  it('refuses non-numeric scores', async () => {
+    expect((await service()).recordGame('Alice', 'Bob', '11', 9).ok).toBe(false);
   });
 
-  it('refuses an unknown player', () => {
-    expect(service().recordGame('Alice', 'Nobody', 11, 9).ok).toBe(false);
+  it('refuses an unknown player', async () => {
+    expect((await service()).recordGame('Alice', 'Nobody', 11, 9).ok).toBe(false);
   });
 
-  it('records pre-match ranks, not post-match ones', () => {
-    const s = service();
+  it('records pre-match ranks, not post-match ones', async () => {
+    const s = await service();
     const { game } = s.recordGame('Alice', 'Bob', 11, 9);
     // Neither player is ranked before their first game.
     expect(game.player1Rank).toBe('Unranked');
     expect(game.player2Rank).toBe('Unranked');
   });
 
-  it('moves the winner up and the loser down', () => {
-    const s = service();
+  it('moves the winner up and the loser down', async () => {
+    const s = await service();
     s.recordGame('Alice', 'Bob', 11, 9);
     expect(s.players.Alice.score).toBeGreaterThan(1000);
     expect(s.players.Bob.score).toBeLessThan(1000);
@@ -359,8 +378,8 @@ describe('ACTIVITY_THRESHOLD', () => {
   it('is honoured when deciding who is ranked', async () => {
     const s = localService();
     await s.updateSettings({ ACTIVITY_THRESHOLD: 5 });
-    s.addPlayer('Alice', '');
-    s.addPlayer('Bob', '');
+    await s.addPlayer('Alice', '');
+    await s.addPlayer('Bob', '');
 
     for (let i = 0; i < 4; i += 1) s.recordGame('Alice', 'Bob', 11, 5);
     expect(s.players.Alice.active).toBe(false);
@@ -371,8 +390,8 @@ describe('ACTIVITY_THRESHOLD', () => {
 
   it('re-evaluates existing players when the threshold changes', async () => {
     const s = localService();
-    s.addPlayer('Alice', '');
-    s.addPlayer('Bob', '');
+    await s.addPlayer('Alice', '');
+    await s.addPlayer('Bob', '');
     for (let i = 0; i < 3; i += 1) s.recordGame('Alice', 'Bob', 11, 5);
     expect(s.players.Alice.active).toBe(true);
 
@@ -386,8 +405,8 @@ describe('game history', () => {
   it('keeps every match even when the display limit is small', async () => {
     const s = localService();
     await s.updateSettings({ GAME_HISTORY_KEEP: 2 });
-    s.addPlayer('Alice', '');
-    s.addPlayer('Bob', '');
+    await s.addPlayer('Alice', '');
+    await s.addPlayer('Bob', '');
 
     for (let i = 0; i < 6; i += 1) s.recordGame('Alice', 'Bob', 11, i);
 
@@ -407,10 +426,10 @@ describe('game history', () => {
 
 describe('quitGame', () => {
   /** docs/AUDIT.md L-01 — this used to throw and return null in both modes. */
-  it('records an abandoned game without touching ratings', () => {
+  it('records an abandoned game without touching ratings', async () => {
     const s = localService();
-    s.addPlayer('Alice', '');
-    s.addPlayer('Bob', '');
+    await s.addPlayer('Alice', '');
+    await s.addPlayer('Bob', '');
 
     const game = s.quitGame('Alice', 'Bob');
 
@@ -423,8 +442,8 @@ describe('quitGame', () => {
   it('works in cloud mode too', async () => {
     const server = createFakeServer();
     const s = cloudService(server);
-    s.addPlayer('Alice', '');
-    s.addPlayer('Bob', '');
+    await s.addPlayer('Alice', '');
+    await s.addPlayer('Bob', '');
 
     expect(s.quitGame('Alice', 'Bob').score).toBe('Quit');
     await s.flushNow();
@@ -433,10 +452,10 @@ describe('quitGame', () => {
 });
 
 describe('undoLastGame', () => {
-  it('restores both players to their pre-match state', () => {
+  it('restores both players to their pre-match state', async () => {
     const s = localService();
-    s.addPlayer('Alice', '');
-    s.addPlayer('Bob', '');
+    await s.addPlayer('Alice', '');
+    await s.addPlayer('Bob', '');
 
     const before = { alice: s.players.Alice.score, bob: s.players.Bob.score };
     s.recordGame('Alice', 'Bob', 11, 9);
@@ -458,17 +477,79 @@ describe('undoLastGame', () => {
 
 describe('addPlayer', () => {
   /** docs/AUDIT.md L-13 — duplicates failed silently. */
-  it('reports a duplicate name instead of returning a bare false', () => {
+  it('reports a duplicate name instead of returning a bare false', async () => {
     const s = localService();
-    expect(s.addPlayer('Alice', '').ok).toBe(true);
+    expect((await s.addPlayer('Alice', '')).ok).toBe(true);
 
-    const duplicate = s.addPlayer('Alice', '');
+    const duplicate = await s.addPlayer('Alice', '');
     expect(duplicate.ok).toBe(false);
     expect(duplicate.reason).toMatch(/already/i);
   });
 
-  it('rejects an empty name', () => {
-    expect(localService().addPlayer('   ', '').ok).toBe(false);
+  it('rejects an empty name', async () => {
+    expect((await localService().addPlayer('   ', '')).ok).toBe(false);
+  });
+
+  it('hashes the password rather than storing it', async () => {
+    const s = localService();
+    await s.addPlayer('Alice', 'secret');
+
+    expect(s.players.Alice.password).not.toBe('secret');
+    expect(s.players.Alice.password).toMatch(/^pbkdf2\$/);
+    expect(await s.checkPlayerPassword('Alice', 'secret')).toBe(true);
+    expect(await s.checkPlayerPassword('Alice', 'wrong')).toBe(false);
+  });
+
+  it('treats a player with no password as always allowed', async () => {
+    const s = localService();
+    await s.addPlayer('Alice', '');
+    expect(s.players.Alice.password).toBe('');
+    expect(await s.checkPlayerPassword('Alice', '')).toBe(true);
+  });
+});
+
+describe('credential migration', () => {
+  /**
+   * Existing accounts have plaintext passwords in Firestore. They must keep
+   * working and upgrade themselves, or this change locks people out of their own
+   * scoreboards (docs/AUDIT.md S-06).
+   */
+  it('accepts a legacy plaintext player password and upgrades it', async () => {
+    const s = localService();
+    await s.addPlayer('Alice', '');
+    s.players.Alice.password = '1234'; // as written by the previous version
+
+    expect(await s.checkPlayerPassword('Alice', '9999')).toBe(false);
+    expect(s.players.Alice.password).toBe('1234'); // a wrong guess must not upgrade
+
+    expect(await s.checkPlayerPassword('Alice', '1234')).toBe(true);
+    expect(s.players.Alice.password).toMatch(/^pbkdf2\$/);
+    expect(await s.checkPlayerPassword('Alice', '1234')).toBe(true);
+  });
+
+  it('accepts a legacy plaintext admin password and upgrades it', async () => {
+    const s = localService();
+    await s.updateSettings({ ADMIN_PASSWORD: 'admin' });
+
+    expect(s.hasAdminPassword()).toBe(true);
+    expect(await s.checkAdminPassword('nope')).toBe(false);
+    expect(await s.checkAdminPassword('admin')).toBe(true);
+    expect(s.settings.ADMIN_PASSWORD).toMatch(/^pbkdf2\$/);
+    expect(await s.checkAdminPassword('admin')).toBe(true);
+  });
+
+  it('reports no admin password when none is set', async () => {
+    const s = localService();
+    expect(s.hasAdminPassword()).toBe(false);
+    expect(await s.checkAdminPassword('')).toBe(false);
+    expect(await s.checkAdminPassword('anything')).toBe(false);
+  });
+
+  it('stores a newly set admin password hashed', async () => {
+    const s = localService();
+    await s.setAdminPasswordValue('correct horse');
+    expect(s.settings.ADMIN_PASSWORD).not.toBe('correct horse');
+    expect(await s.checkAdminPassword('correct horse')).toBe(true);
   });
 });
 
@@ -497,10 +578,10 @@ describe('legacy session values', () => {
 });
 
 describe('resetAllScores', () => {
-  it('clears the season but keeps lifetime stats', () => {
+  it('clears the season but keeps lifetime stats', async () => {
     const s = localService();
-    s.addPlayer('Alice', '');
-    s.addPlayer('Bob', '');
+    await s.addPlayer('Alice', '');
+    await s.addPlayer('Bob', '');
     for (let i = 0; i < 3; i += 1) s.recordGame('Alice', 'Bob', 11, 5);
 
     const lifetimeWins = s.players.Alice.lifetimeWins;
@@ -516,17 +597,17 @@ describe('resetAllScores', () => {
 });
 
 describe('subscribers', () => {
-  it('are notified when data changes', () => {
+  it('are notified when data changes', async () => {
     const s = localService();
     const listener = jest.fn();
     const unsubscribe = s.subscribe(listener);
 
-    s.addPlayer('Alice', '');
+    await s.addPlayer('Alice', '');
     expect(listener).toHaveBeenCalled();
 
     unsubscribe();
     const callCount = listener.mock.calls.length;
-    s.addPlayer('Bob', '');
+    await s.addPlayer('Bob', '');
     expect(listener).toHaveBeenCalledTimes(callCount);
   });
 });

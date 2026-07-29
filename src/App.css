@@ -157,11 +157,14 @@ textarea {
   background-color: var(--primary-color);
   color: white;
 }
-.btn.admin-controls {
+/* The button that opens the admin panel. Named distinctly from the panel's own
+   root class, which was also `admin-controls` — an ambiguity that made
+   `.admin-controls` match on both the main screen and the panel. */
+.btn.admin-open-btn {
   background-color: #ffa500;
   color: white;
 }
-.btn.admin-controls:hover {
+.btn.admin-open-btn:hover {
   background-color: #ff8c00;
 }
 

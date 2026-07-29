@@ -118,7 +118,7 @@ function AdminControls({ onExit, onAddPlayer, onNotify = () => {}, onAccountEras
       return onNotify('Password must be at least 4 characters long.', 'error');
     }
     try {
-      await dataService.updateSettings({ ADMIN_PASSWORD: newAdminPassword });
+      await dataService.setAdminPasswordValue(newAdminPassword);
       setNewAdminPassword('');
       onNotify('Admin password updated.', 'success');
     } catch (error) {
