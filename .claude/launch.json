@@ -4,7 +4,7 @@
     {
       "name": "ping-pong-pi",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["react-scripts", "start"],
+      "runtimeArgs": ["vite", "--port", "3000", "--strictPort"],
       "port": 3000
     }
   ]

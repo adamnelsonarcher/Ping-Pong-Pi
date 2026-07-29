@@ -4,24 +4,24 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#2196F3" />
-    
+
     <!-- Canonical URL -->
     <link rel="canonical" href="https://pingpongpi.com/" />
-    
+
     <!-- Primary Meta Tags -->
     <title>Ping Pong Pi - Real-time Scoreboard</title>
     <meta name="title" content="Ping Pong Pi - Real-time Table Tennis Scoreboard">
     <meta name="description" content="Track ping pong matches, player rankings, and game history in real-time. Perfect for offices and recreational spaces with TV display optimization.">
     <meta name="keywords" content="ping pong scoreboard, table tennis tracker, player rankings, game stats, real-time scores, office ping pong, recreational sports, tournament tracking">
     <meta name="author" content="Adam Nelson-Archer">
-    
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://pingpongpi.com/">
     <meta property="og:title" content="Ping Pong Pi - Real-time Table Tennis Scoreboard">
     <meta property="og:description" content="Track ping pong matches, player rankings, and game history in real-time. Perfect for offices and recreational spaces with TV display optimization.">
     <meta property="og:image" content="https://pingpongpi.com/images/pingpongpi_thumbnail.png">
-    
+
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://pingpongpi.com/">
@@ -51,7 +51,7 @@
         background: linear-gradient(135deg, #1a1a1a 0%, #363636 100%);
         z-index: 9999;
       }
-      
+
       #initial-loader .content {
         display: flex;
         flex-direction: column;
@@ -63,13 +63,13 @@
         border-radius: 20px;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
       }
-      
+
       #initial-loader h1 {
         font-size: 4rem;
         margin: 0 0 2rem 0;
         color: white;
       }
-      
+
       #initial-loader .spinner {
         width: 50px;
         height: 50px;
@@ -79,13 +79,13 @@
         animation: spin 1s linear infinite;
         margin-bottom: 20px;
       }
-      
+
       #initial-loader h2 {
         color: white;
         font-size: 1.5rem;
         margin: 0;
       }
-      
+
       @keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
@@ -108,6 +108,7 @@
       mounted — so a startup crash produced a blank white page instead of the
       error screen.
     -->
+    <script type="module" src="/src/index.jsx"></script>
     <!-- JSON-LD Schema -->
     <script type="application/ld+json">
     {
