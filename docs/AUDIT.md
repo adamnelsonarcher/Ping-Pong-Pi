@@ -1,5 +1,12 @@
 # Ping Pong Pi — Code Audit
 
+> **Most of this has since been fixed.** See [FIXES.md](FIXES.md) for the status of
+> every finding — 42 of 49 fixed, 7 partial. This document is kept as written, as
+> the record of what was found and why it mattered.
+>
+> Two things still need a human: rotating the exposed Firebase key (S-01) and
+> purging both secrets from git history (S-01, S-02).
+
 Audited commit `5653345` ("fixed admin controls bug") on branch `Webapp`.
 Scope: all 70 tracked files. Build, test suite, dependency audit and the rating
 math were executed, not just read.
@@ -12,9 +19,9 @@ The app builds clean and the UI is genuinely nice. Underneath, three things need
 attention in this order:
 
 1. **A live secret is published on the internet.** Your Firebase Admin private key
-   is in the public GitHub repo (S-01), and a database dump containing another
-   person's Gmail address and plaintext passwords is served from your own website
-   (S-02). These are the only findings that can't wait.
+   is in the public GitHub repo (S-01). A database dump containing plaintext
+   passwords is also served from your own website (S-02). S-01 is the one that
+   cannot wait.
 2. **Cloud saves have been going to the wrong Firestore document since the last
    commit** (D-01). Anyone playing in Google mode is losing every match they record.
 3. **The backend has no authentication at all** (S-03). Any visitor can read or
@@ -67,13 +74,19 @@ project as a launch point against anything else in the same GCP project.
 
 ---
 
-### 🔴 S-02 — A production database dump is published on your website
+### 🟠 S-02 — A production database dump is published on your website
+
+> **Corrected after first publication.** This finding originally described
+> `donutcraft34@gmail.com` as a third party's address and was rated 🔴 Critical on
+> that basis. It is in fact the repo owner's own git commit email, already present
+> in every commit here. No third party's data is involved and there is nothing to
+> disclose. Downgraded to 🟠 High: the plaintext passwords are still published.
 
 `public/data/data.json` (424 lines) is a real export of the Firestore document. It
 contains:
 
-- `donutcraft34@gmail.com` — a **third party's** personal email address
-- their `ADMIN_PASSWORD`: `"1234"`, and another account's: `"admin"`
+- `donutcraft34@gmail.com` — the owner's own address, already public in this repo
+- an `ADMIN_PASSWORD` of `"1234"`, and another account's `"admin"`
 - seven player records with plaintext passwords (`"123"`, …)
 - a `"null"` user key — the fingerprint of the boot race in D-07
 
@@ -84,8 +97,8 @@ no login. It is also in the public git repo.
 Nothing reads this file — it is a leftover from the pre-Firestore prototype.
 
 **Fix:** `git rm public/data/data.json`, purge it from history alongside `.env`, and
-change any password that ever appeared in it. Since it contains someone else's
-personal data, tell them.
+change any of those passwords that are reused anywhere else. If they were only ever
+throwaway values for this app, there is nothing further to do.
 
 ---
 

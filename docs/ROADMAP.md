@@ -1,51 +1,39 @@
 # Ping Pong Pi — Remediation & Design Roadmap
 
-Companion to [AUDIT.md](AUDIT.md) (what's wrong) and
-[ARCHITECTURE.md](ARCHITECTURE.md) (how it works today). This document is about
-**what to do next**, in what order, and what the app could become.
+Companion to [AUDIT.md](AUDIT.md) (what was wrong), [FIXES.md](FIXES.md) (what got
+fixed) and [ARCHITECTURE.md](ARCHITECTURE.md) (how it works). This document is
+about **what to do next**, and what the app could become.
 
 ---
 
 ## 1. Triage
 
-Ordered by (damage × likelihood) ÷ effort. Steps 0 and 1 are hours, not days.
+### ✅ Done — steps 0 through 2
 
-### Step 0 — Stop the bleeding (do today)
+The original triage list is complete except where noted below. Server-side token
+verification, the Firestore key fix, `quitGame`, the ELO snapshot, save flushing,
+the XSS, the error boundary and every inert setting have all landed. See
+[FIXES.md](FIXES.md) for the finding-by-finding status.
 
-| # | Action | Finding |
-|---|---|---|
-| 1 | **Revoke the Firebase service-account key**, issue a new one, store it only in Vercel env vars | S-01 |
-| 2 | `git rm --cached .env public/data/data.json`, commit, push | S-01, S-02 |
-| 3 | Purge both from git history (`git filter-repo`), force-push | S-01, S-02 |
-| 4 | Change every password that appeared in `data.json`; notify `donutcraft34@` that their address and password were exposed | S-02 |
-| 5 | Revert `dataService.js:191` to `currentUser: this.currentUser` — one line, restores cloud saving | D-01 |
-| 6 | Delete the orphaned base64 documents in the Firestore console (merge anything worth keeping first) | D-01 |
+### ⚠ Still needs a human
 
-Step 5 is a one-line fix for the most damaging bug in the app. Do it before
-anything architectural.
-
-### Step 1 — Make the core reliable (a weekend)
+Three things cannot be done from the code:
 
 | # | Action | Finding |
 |---|---|---|
-| 7 | Add server-side ID-token verification; derive the doc key from the verified `uid` | S-03, S-04 |
-| 8 | Rewrite `quitGame` to use the in-memory + normal save path | L-01 |
-| 9 | Guard both `atob` call sites with the existing `decodeUser()`; add an error boundary | D-06, Q-10 |
-| 10 | Replace `dangerouslySetInnerHTML` in `GameHistory` with JSX | S-05 |
-| 11 | Snapshot ratings before updating either player | L-02 |
-| 12 | Flush pending saves on `beforeunload`; make `debouncedSave` awaitable | D-02 |
-| 13 | Make `getSettings`/`getPlayers` read the singleton instead of refetching | D-04 |
+| 1 | **Rotate the Firebase service-account key.** The file is untracked now, but the value is still in public git history and must be assumed compromised. | S-01 |
+| 2 | **Purge `.env` and `public/data/data.json` from git history** and force-push:<br>`git filter-repo --path .env --path public/data/data.json --invert-paths` | S-01, S-02 |
+| 3 | **Change the passwords from the dump** (`admin`, `1234`, `123`) anywhere they are reused. The address in it is the repo owner's own, so there is nobody to notify. | S-02 |
 
-### Step 2 — Make the settings real (a week)
-
-Wire up the settings that are advertised but inert (L-04, L-05, L-08), give
-`SettingsContext` a write path so changes apply without a reload (L-03), reject
-ties and 0–0 (L-06), guard against double-recording (L-07), and stop truncating
-stored history (D-08).
+One data task remains too: matches saved between commit `7378d8d` and the D-01 fix
+went into orphaned base64-keyed documents. They are still in Firestore. Merge
+anything worth keeping in the console, then delete the orphans.
 
 ### Step 3 — Structural (the sections below)
 
-Data model, state ownership, toolchain, tests.
+Data model, state ownership, toolchain. These are the remaining ⚠ markers in
+[ARCHITECTURE.md](ARCHITECTURE.md): same-account write concurrency (§3), the
+single-document Firestore layout (§3), and the CRA toolchain (§5).
 
 ---
 
@@ -412,15 +400,16 @@ actually argue about, and it's a pure query over data you already have.
 
 ## 9. Suggested sequencing
 
-| Phase | Work | Rough effort |
+| Phase | Work | Status |
 |---|---|---|
-| **0** | Triage §1 Step 0 — key rotation, history purge, D-01 one-liner | half a day |
-| **1** | Triage §1 Step 1 — auth (§2), quit, atob guard, XSS, ELO snapshot, save flush | a weekend |
-| **2** | Vite + `createRoot` + lazy chart (§5); delete dead files Q-04/Q-05 | a day |
-| **3** | Rating tests + persistence round-trip (§6) — **before** touching the data model | a day |
-| **4** | Data model migration (§3) and state ownership (§4) | a week, incremental |
-| **5** | Settings that work, live sync, undo, workflow polish (§7) | ongoing |
+| **0** | Key rotation, history purge, D-01 fix | ⚠ D-01 fixed; rotation and purge are yours |
+| **1** | Auth (§2), quit, atob guard, XSS, ELO snapshot, save flush | ✅ done |
+| **2** | `createRoot` + lazy chart, delete dead files/code | ✅ done (215 KB → 93 KB) |
+| **3** | Rating tests + persistence round-trip (§6) | ✅ done (44 tests) |
+| **3b** | Vite migration (§5) | ⬜ not started |
+| **4** | Data model migration (§3), derived ratings | ⬜ not started |
+| **5** | Live sync, seasons, workflow polish (§7) | ⬜ partly — undo landed |
 
-Phase 3 sits before phase 4 deliberately: the round-trip test is what makes the
-migration safe, and it is the test that would have caught the bug currently losing
-everyone's games.
+Phase 3 sat before phase 4 deliberately, and still does: the round-trip test is
+what makes the data-model migration safe to attempt. It exists now, so phase 4 is
+unblocked whenever you want it.
