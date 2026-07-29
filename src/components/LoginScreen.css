@@ -167,3 +167,16 @@
   font-size: 0.8rem;
   font-style: italic;
 }
+/* Inline sign-in failure message. Replaces an alert() (docs/AUDIT.md A-03). */
+.login-error {
+  max-width: 32rem;
+  margin: 0 auto 1.5rem;
+  padding: 0.85rem 1.25rem;
+  border-radius: 8px;
+  border-left: 5px solid #e74c3c;
+  background-color: rgba(0, 0, 0, 0.55);
+  color: #ffdcdc;
+  font-size: 1rem;
+  line-height: 1.4;
+  text-align: left;
+}

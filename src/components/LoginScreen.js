@@ -4,58 +4,54 @@ import dataService from '../services/dataService';
 import { auth, googleProvider } from '../config/firebase';
 import { signInWithPopup } from 'firebase/auth';
 
+const LOCAL_USER_ID = 'local_user';
+
 function LoginScreen({ onLogin }) {
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const canvasRef = useRef(null);
-  const ballRef = useRef({
-    x: 100,
-    y: 100,
-    dx: 4,
-    dy: 4,
-    radius: 8
-  });
 
   useEffect(() => {
     const canvas = canvasRef.current;
+    if (!canvas) return undefined;
+
     const ctx = canvas.getContext('2d');
+    const ball = { x: 100, y: 100, dx: 4, dy: 4, radius: 8 };
     let animationFrameId;
-    
+
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     };
 
+    const prefersReducedMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)'
+    ).matches;
+
     const drawBall = () => {
-      const ball = ballRef.current;
-      
-      // Clear canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      // Draw ball
       ctx.beginPath();
       ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
       ctx.fillStyle = '#ffffff';
       ctx.fill();
       ctx.closePath();
-      
-      // Update position
+
       ball.x += ball.dx;
       ball.y += ball.dy;
-      
-      // Bounce off walls
+
       if (ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) {
         ball.dx = -ball.dx;
       }
       if (ball.y + ball.dy > canvas.height - ball.radius || ball.y + ball.dy < ball.radius) {
         ball.dy = -ball.dy;
       }
-      
+
       animationFrameId = requestAnimationFrame(drawBall);
     };
 
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
-    drawBall();
+    if (!prefersReducedMotion) drawBall();
 
     return () => {
       window.removeEventListener('resize', resizeCanvas);
@@ -63,102 +59,76 @@ function LoginScreen({ onLogin }) {
     };
   }, []);
 
+  /**
+   * Sign in with Google.
+   *
+   * This deliberately does not write localStorage or load any data: App owns
+   * that, and its error path clears the session if the load fails. The old
+   * version wrote the identity to localStorage *before* the risky work, so an
+   * interrupted login left a value behind that crashed the next page load
+   * (docs/AUDIT.md D-06).
+   */
   const handleGoogleLogin = async () => {
+    setError('');
     try {
-      console.log('Starting Google login process...');
       setIsLoading(true);
-      
-      // Only show warning if currently in local mode
-      const isLocalMode = localStorage.getItem('isLocalMode') === 'true';
-      const localData = localStorage.getItem('localGameData');
-      if (isLocalMode && localData) {
+
+      const hasLocalData = localStorage.getItem('localGameData');
+      if (localStorage.getItem('isLocalMode') === 'true' && hasLocalData) {
         const confirmed = window.confirm(
-          'WARNING: Signing in with Google will remove your local save data. ' +
-          'Please download your save data from the admin panel first if you want to keep it.\n\n' +
-          'Do you want to continue?'
+          'Signing in with Google switches this device to cloud storage.\n\n' +
+            'Your local save stays on this device but will not be used. Download it ' +
+            'from the admin panel first if you want to import it into your account.\n\n' +
+            'Continue?'
         );
-        
         if (!confirmed) {
           setIsLoading(false);
           return;
         }
-        // Clear local data only if confirmed
-        localStorage.removeItem('localGameData');
       }
-      
-      console.log('Signing out of any existing session...');
+
       await auth.signOut();
-      
-      console.log('Opening Google sign-in popup...');
       const result = await signInWithPopup(auth, googleProvider);
-      console.log('Google sign-in result:', result);
-      
-      if (!result.user || !result.user.email) {
-        throw new Error('No user email found');
+
+      if (!result.user?.email) {
+        throw new Error('That Google account has no email address.');
       }
-      
-      const email = result.user.email;
-      console.log('Got user email:', email);
-      
-      console.log('Setting up data service...');
+
       dataService.setLocalMode(false);
-      localStorage.setItem('currentUser', email);
-      
-      console.log('Creating/loading user data...');
-      const { success, isFirstUser } = await dataService.createUser(email);
-      console.log('User creation result:', { success, isFirstUser });
-      
-      if (success) {
-        await dataService.loadData(); // Load data after successful creation/verification
-      }
-      
-      onLogin(email);
-    } catch (error) {
-      console.error('Google login error:', error);
-      if (error.code === 'auth/popup-closed-by-user') {
+      onLogin(result.user.email);
+    } catch (err) {
+      if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
         setIsLoading(false);
         return;
       }
-      alert(`Failed to login with Google: ${error.message}`);
+      console.error('Google login error:', err);
+      setError(err.message || 'Failed to sign in with Google.');
       setIsLoading(false);
     }
   };
 
   const handleLocalLogin = async () => {
+    setError('');
     try {
       setIsLoading(true);
-      const localId = 'local_user';
       dataService.setLocalMode(true);
-      localStorage.setItem('currentUser', localId);
-      localStorage.setItem('isLocalMode', 'true');
-      
+
       if (!localStorage.getItem('localGameData')) {
-        const defaultData = {
-          settings: {
-            SCORE_CHANGE_K_FACTOR: 70,
-            POINT_DIFFERENCE_WEIGHT: 6,
-            ACTIVITY_THRESHOLD: 3,
-            DEFAULT_RANK: "Unranked",
-            PLAYER1_SCOREBOARD_COLOR: "#4CAF50",
-            PLAYER2_SCOREBOARD_COLOR: "#2196F3",
-            GAME_HISTORY_KEEP: 30,
-            ADDPLAYER_ADMINONLY: false,
-            ADMIN_PASSWORD: ""
-          },
-          players: {},
-          gameHistory: []
-        };
-        localStorage.setItem('localGameData', JSON.stringify(defaultData));
+        localStorage.setItem(
+          'localGameData',
+          JSON.stringify({
+            settings: { ...dataService.defaultSettings, ADMIN_PASSWORD: '' },
+            players: {},
+            gameHistory: [],
+          })
+        );
       }
-      
-      await dataService.loadData();
-      onLogin(localId);
-    } catch (error) {
-      console.error('Local login error:', error);
-      alert('Failed to initialize local storage. Please try again.');
-      localStorage.removeItem('localGameData');
-      localStorage.removeItem('currentUser');
-      localStorage.removeItem('isLocalMode');
+
+      onLogin(LOCAL_USER_ID);
+    } catch (err) {
+      console.error('Local login error:', err);
+      setError('Failed to initialise local storage. Browser storage may be disabled.');
+      dataService.setLocalMode(false);
       setIsLoading(false);
     }
   };
@@ -177,42 +147,46 @@ function LoginScreen({ onLogin }) {
           <div className="logo-container">
             <h1>🏓</h1>
             <h2>Ping Pong Pi</h2>
-            <p className="subtitle">A scoreboard display to track ping pong scores and display stats</p>
+            <p className="subtitle">
+              A scoreboard display to track ping pong scores and display stats
+            </p>
           </div>
+
+          {error && <div className="login-error">{error}</div>}
+
           <div className="login-buttons">
             <div className="login-button-container">
-              <button 
-                className="local-login-btn" 
-                onClick={handleLocalLogin}
-              >
+              <button className="local-login-btn" onClick={handleLocalLogin}>
                 <span className="btn-icon">💾</span>
                 <span className="btn-text">Use Local Storage</span>
               </button>
               <span className="button-subtext">Stores data on this device only</span>
             </div>
-            
+
             <div className="divider">
               <span>or</span>
             </div>
-            
+
             <div className="login-button-container">
-              <button 
-                className="google-login-btn" 
-                onClick={handleGoogleLogin}
-              >
+              <button className="google-login-btn" onClick={handleGoogleLogin}>
                 <span className="btn-icon">G</span>
                 <span className="btn-text">Login with Google</span>
               </button>
-              <span className="button-subtext">Saves data to server, allows for sync between computers</span>
+              <span className="button-subtext">
+                Saves data to the server, allows sync between computers
+              </span>
             </div>
           </div>
         </div>
       )}
       <div className="attribution">
-        by <a href="https://nelsonarcher.com" target="_blank" rel="noopener noreferrer">Adam Nelson-Archer</a>
+        by{' '}
+        <a href="https://nelsonarcher.com" target="_blank" rel="noopener noreferrer">
+          Adam Nelson-Archer
+        </a>
       </div>
     </div>
   );
 }
 
-export default LoginScreen; 
+export default LoginScreen;

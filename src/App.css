@@ -9,6 +9,7 @@
   --light-text: #333333;
   --light-text-secondary: #666666;
   --light-border: #e0e0e0;
+  --light-input-background: #ffffff;
 
   /* Dark theme */
   --dark-background: #1a1a1a;
@@ -16,31 +17,54 @@
   --dark-text: #e0e0e0;
   --dark-text-secondary: #a0a0a0;
   --dark-border: #404040;
-}
+  --dark-input-background: #3a3a3a;
 
-[data-theme="light"] {
-  --background-color: var(--light-background);
-  --surface-color: var(--light-surface);
-  --text-color: var(--light-text);
-  --text-secondary: var(--light-text-secondary);
-  --border-color: var(--light-border);
-}
-
-[data-theme="dark"] {
+  /* Fallbacks, so the page is still readable if data-theme is never set (for
+     example if the app crashes before ThemeProvider's effect runs). */
   --background-color: var(--dark-background);
   --surface-color: var(--dark-surface);
   --text-color: var(--dark-text);
   --text-secondary: var(--dark-text-secondary);
   --border-color: var(--dark-border);
+  --input-background: var(--dark-input-background);
+}
+
+[data-theme='light'] {
+  --background-color: var(--light-background);
+  --surface-color: var(--light-surface);
+  --text-color: var(--light-text);
+  --text-secondary: var(--light-text-secondary);
+  --border-color: var(--light-border);
+  --input-background: var(--light-input-background);
+}
+
+[data-theme='dark'] {
+  --background-color: var(--dark-background);
+  --surface-color: var(--dark-surface);
+  --text-color: var(--dark-text);
+  --text-secondary: var(--dark-text-secondary);
+  --border-color: var(--dark-border);
+  --input-background: var(--dark-input-background);
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
-  font-family: 'Roboto', sans-serif;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   background-color: var(--background-color);
   color: var(--text-color);
   margin: 0;
   padding: 0;
-  font-size: 24px; /* Increased base font size for TV display */
+  font-size: 24px; /* Large base size: this is read from across a room. */
+}
+
+input,
+select,
+textarea {
+  box-sizing: border-box;
+  max-width: 100%;
 }
 
 .App {
@@ -62,7 +86,7 @@ body {
 .App-column {
   background-color: var(--surface-color);
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   padding: 1rem;
   overflow: auto;
   max-height: calc(100vh - 2rem - 60px);
@@ -79,16 +103,19 @@ body {
 .App-footer {
   background-color: var(--surface-color);
   padding: 1rem;
-  box-shadow: 0 -2px 4px rgba(0,0,0,0.2);
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.2);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .player-controls {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .admin-buttons {
@@ -101,106 +128,91 @@ body {
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
   font-weight: bold;
   font-size: 20px;
   transition: all 0.2s ease;
 }
-
-.start-game { background-color: var(--secondary-color); color: white; }
-.clear-selections { background-color: #e74c3c; color: white; }
-.add-player { background-color: var(--primary-color); color: white; }
-.admin-controls { background-color: #f39c12; color: white; }
 
 .btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* Leaderboard styles */
-.Leaderboard {
-  height: 100%;
-  overflow-y: auto;
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
+.start-game {
+  background-color: var(--secondary-color);
+  color: white;
+}
+.clear-selections {
+  background-color: #e74c3c;
+  color: white;
+}
+.add-player {
+  background-color: var(--primary-color);
+  color: white;
+}
+.btn.admin-controls {
+  background-color: #ffa500;
+  color: white;
+}
+.btn.admin-controls:hover {
+  background-color: #ff8c00;
+}
+
+/* Leaderboard sizing. Colours and theming live in Leaderboard.css — this file
+   used to also set a hardcoded #e0e0e0 cell border, which showed as light grey
+   rules across every row in dark mode (docs/AUDIT.md Q-06). */
 .Leaderboard table {
   width: 100%;
   border-collapse: collapse;
   font-size: 32px;
 }
 
-.Leaderboard th, .Leaderboard td {
-  padding: 1rem;
-  text-align: left;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.Leaderboard th {
-  background-color: var(--primary-color);
-  color: white;
-  position: sticky;
-  top: 0;
-}
-
-.Leaderboard tr:nth-child(even) {
-  background-color: #f8f8f8;
-}
-
-.Leaderboard tr:hover {
-  background-color: #e8e8e8;
-  cursor: pointer;
-}
-
-.Leaderboard tr.selected {
-  background-color: #d0d0d0;
-}
-
-.Leaderboard tr.unranked {
-  color: #999;
-  font-style: italic;
-}
-
-/* Game History styles */
-.GameHistory .history-container {
-  max-height: 500px;
-  overflow-y: auto;
-  font-size: 28px;
-}
-
-.GameHistory .history-item {
-  padding: 0.5rem;
-  border-bottom: 1px solid #e0e0e0;
-  cursor: pointer;
-}
-
-.GameHistory .history-item:hover {
-  background-color: #e8e8e8;
-}
-
-.GameHistory .history-item.selected {
-  background-color: #d0d0d0;
-}
-
-/* Player Selection styles */
-.PlayerSelection select {
-  padding: 0.5rem;
-  margin-right: 0.5rem;
-  border: 1px solid #ccc;
+/* Player selection dropdowns */
+.player-controls select {
+  min-width: 200px;
+  border: 2px solid var(--border-color);
   border-radius: 4px;
+  padding: 0.5rem 2.5rem 0.5rem 0.75rem;
   font-size: 20px;
+  /* Was hardcoded white-on-white in dark mode (docs/AUDIT.md A-04). */
+  background-color: var(--input-background);
+  color: var(--text-color);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  cursor: pointer;
+  appearance: none;
+}
+
+.player-controls select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.25);
+  outline: none;
 }
 
 h2 {
   font-size: 36px;
 }
 
-/* Updated Scoreboard styles */
+/* ---------------------------------------------------------------------------
+   Scoreboard
+   The per-player background colour is applied inline from the
+   PLAYER1/2_SCOREBOARD_COLOR settings; there are no .green / .blue classes any
+   more, which is why those settings did nothing (docs/AUDIT.md L-05).
+   --------------------------------------------------------------------------- */
 .Scoreboard {
   display: flex;
   flex-direction: column;
   height: 100vh;
   width: 100vw;
-  background-color: #1a1a1a;
+  background-color: #1a1a1a; /* Always dark: this is a TV in a room. */
   overflow: hidden;
   padding: 2vh;
   box-sizing: border-box;
@@ -221,14 +233,7 @@ h2 {
   justify-content: space-between;
   padding: 2vh 2vw;
   border-radius: 2vh;
-}
-
-.player-score.green {
-  background-color: #4CAF50;
-}
-
-.player-score.blue {
-  background-color: #2196F3;
+  min-width: 0;
 }
 
 .player-name {
@@ -238,16 +243,21 @@ h2 {
   border: 2px solid white;
   border-radius: 1vh;
   margin-bottom: 2vh;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .score {
-  font-size: 35vh; /* Increased font size */
+  font-size: 35vh;
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   flex: 1;
   margin: 2vh 0;
+  line-height: 1;
 }
 
 .score-buttons {
@@ -299,14 +309,15 @@ h2 {
 }
 
 .end-game {
-  background-color: #2196F3;
+  background-color: #2196f3;
 }
 
 .quit-game {
   background-color: #f44336;
 }
 
-.controls, .fullscreen {
+.controls,
+.fullscreen {
   background-color: transparent;
   border: 1px solid white;
 }
@@ -317,6 +328,7 @@ h2 {
   left: 50%;
   transform: translate(-50%, -50%);
   background-color: white;
+  color: #222;
   padding: 2vh;
   border-radius: 1vh;
   z-index: 1000;
@@ -329,68 +341,33 @@ h2 {
 .controls-popup button {
   margin-top: 1vh;
   padding: 1vh 2vw;
-  background-color: #4CAF50;
+  background-color: #4caf50;
   color: white;
   border: none;
   border-radius: 0.5vh;
   cursor: pointer;
 }
 
-.btn.admin-controls {
-  background-color: #FFA500; /* Orange color for admin button */
-  color: white;
+/* Transient messages */
+.temp-message {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.85);
+  color: #ffd700;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-size: 1.2em;
+  z-index: 1000;
+  text-align: center;
+  max-width: 90vw;
 }
 
-.btn.admin-controls:hover {
-  background-color: #FF8C00; /* Darker orange on hover */
+.confirmation-message {
+  animation: fadeIn 0.3s ease-out;
 }
 
-/* Add this new style for the admin page */
-.admin-page {
-  height: 100vh;
-  overflow-y: auto;
-}
-
-/* Add this at the top of your App.css */
-* {
-  box-sizing: border-box;
-}
-
-input, select, textarea {
-  box-sizing: border-box;
-  max-width: 100%;
-}
-
-/* Player selection dropdowns */
-.player-controls select {
-  min-width: 200px;
-  border: 2px solid #e9ecef;
-  background-color: white;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 1rem center;
-  padding-right: 2.5rem;
-  cursor: pointer;
-  appearance: none;
-}
-
-.player-controls select:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
-  outline: none;
-}
-
-.player-controls select:hover {
-  border-color: #ced4da;
-}
-
-/* Button hover effects */
-.btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-/* Game transition animations */
 @keyframes gameStart {
   from {
     opacity: 0;
@@ -402,40 +379,8 @@ input, select, textarea {
   }
 }
 
-@keyframes gameEnd {
-  from {
-    opacity: 1;
-    transform: scale(1);
-  }
-  to {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-}
-
 .game-transition-enter {
   animation: gameStart 0.3s ease-out;
-}
-
-.game-transition-exit {
-  animation: gameEnd 0.3s ease-out;
-}
-
-.temp-message {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: rgba(0, 0, 0, 0.8);
-  color: #ffd700;
-  padding: 10px 20px;
-  border-radius: 5px;
-  font-size: 1.2em;
-  z-index: 1000;
-}
-
-.confirmation-message {
-  animation: fadeIn 0.3s ease-out;
 }
 
 @keyframes fadeIn {
@@ -446,5 +391,17 @@ input, select, textarea {
   to {
     opacity: 1;
     transform: translate(-50%, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .game-transition-enter,
+  .confirmation-message {
+    animation: none;
+    transition: none;
+  }
+  .btn:hover {
+    transform: none;
   }
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useSyncExternalStore } from 'react';
 import './App.css';
 import Leaderboard from './components/Leaderboard';
 import GameHistory from './components/GameHistory';
@@ -6,340 +6,276 @@ import Scoreboard from './components/Scoreboard';
 import PlayerSelection from './components/PlayerSelection';
 import AdminControls from './components/AdminControls';
 import InputModal from './components/InputModal';
+import Toast from './components/Toast';
 import dataService from './services/dataService';
 import { useSettings } from './contexts/SettingsContext';
 import LoginScreen from './components/LoginScreen';
 import AdminPasswordPrompt from './components/AdminPasswordPrompt';
 import InfoButton from './components/InfoButton';
 import LoadingScreen from './components/LoadingScreen';
-import { ThemeProvider } from './contexts/ThemeContext';
+
+const subscribe = (listener) => dataService.subscribe(listener);
+const getVersion = () => dataService.version;
 
 function App() {
-  const [currentUser, setCurrentUser] = useState(() => {
-    const encoded = localStorage.getItem('currentUser');
-    return encoded ? atob(encoded) : null;
-  });
-  const [currentScreen, setCurrentScreen] = useState('login');
-  const [selectedPlayers, setSelectedPlayers] = useState({ player1: null, player2: null });
-  const [leaderboard, setLeaderboard] = useState([]);
-  const [gameHistory, setGameHistory] = useState([]);
-  const [players, setPlayers] = useState([]);
+  const [currentUser, setCurrentUser] = useState(() => dataService.currentUser);
+  const [currentScreen, setCurrentScreen] = useState('main');
+  const [selectedPlayers, setSelectedPlayers] = useState({ player1: '', player2: '' });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalConfig, setModalConfig] = useState({});
-  const [, setGameInProgress] = useState(false);
-  const [, setGameHistoryKeep] = useState(10);
-  const { settings } = useSettings();
   const [showAdminPasswordPrompt, setShowAdminPasswordPrompt] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [toast, setToast] = useState(null);
+  const { settings } = useSettings();
+
+  // Re-render whenever dataService changes, and read straight from it. There is
+  // no second copy of players/leaderboard/history to drift out of sync — which is
+  // how admin edits used to fail to appear on the leaderboard.
+  useSyncExternalStore(subscribe, getVersion);
+  const leaderboard = dataService.getLeaderboard();
+  const gameHistory = dataService.getGameHistory();
+  const players = dataService.getPlayers();
+
+  const notify = useCallback((message, tone = 'info') => {
+    setToast({ message, tone, id: Date.now() });
+  }, []);
+
+  const handleLogout = useCallback(async () => {
+    try {
+      await dataService.flush();
+    } catch {
+      /* logging out is more important than the last save landing */
+    }
+    localStorage.removeItem('currentUser');
+    // isLocalMode used to be cleared only when *not* in local mode, so logging
+    // out of local mode left the flag set and the next Google login started in
+    // the wrong mode (docs/AUDIT.md L-14).
+    localStorage.removeItem('isLocalMode');
+    dataService.setLocalMode(false);
+    dataService.clearCurrentUser();
+
+    setSelectedPlayers({ player1: '', player2: '' });
+    setCurrentScreen('main');
+    setCurrentUser(null);
+  }, []);
 
   useEffect(() => {
-    const initializeApp = async () => {
+    let cancelled = false;
+
+    const initialiseApp = async () => {
       if (!currentUser) {
-        setCurrentScreen('login');
-        setIsInitialized(true);
         setIsLoading(false);
         return;
       }
 
+      setIsLoading(true);
       try {
-        const isLocalMode = localStorage.getItem('isLocalMode') === 'true';
-        if (isLocalMode) {
-          dataService.setLocalMode(true);
-        }
-        
+        dataService.setLocalMode(localStorage.getItem('isLocalMode') === 'true');
         await dataService.setCurrentUser(currentUser);
-        await dataService.loadData();
-        
-        setPlayers(Object.values(dataService.players));
-        setLeaderboard(dataService.getLeaderboard());
-        setGameHistory(dataService.gameHistory);
-        setGameHistoryKeep(dataService.settings.GAME_HISTORY_KEEP);
-        
-        if (!dataService.settings?.ADMIN_PASSWORD) {
-          setShowAdminPasswordPrompt(true);
-        } else {
-          setCurrentScreen('main');
-        }
+        if (cancelled) return;
+
+        setShowAdminPasswordPrompt(!dataService.settings?.ADMIN_PASSWORD);
+        setCurrentScreen('main');
       } catch (error) {
+        if (cancelled) return;
         console.error('Error initializing app:', error);
+        notify('Could not load your data. Please sign in again.', 'error');
         handleLogout();
+      } finally {
+        if (!cancelled) setIsLoading(false);
       }
-      setIsInitialized(true);
-      setIsLoading(false);
     };
-    
-    initializeApp();
-  }, [currentUser]);
+
+    initialiseApp();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser, handleLogout, notify]);
 
   if (!currentUser) {
     return <LoginScreen onLogin={setCurrentUser} />;
   }
 
-  if (!isInitialized || isLoading) {
+  if (isLoading) {
     return <LoadingScreen />;
   }
 
-  const updateLeaderboard = () => {
-    const leaderboardData = dataService.getLeaderboard();
-    setLeaderboard(leaderboardData);
-    setPlayers(Object.values(dataService.players));
-  };
+  if (showAdminPasswordPrompt) {
+    return (
+      <AdminPasswordPrompt
+        onSubmit={async (password) => {
+          try {
+            await dataService.updateSettings({ ADMIN_PASSWORD: password });
+            setShowAdminPasswordPrompt(false);
+            setCurrentScreen('main');
+          } catch (error) {
+            console.error('Error setting admin password:', error);
+            notify('Failed to set admin password. Please try again.', 'error');
+          }
+        }}
+        message="Please set a password for accessing the settings dashboard."
+      />
+    );
+  }
 
-  const handleGameEnd = async (gameResult) => {
-    try {
-      if (gameResult) {
-        setGameHistory(dataService.gameHistory);
-      }
-      updateLeaderboard();
-    } catch (error) {
-      console.error('Error handling game end:', error);
-    } finally {
-      setCurrentScreen('main');
-      setGameInProgress(false);
-    }
-  };
-
-  const handleQuitGame = async (result) => {
-    try {
-      setGameInProgress(false);
-      setCurrentScreen('main');
-      // Update game history if needed 
-      //if (result) {
-      //  setGameHistory(prev => [...prev, result].slice(-gameHistoryKeep));
-      //}
-    } catch (error) {
-      console.error('Error handling quit game:', error);
-    }
-  };
+  const closeModal = () => setIsModalOpen(false);
 
   const handleAddPlayer = () => {
     setModalConfig({
       title: 'Add New Player',
       fields: [
         { name: 'playerName', label: 'Player Name' },
-        { name: 'password', label: 'Password', type: 'password' }
+        { name: 'password', label: 'Password', type: 'password' },
       ],
       onSubmit: (values) => {
-        dataService.addPlayer(values.playerName, values.password);
-        updateLeaderboard();
-        setIsModalOpen(false);
-      }
+        const result = dataService.addPlayer(values.playerName, values.password);
+        if (!result.ok) {
+          // Previously this failure was swallowed and the modal closed as if it
+          // had worked (docs/AUDIT.md L-13).
+          notify(result.reason, 'error');
+          return;
+        }
+        notify(`Added ${values.playerName.trim()}.`);
+        closeModal();
+      },
     });
     setIsModalOpen(true);
   };
 
   const handleClearSelections = () => {
-    console.log('Clearing player selections');
     setSelectedPlayers({ player1: '', player2: '' });
-    localStorage.removeItem('selectedPlayer1');
-    localStorage.removeItem('selectedPlayer2');
   };
 
   const handleStartGame = () => {
     if (!selectedPlayers.player1 || !selectedPlayers.player2) {
-      alert("Please select two players before starting a game.");
+      notify('Select two players before starting a game.', 'error');
       return;
     }
-    
     if (selectedPlayers.player1 === selectedPlayers.player2) {
-      alert("Please select different players - the same player cannot play against themselves.");
+      notify('A player cannot play against themselves.', 'error');
       return;
     }
-
     setCurrentScreen('game');
-    setGameInProgress(true);
   };
+
+  const setPlayerAt = (index, name) =>
+    setSelectedPlayers((prev) => ({ ...prev, [`player${index + 1}`]: name }));
 
   const handlePlayerSelect = (playerName, index) => {
     if (playerName === '') {
-      const newSelectedPlayers = { ...selectedPlayers };
-      newSelectedPlayers[`player${index + 1}`] = '';
-      setSelectedPlayers(newSelectedPlayers);
-      localStorage.setItem(`selectedPlayer${index + 1}`, '');
-    } else {
-      setModalConfig({
-        title: `Enter Password for ${playerName}`,
-        fields: [
-          { name: 'password', label: '', type: 'password' }
-        ],
-        onSubmit: (values) => {
-          if (values.password === dataService.players[playerName].password) {
-            const newSelectedPlayers = { ...selectedPlayers };
-            newSelectedPlayers[`player${index + 1}`] = playerName;
-            setSelectedPlayers(newSelectedPlayers);
-            localStorage.setItem(`selectedPlayer${index + 1}`, playerName);
-            setIsModalOpen(false);
-          } else {
-            alert('Incorrect password');
-          }
-        },
-        onCancel: () => {
-          const newSelectedPlayers = { ...selectedPlayers };
-          newSelectedPlayers[`player${index + 1}`] = '';
-          setSelectedPlayers(newSelectedPlayers);
-          localStorage.setItem(`selectedPlayer${index + 1}`, '');
-          setIsModalOpen(false);
-        }
-      });
-      setIsModalOpen(true);
+      setPlayerAt(index, '');
+      return;
     }
-  };
 
-  const handleAdminAccess = (values) => {
-    if (dataService.settings && values.password === dataService.settings.ADMIN_PASSWORD) {
-      setCurrentScreen('admin');
-      setIsModalOpen(false);
-    } else {
-      alert('Incorrect admin password');
-      setIsModalOpen(false);
+    const player = dataService.players[playerName];
+    if (!player) return;
+
+    // An empty password means this player did not set one; don't demand it.
+    if (!player.password) {
+      setPlayerAt(index, playerName);
+      return;
     }
+
+    setModalConfig({
+      title: `Enter Password for ${playerName}`,
+      fields: [{ name: 'password', label: 'Password', type: 'password' }],
+      onSubmit: (values) => {
+        if (values.password === player.password) {
+          setPlayerAt(index, playerName);
+          closeModal();
+        } else {
+          notify('Incorrect password.', 'error');
+        }
+      },
+      onCancel: () => setPlayerAt(index, ''),
+    });
+    setIsModalOpen(true);
   };
 
   const handleAdminClick = () => {
     setModalConfig({
       title: 'Enter Admin Password',
-      fields: [
-        { name: 'password', label: 'Password', type: 'password' }
-      ],
-      onSubmit: handleAdminAccess
+      fields: [{ name: 'password', label: 'Password', type: 'password' }],
+      onSubmit: (values) => {
+        if (values.password === dataService.settings?.ADMIN_PASSWORD) {
+          setCurrentScreen('admin');
+          closeModal();
+        } else {
+          notify('Incorrect admin password.', 'error');
+        }
+      },
     });
     setIsModalOpen(true);
   };
 
-  const handleLogout = () => {
-    const isLocalMode = localStorage.getItem('isLocalMode') === 'true';
-
-    // Clear current session state
-    setSelectedPlayers({ player1: null, player2: null });
-    setLeaderboard([]);
-    setGameHistory([]);
-    setPlayers([]);
-    setGameHistoryKeep(10);
-    
-    // Clear only session-specific localStorage items
-    localStorage.removeItem('currentUser');
-    
-    // Only clear these if we're not in local mode
-    if (!isLocalMode) {
-      localStorage.removeItem('localUserId');
-      localStorage.removeItem('localGameData');
-      localStorage.removeItem('isLocalMode');
-    }
-    
-    // Reset dataService to default state
-    dataService.currentUser = null;
-    setCurrentUser(null);
-    setCurrentScreen('login');
-  };
-
-  const handleSetAdminPassword = async (password) => {
-    try {
-      if (dataService.isLocalMode) {
-        // For local mode, update the settings directly in localStorage
-        const localData = JSON.parse(localStorage.getItem('localGameData'));
-        localData.settings.ADMIN_PASSWORD = password;
-        localStorage.setItem('localGameData', JSON.stringify(localData));
-        
-        // Update dataService settings
-        dataService.settings.ADMIN_PASSWORD = password;
-      } else {
-        // For server mode
-        await dataService.updateSettings({
-          ...dataService.settings,
-          ADMIN_PASSWORD: password
-        });
-      }
-      
-      setShowAdminPasswordPrompt(false);
-      setCurrentScreen('main');
-    } catch (error) {
-      console.error('Error setting admin password:', error);
-      alert('Failed to set admin password. Please try again.');
-    }
+  const returnToMain = () => {
+    setCurrentScreen('main');
+    handleClearSelections();
   };
 
   return (
-    <ThemeProvider>
-      <div className="App">
-        {!currentUser ? (
-          <LoginScreen onLogin={setCurrentUser} />
-        ) : !isInitialized || isLoading ? (
-          <div className="loading-screen">
-            <div className="loading-content">
-              <h1>🏓</h1>
-              <div className="loading-spinner"></div>
-              <h2 className="loading-text">Loading Game Data...</h2>
+    <div className="App">
+      {currentScreen === 'main' && (
+        <>
+          <main className="App-main">
+            <div className="App-column leaderboard-column">
+              <Leaderboard players={leaderboard} />
             </div>
-          </div>
-        ) : showAdminPasswordPrompt ? (
-          <AdminPasswordPrompt 
-            onSubmit={handleSetAdminPassword}
-            message="Please set a password for accessing the settings dashboard."
-          />
-        ) : (
-          <>
-            {currentScreen === 'main' && (
-              <>
-                <main className="App-main">
-                  <div className="App-column leaderboard-column">
-                    <Leaderboard players={leaderboard} />
-                  </div>
-                  <div className="App-column history-column">
-                    <GameHistory gameHistory={gameHistory} />
-                  </div>
-                </main>
-                <footer className="App-footer">
-                  <div className="player-controls">
-                    <PlayerSelection 
-                      players={players}
-                      selectedPlayers={selectedPlayers}
-                      onPlayerSelect={handlePlayerSelect}
-                    />
-                    <button className="btn clear-selections" onClick={handleClearSelections}>
-                      Clear Selections
-                    </button>
-                    <button className="btn start-game" onClick={handleStartGame}>
-                      Start Game
-                    </button>
-                  </div>
-                  <div className="admin-buttons">
-                    {settings && !settings.ADDPLAYER_ADMINONLY && (
-                      <button className="btn add-player" onClick={handleAddPlayer}>
-                        Add Player
-                      </button>
-                    )}
-                    <button className="btn admin-controls" onClick={handleAdminClick}>
-                      Admin
-                    </button>
-                    <InfoButton currentUser={currentUser} onLogout={handleLogout} />
-                  </div>
-                </footer>
-              </>
-            )}
-            {currentScreen === 'game' && (
-              <Scoreboard 
-                player1={selectedPlayers.player1} 
-                player2={selectedPlayers.player2}
-                onGameEnd={handleGameEnd}
-                onQuitGame={handleQuitGame}
+            <div className="App-column history-column">
+              <GameHistory gameHistory={gameHistory} />
+            </div>
+          </main>
+          <footer className="App-footer">
+            <div className="player-controls">
+              <PlayerSelection
+                players={players}
+                selectedPlayers={selectedPlayers}
+                onPlayerSelect={handlePlayerSelect}
               />
-            )}
-            {currentScreen === 'admin' && (
-              <AdminControls 
-                onExit={() => setCurrentScreen('main')} 
-                onAddPlayer={handleAddPlayer}
-              />
-            )}
-            <InputModal
-              isOpen={isModalOpen}
-              onClose={() => setIsModalOpen(false)}
-              {...modalConfig}
-            />
-          </>
-        )}
-      </div>
-    </ThemeProvider>
+              <button className="btn clear-selections" onClick={handleClearSelections}>
+                Clear Selections
+              </button>
+              <button className="btn start-game" onClick={handleStartGame}>
+                Start Game
+              </button>
+            </div>
+            <div className="admin-buttons">
+              {!settings?.ADDPLAYER_ADMINONLY && (
+                <button className="btn add-player" onClick={handleAddPlayer}>
+                  Add Player
+                </button>
+              )}
+              <button className="btn admin-controls" onClick={handleAdminClick}>
+                Admin
+              </button>
+              <InfoButton currentUser={currentUser} onLogout={handleLogout} />
+            </div>
+          </footer>
+        </>
+      )}
+
+      {currentScreen === 'game' && (
+        <Scoreboard
+          player1={selectedPlayers.player1}
+          player2={selectedPlayers.player2}
+          onGameEnd={returnToMain}
+          onQuitGame={returnToMain}
+          onNotify={notify}
+        />
+      )}
+
+      {currentScreen === 'admin' && (
+        <AdminControls
+          onExit={() => setCurrentScreen('main')}
+          onAddPlayer={handleAddPlayer}
+          onNotify={notify}
+          onAccountErased={handleLogout}
+        />
+      )}
+
+      <InputModal isOpen={isModalOpen} onClose={closeModal} {...modalConfig} />
+      {toast && <Toast key={toast.id} {...toast} onDismiss={() => setToast(null)} />}
+    </div>
   );
 }
 

@@ -63,3 +63,9 @@
   font-style: italic;
 }
 
+
+/* Win-streak badge, rendered next to the player's name. */
+.streak-badge {
+  white-space: nowrap;
+  font-size: 0.9em;
+}

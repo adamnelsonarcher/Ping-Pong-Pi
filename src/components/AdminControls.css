@@ -413,3 +413,59 @@ button[type="button"].delete-player-btn {
   flex-wrap: wrap;
   justify-content: flex-start;  /* Explicitly set left alignment */
 }
+
+/* ---------------------------------------------------------------------------
+   Section headers are buttons so they can be reached and toggled from the
+   keyboard; they used to be bare clickable <h3>s (docs/AUDIT.md A-04).
+   --------------------------------------------------------------------------- */
+.admin-section h3 .section-toggle {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.admin-section h3 .section-toggle:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 3px;
+}
+
+.admin-section h3 .section-toggle::after {
+  content: ' ▾';
+  font-size: 0.8em;
+  opacity: 0.7;
+}
+
+.admin-section.collapsed h3 .section-toggle::after {
+  content: ' ▸';
+}
+
+/* ---------------------------------------------------------------------------
+   Footer with an explicit save. The settings form previously had no submit
+   button at all (docs/AUDIT.md D-04 discussion).
+   --------------------------------------------------------------------------- */
+.admin-footer {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 2rem;
+  padding: 1rem;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--surface-color);
+}
+
+.unsaved-indicator {
+  margin-right: auto;
+  color: #f39c12;
+  font-style: italic;
+  font-size: 0.9em;
+}

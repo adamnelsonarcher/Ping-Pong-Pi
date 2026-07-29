@@ -1,8 +1,32 @@
-// import settings from '../settings1';
 import API_URL from '../config/api';
+import { auth, authReady } from '../config/firebase';
+import {
+  computeMatchDeltas,
+  isActive,
+  MIN_LIFETIME_SCORE,
+  STARTING_SCORE,
+  DEFAULT_ACTIVITY_THRESHOLD,
+} from './rating';
+
+/**
+ * Hard ceiling on stored match history, as a safety valve only.
+ *
+ * GAME_HISTORY_KEEP used to be applied to the *stored* array, so lowering a
+ * setting the admin panel describes as "number of games to show" silently and
+ * permanently destroyed matches (docs/AUDIT.md D-08). It is now a display limit
+ * applied at render time, and this constant exists purely so a long-lived
+ * account cannot grow the Firestore document past its 1 MB cap.
+ */
+export const MAX_STORED_HISTORY = 1000;
+
+/** How long to wait for more changes before writing. */
+const SAVE_DELAY = 1000;
+
+/** Retry schedule for failed cloud saves, in milliseconds. */
+const SAVE_RETRY_DELAYS = [500, 2000];
 
 class Player {
-  constructor(name, score = 1000, password = "") {
+  constructor(name, score = STARTING_SCORE, password = '') {
     this.name = name;
     this.score = score;
     this.gamesPlayed = 0;
@@ -16,75 +40,50 @@ class Player {
     this.lifetimeLosses = 0;
     this.lifetimeScore = score;
     this.active = false;
-    this.scoreHistory = [score]; // Ensure this is always initialized
+    this.scoreHistory = [score];
   }
 
-  calculateScoreChange(currentScore, opponentScore, result, K) {
-    const expectedScore = 1 / (1 + Math.pow(10, (opponentScore - currentScore) / 450));
-    let scoreChange = K * (result - expectedScore);
-    if ((expectedScore < 0.45 && result === 1) || (expectedScore > 0.65 && result === 0)) {
-      scoreChange *= 1.3;
-    }
-    return scoreChange;
-  }
+  /**
+   * Apply one match result to this player.
+   *
+   * `deltas` comes from computeMatchDeltas, which reads a snapshot of both
+   * players taken before either was touched. This method must therefore never
+   * look at the opponent — doing so is exactly what made the old implementation
+   * order-dependent (docs/AUDIT.md L-02).
+   */
+  applyMatch({ score: scoreDelta, lifetimeScore: lifetimeDelta }, won, activityThreshold) {
+    this.score += scoreDelta;
+    this.lifetimeScore = Math.max(MIN_LIFETIME_SCORE, this.lifetimeScore + lifetimeDelta);
 
-  updateScore(opponent, won, pointDifference, gameSettings) {
-    const opponentIsUnranked = !opponent.active;
-    const playerIsUnranked = !this.active;
-
-    let K = gameSettings.SCORE_CHANGE_K_FACTOR + pointDifference * gameSettings.POINT_DIFFERENCE_WEIGHT;
-
-    if (playerIsUnranked && opponentIsUnranked) {
-      K *= 1.2;
-    } else if (playerIsUnranked) {
-      K *= 1.2;
-    } else if (opponentIsUnranked) {
-      K = 20;
-    }
-
-    const result = won ? 1 : 0;
-    const scoreChange = this.calculateScoreChange(this.score, opponent.score, result, K);
-    this.score += scoreChange;
     this.gamesPlayed += 1;
-    this.lifetimeGamesPlayed += 1; // Increment lifetime games played
+    this.lifetimeGamesPlayed += 1;
 
-    const lifetimeScoreChange = this.calculateScoreChange(this.lifetimeScore, opponent.lifetimeScore, result, K);
-    this.lifetimeScore += lifetimeScoreChange;
-
-    if (this.lifetimeScore < 100) {
-      this.lifetimeScore = 100;
-    }
-
-    // Add a check before pushing to scoreHistory
-    if (!Array.isArray(this.scoreHistory)) {
-      this.scoreHistory = [];
-    }
+    if (!Array.isArray(this.scoreHistory)) this.scoreHistory = [];
     this.scoreHistory.push(Math.round(this.lifetimeScore * 100) / 100);
 
-    this.updateActiveStatus();
+    this.active = isActive(this.gamesPlayed, activityThreshold);
 
     if (won) {
       this.wins += 1;
       this.lifetimeWins += 1;
       this.currentStreak += 1;
-      if (this.currentStreak > this.maxWinStreak) {
-        this.maxWinStreak = this.currentStreak;
-      }
+      if (this.currentStreak > this.maxWinStreak) this.maxWinStreak = this.currentStreak;
     } else {
       this.losses += 1;
       this.lifetimeLosses += 1;
       this.currentStreak = 0;
     }
 
-    return scoreChange;
+    return scoreDelta;
+  }
+
+  /** A plain, immutable view of the fields the rating maths needs. */
+  snapshot() {
+    return { score: this.score, lifetimeScore: this.lifetimeScore, active: this.active };
   }
 
   winLossRatio() {
-    return this.gamesPlayed === 0 ? "0/0" : `${this.wins}/${this.losses}`;
-  }
-
-  updateActiveStatus(activityThreshold = 3) {
-    this.active = this.gamesPlayed >= activityThreshold;
+    return this.gamesPlayed === 0 ? '0/0' : `${this.wins}/${this.losses}`;
   }
 }
 
@@ -93,566 +92,643 @@ class DataService {
     this.defaultSettings = {
       SCORE_CHANGE_K_FACTOR: 70,
       POINT_DIFFERENCE_WEIGHT: 6,
-      ACTIVITY_THRESHOLD: 3,
-      DEFAULT_RANK: "Unranked",
-      PLAYER1_SCOREBOARD_COLOR: "#4CAF50",
-      PLAYER2_SCOREBOARD_COLOR: "#2196F3",
+      ACTIVITY_THRESHOLD: DEFAULT_ACTIVITY_THRESHOLD,
+      DEFAULT_RANK: 'Unranked',
+      PLAYER1_SCOREBOARD_COLOR: '#4CAF50',
+      PLAYER2_SCOREBOARD_COLOR: '#2196F3',
       GAME_HISTORY_KEEP: 30,
       ADDPLAYER_ADMINONLY: false,
-      DISABLE_WIN_ANIMATION: false
+      DISABLE_WIN_ANIMATION: false,
     };
-    
+
     this.players = {};
     this.gameHistory = [];
-    this.settings = { ...this.defaultSettings, ADMIN_PASSWORD: "" };
-    const encodedUser = localStorage.getItem('currentUser');
-    this.currentUser = encodedUser ? atob(encodedUser) : null;
+    this.settings = { ...this.defaultSettings, ADMIN_PASSWORD: '' };
+    this.currentUser = readStoredUser();
     this.isLocalMode = localStorage.getItem('isLocalMode') === 'true';
-    this.saveTimeout = null;
-    this.SAVE_DELAY = 1000;
-    this.debouncedSave = this.debouncedSave.bind(this);
+
+    /** Set when the most recent cloud save failed, so the UI can say so. */
+    this.lastSaveError = null;
+
+    this._saveTimer = null;
+    this._pendingSave = null;
+    this._listeners = new Set();
+
+    // Bumped on every change. useSyncExternalStore needs a snapshot value that
+    // is cheap to compare and stable between changes; a counter is both.
+    this._version = 0;
   }
 
-  debouncedSave() {
-    if (this.saveTimeout) {
-      clearTimeout(this.saveTimeout);
-    }
-    this.saveTimeout = setTimeout(() => {
-      this.saveData();
-    }, this.SAVE_DELAY);
+  get version() {
+    return this._version;
   }
+
+  // ---------------------------------------------------------------------------
+  // Change notification
+  //
+  // The app used to keep three uncoordinated copies of this data (App's state,
+  // SettingsContext's state, AdminControls' state) with nothing to keep them in
+  // sync, which is why settings changes appeared to do nothing until a reload
+  // (docs/AUDIT.md L-03) and why admin edits did not show on the leaderboard.
+  // ---------------------------------------------------------------------------
+
+  /** Subscribe to any change. Returns an unsubscribe function. */
+  subscribe(listener) {
+    this._listeners.add(listener);
+    return () => this._listeners.delete(listener);
+  }
+
+  _emit() {
+    this._version += 1;
+    this._listeners.forEach((listener) => {
+      try {
+        listener();
+      } catch (error) {
+        console.error('dataService listener threw:', error);
+      }
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Persistence
+  // ---------------------------------------------------------------------------
 
   setLocalMode(isLocal) {
     this.isLocalMode = isLocal;
     localStorage.setItem('isLocalMode', isLocal.toString());
   }
 
+  setCurrentUser(username) {
+    this.currentUser = username;
+    localStorage.setItem('currentUser', username);
+    return this.loadData();
+  }
+
+  clearCurrentUser() {
+    this.currentUser = null;
+    this.players = {};
+    this.gameHistory = [];
+    this.settings = { ...this.defaultSettings, ADMIN_PASSWORD: '' };
+    this._emit();
+  }
+
+  /**
+   * Attach the caller's Firebase ID token. The server verifies this and derives
+   * the storage key from it, so a client can no longer read or overwrite an
+   * arbitrary account by naming it (docs/AUDIT.md S-03).
+   */
+  async _authHeaders() {
+    // Wait for Firebase to restore any persisted session, or the first request
+    // after a page reload goes out unauthenticated. See config/firebase.js.
+    await authReady;
+
+    const user = auth.currentUser;
+    if (!user) return {};
+    try {
+      return { Authorization: `Bearer ${await user.getIdToken()}` };
+    } catch (error) {
+      console.error('Could not get an auth token:', error);
+      return {};
+    }
+  }
+
   async loadData() {
     if (this.isLocalMode) {
-      const localData = JSON.parse(localStorage.getItem('localGameData'));
-      if (localData) {
-        this.settings = { ...this.defaultSettings, ...localData.settings };
-        this.gameHistory = localData.gameHistory || [];
-        this.players = {};
-        
-        Object.entries(localData.players || {}).forEach(([name, playerData]) => {
-          const player = new Player(
-            playerData.name,
-            playerData.score,
-            playerData.password
-          );
-          Object.assign(player, playerData);
-          this.players[name] = player;
-        });
-        return true;
-      }
-      return false;
-    } else {
+      const raw = localStorage.getItem('localGameData');
+      if (!raw) return false;
 
-        const response = await fetch(`${API_URL}/api/getData?userId=${this.currentUser}`);
-        if (!response.ok) throw new Error('Failed to fetch data');
-        const userData = await response.json();
-        
-        this.settings = { ...this.defaultSettings, ...userData.settings };
-        this.gameHistory = userData.gameHistory || [];
-        this.players = {};
-        
-        Object.entries(userData.players || {}).forEach(([name, playerData]) => {
-          const player = new Player(
-            playerData.name,
-            playerData.score,
-            playerData.password
-          );
-          Object.assign(player, playerData);
-          this.players[name] = player;
-        });
-        
-        return true;
-    }
-  }
-
-  async saveData() {
-    console.log('Saving to URL:', `${API_URL}/api/saveData`);
-    if (this.isLocalMode) {
-      const dataToSave = {
-        settings: this.settings,
-        players: this.players,
-        gameHistory: this.gameHistory
-      };
-      localStorage.setItem('localGameData', JSON.stringify(dataToSave));
-      return true;
-    } else {
+      let localData;
       try {
-        const saveResponse = await fetch(`${API_URL}/api/saveData`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            currentUser: btoa(this.currentUser),
-            settings: this.settings,
-            players: this.players,
-            gameHistory: this.gameHistory
-          })
-        });
-  
-        if (!saveResponse.ok) throw new Error('Failed to save data');
-        
-        return true;
+        localData = JSON.parse(raw);
       } catch (error) {
-        console.error('Error saving data:', error);
-        throw error;
+        console.error('Local save data is corrupt, ignoring it:', error);
+        return false;
       }
-    }
-  }
-
-  addPlayer(name, password) {
-    if (!(name in this.players)) {
-      this.players[name] = new Player(name, 1000, password);
-      if (this.isLocalMode) {
-        this.saveData(); // Immediate save for local storage
-      } else {
-        this.debouncedSave(); // Debounced save for server
-      }
+      this._hydrate(localData);
       return true;
     }
-    return false;
+
+    if (!this.currentUser) return false;
+
+    const response = await fetch(`${API_URL}/api/getData`, {
+      headers: await this._authHeaders(),
+    });
+    if (!response.ok) throw new Error(`Failed to fetch data (${response.status})`);
+
+    this._hydrate(await response.json());
+    return true;
   }
 
-  recordGame(player1Name, player2Name, player1Score, player2Score) {
-    // Validate scores
-    if (typeof player1Score !== 'number' || typeof player2Score !== 'number') {
-      console.error('Invalid scores:', player1Score, player2Score);
-      return null;
-    }
+  /** Rebuild in-memory state from a stored document. */
+  _hydrate(data) {
+    this.settings = { ...this.defaultSettings, ...(data.settings || {}) };
+    this.gameHistory = Array.isArray(data.gameHistory) ? data.gameHistory : [];
+    this.players = {};
 
-    const player1 = this.players[player1Name];
-    const player2 = this.players[player2Name];
-    
-    if (!player1 || !player2) {
-      console.error('Players not found:', player1Name, player2Name);
-      return null;
-    }
+    Object.entries(data.players || {}).forEach(([name, playerData]) => {
+      const player = new Player(playerData.name || name, playerData.score, playerData.password);
+      Object.assign(player, playerData);
 
-    const winner = player1Score > player2Score ? player1 : player2;
-    const loser = player1Score > player2Score ? player2 : player1;
+      // Older saves predate these fields. Normalising here means the rest of the
+      // app can assume they exist — the stats dialog used to crash on a missing
+      // scoreHistory (docs/AUDIT.md L-12).
+      if (!Array.isArray(player.scoreHistory)) {
+        player.scoreHistory = [player.lifetimeScore ?? player.score ?? STARTING_SCORE];
+      }
+      if (!Number.isFinite(player.lifetimeScore)) player.lifetimeScore = player.score;
+      if (!Number.isFinite(player.maxWinStreak)) player.maxWinStreak = 0;
+      if (!Number.isFinite(player.currentStreak)) player.currentStreak = 0;
 
-    // Calculate score changes
-    const pointDifference = Math.abs(player1Score - player2Score);
-    const winnerScoreChange = winner.updateScore(loser, true, pointDifference, this.settings);
-    const loserScoreChange = loser.updateScore(winner, false, pointDifference, this.settings);
+      this.players[name] = player;
+    });
 
-    // Create game history entry
-    const gameResult = {
-      player1: player1Name,
-      player2: player2Name,
-      score: `${player1Score} - ${player2Score}`,
-      player1Rank: this.getPlayerRank(player1Name),
-      player2Rank: this.getPlayerRank(player2Name),
-      pointChange1: player1 === winner ? winnerScoreChange : loserScoreChange,
-      pointChange2: player2 === winner ? winnerScoreChange : loserScoreChange,
-      date: new Date().toISOString()
+    // Recompute from the *current* threshold rather than trusting the stored
+    // flag, so raising ACTIVITY_THRESHOLD demotes players immediately instead of
+    // waiting for each of them to play again.
+    this._recomputeActiveStatus();
+    this._emit();
+  }
+
+  _recomputeActiveStatus() {
+    const threshold = this.settings.ACTIVITY_THRESHOLD;
+    Object.values(this.players).forEach((player) => {
+      player.active = isActive(player.gamesPlayed, threshold);
+    });
+  }
+
+  _serialise() {
+    return {
+      settings: this.settings,
+      players: this.players,
+      gameHistory: this.gameHistory,
     };
+  }
 
-    // Update game history
-    const gameHistoryKeep = this.settings?.GAME_HISTORY_KEEP || 30;
-    this.gameHistory = [...this.gameHistory, gameResult].slice(-gameHistoryKeep);
+  /**
+   * Schedule a save, coalescing rapid changes.
+   *
+   * Returns a promise that resolves when the write actually lands. The old
+   * version returned undefined, so callers that wrote `await debouncedSave()`
+   * were not waiting for anything (docs/AUDIT.md D-02).
+   */
+  scheduleSave() {
+    if (this._saveTimer) clearTimeout(this._saveTimer);
 
-    // Save the updated data
-    if (this.isLocalMode) {
-      const localData = {
-        settings: this.settings,
-        players: this.players,
-        gameHistory: this.gameHistory
-      };
-      localStorage.setItem('localGameData', JSON.stringify(localData));
-    } else {
-      this.debouncedSave();
+    if (!this._pendingSave) {
+      let resolve;
+      let reject;
+      const promise = new Promise((res, rej) => {
+        resolve = res;
+        reject = rej;
+      });
+      // Nothing may await this promise; don't let a rejection become unhandled.
+      promise.catch(() => {});
+      this._pendingSave = { promise, resolve, reject };
     }
 
-    return gameResult;
+    const pending = this._pendingSave;
+    this._saveTimer = setTimeout(() => {
+      this._saveTimer = null;
+      this._pendingSave = null;
+      this.saveData().then(pending.resolve, pending.reject);
+    }, SAVE_DELAY);
+
+    return pending.promise;
   }
 
-  getPlayerRank(playerName) {
-    const activePlayers = Object.values(this.players).filter(p => p.active);
-    const sortedPlayers = activePlayers.sort((a, b) => b.score - a.score);
-    const playerIndex = sortedPlayers.findIndex(p => p.name === playerName);
-    return playerIndex !== -1 ? playerIndex + 1 : 'Unranked';
+  /** True if there are changes waiting to be written. */
+  hasPendingSave() {
+    return this._saveTimer !== null;
   }
 
-  getLeaderboard() {
-    const activePlayers = Object.values(this.players)
-      .filter(player => player.active)
-      .sort((a, b) => b.score - a.score)
-      .map(player => ({
-        name: player.name,
-        score: player.score.toFixed(2),
-        ratio: player.winLossRatio(),
-        active: true
-      }));
+  /**
+   * Write any scheduled save immediately. Call this before the page goes away —
+   * without it, a match recorded in the last second before the TV is switched
+   * off is simply lost (docs/AUDIT.md D-02).
+   */
+  async flush({ keepalive = false } = {}) {
+    if (!this._saveTimer) return true;
 
-    const inactivePlayers = Object.values(this.players)
-      .filter(player => !player.active)
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .map(player => ({
-        name: player.name,
-        score: this.settings.DEFAULT_RANK,
-        ratio: player.winLossRatio(),
-        active: false
-      }));
+    clearTimeout(this._saveTimer);
+    this._saveTimer = null;
+    const pending = this._pendingSave;
+    this._pendingSave = null;
 
-    return [...activePlayers, ...inactivePlayers];
-  }
-
-  getGameHistory() {
-    return this.gameHistory;
-  }
-
-  async testServerConnection() {
     try {
-      const response = await fetch('/api/test');
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const text = await response.text();
-      console.log('Raw test response:', text);
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (error) {
-        console.error('Failed to parse JSON:', error);
-        throw new Error('Invalid JSON response from server');
-      }
-      console.log('Server test response:', data);
-      return true;
+      const result = await this.saveData({ keepalive, retries: 0 });
+      pending?.resolve(result);
+      return result;
     } catch (error) {
-      console.error('Error testing server connection:', error);
-      return false;
+      pending?.reject(error);
+      throw error;
     }
+  }
+
+  async saveData({ keepalive = false, retries = SAVE_RETRY_DELAYS.length } = {}) {
+    if (this.isLocalMode) {
+      localStorage.setItem('localGameData', JSON.stringify(this._serialise()));
+      this.lastSaveError = null;
+      return true;
+    }
+
+    const body = JSON.stringify(this._serialise());
+    const headers = { 'Content-Type': 'application/json', ...(await this._authHeaders()) };
+
+    for (let attempt = 0; ; attempt += 1) {
+      try {
+        const response = await fetch(`${API_URL}/api/saveData`, {
+          method: 'POST',
+          headers,
+          body,
+          keepalive,
+        });
+        if (!response.ok) throw new Error(`Save failed (${response.status})`);
+        this.lastSaveError = null;
+        this._emit();
+        return true;
+      } catch (error) {
+        if (attempt >= retries) {
+          this.lastSaveError = error;
+          this._emit();
+          console.error('Error saving data:', error);
+          throw error;
+        }
+        await delay(SAVE_RETRY_DELAYS[attempt]);
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Players
+  // ---------------------------------------------------------------------------
+
+  /**
+   * @returns {{ok: boolean, reason?: string}} — the old version returned a bare
+   * false on a duplicate name and every caller ignored it, so adding a duplicate
+   * player looked like it had worked (docs/AUDIT.md L-13).
+   */
+  addPlayer(name, password) {
+    const trimmed = (name || '').trim();
+    if (!trimmed) return { ok: false, reason: 'Player name cannot be empty.' };
+    if (trimmed in this.players) {
+      return { ok: false, reason: `There is already a player called "${trimmed}".` };
+    }
+
+    this.players[trimmed] = new Player(trimmed, STARTING_SCORE, password);
+    this._emit();
+    this.scheduleSave();
+    return { ok: true };
   }
 
   async editPlayerPassword(playerName, newPassword) {
-    if (this.players[playerName]) {
-      this.players[playerName].password = newPassword;
-      this.debouncedSave();
-      return true;
-    }
-    return false;
+    const player = this.players[playerName];
+    if (!player) return false;
+    player.password = newPassword;
+    this._emit();
+    this.scheduleSave();
+    return true;
   }
 
+  /**
+   * Admin override of a player's *season* score.
+   *
+   * This deliberately does not touch scoreHistory. That series records
+   * lifetimeScore, so the old implementation was pushing a value from the wrong
+   * series into the stats graph (docs/AUDIT.md L-11).
+   */
   async editPlayerScore(playerName, newScore) {
-    if (this.players[playerName]) {
-      this.players[playerName].score = newScore;
-      this.players[playerName].scoreHistory.push(newScore);
-      this.debouncedSave();
-      return true;
-    }
-    return false;
+    const player = this.players[playerName];
+    if (!player || !Number.isFinite(newScore)) return false;
+    player.score = newScore;
+    this._emit();
+    this.scheduleSave();
+    return true;
   }
 
   async deletePlayer(playerName) {
-    if (this.players[playerName]) {
-      delete this.players[playerName];
-      this.debouncedSave();
-      return true;
-    }
-    return false;
+    if (!this.players[playerName]) return false;
+    delete this.players[playerName];
+    this._emit();
+    this.scheduleSave();
+    return true;
   }
 
   async resetAllScores() {
-    Object.values(this.players).forEach(player => {
-      player.score = 1000;
+    Object.values(this.players).forEach((player) => {
+      player.score = STARTING_SCORE;
       player.gamesPlayed = 0;
       player.wins = 0;
       player.losses = 0;
       player.currentStreak = 0;
       player.active = false;
+      // maxWinStreak and everything lifetime-prefixed survive on purpose: the
+      // confirmation dialog promises a season reset, not a wipe.
     });
-    this.debouncedSave();
+    this._emit();
+    this.scheduleSave();
     return true;
   }
 
-  async saveSettings() {
-    try {
-      const response = await fetch(`${API_URL}/api/saveSettings`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(this.settings),
-      });
-      if (!response.ok) {
-        throw new Error('Failed to save settings');
-      }
-    } catch (error) {
-      console.error('Error saving settings:', error);
-      throw error;
+  // ---------------------------------------------------------------------------
+  // Matches
+  // ---------------------------------------------------------------------------
+
+  /**
+   * @returns {{ok: false, reason: string} | {ok: true, game: object}}
+   */
+  recordGame(player1Name, player2Name, player1Score, player2Score) {
+    if (!Number.isFinite(player1Score) || !Number.isFinite(player2Score)) {
+      return { ok: false, reason: 'Scores must be numbers.' };
     }
+    if (player1Score === player2Score) {
+      // The display layer has always been able to render a tie, but the data
+      // layer silently handed the win to player 2 (docs/AUDIT.md L-06).
+      return { ok: false, reason: 'A game cannot end in a tie — play it out.' };
+    }
+    if (player1Score === 0 && player2Score === 0) {
+      return { ok: false, reason: 'Nobody has scored yet.' };
+    }
+
+    const player1 = this.players[player1Name];
+    const player2 = this.players[player2Name];
+    if (!player1 || !player2) {
+      return { ok: false, reason: 'One of those players no longer exists.' };
+    }
+
+    const p1Won = player1Score > player2Score;
+    const pointDifference = Math.abs(player1Score - player2Score);
+    const threshold = this.settings.ACTIVITY_THRESHOLD;
+
+    // Ranks are the pre-match standings — that is what "player1Rank" means to
+    // anyone reading the history.
+    const player1Rank = this.getPlayerRank(player1Name);
+    const player2Rank = this.getPlayerRank(player2Name);
+
+    // Snapshot both players before either is modified. See rating.js.
+    const deltas = computeMatchDeltas(
+      player1.snapshot(),
+      player2.snapshot(),
+      p1Won,
+      pointDifference,
+      this.settings
+    );
+
+    const pointChange1 = player1.applyMatch(deltas.p1, p1Won, threshold);
+    const pointChange2 = player2.applyMatch(deltas.p2, !p1Won, threshold);
+
+    const game = {
+      player1: player1Name,
+      player2: player2Name,
+      score: `${player1Score} - ${player2Score}`,
+      player1Rank,
+      player2Rank,
+      pointChange1,
+      pointChange2,
+      date: new Date().toISOString(),
+    };
+
+    this._appendToHistory(game);
+    this._emit();
+    this.scheduleSave();
+    return { ok: true, game };
+  }
+
+  /** Record an abandoned game. No rating effect. */
+  quitGame(player1Name, player2Name) {
+    const game = {
+      player1: player1Name,
+      player2: player2Name,
+      score: 'Quit',
+      player1Rank: this.getPlayerRank(player1Name),
+      player2Rank: this.getPlayerRank(player2Name),
+      pointChange1: 0,
+      pointChange2: 0,
+      date: new Date().toISOString(),
+    };
+
+    this._appendToHistory(game);
+    this._emit();
+    this.scheduleSave();
+    return game;
+  }
+
+  _appendToHistory(game) {
+    this.gameHistory = [...this.gameHistory, game].slice(-MAX_STORED_HISTORY);
+  }
+
+  /** Remove the most recent match and undo its rating effect. */
+  undoLastGame() {
+    const last = this.gameHistory[this.gameHistory.length - 1];
+    if (!last) return { ok: false, reason: 'There is nothing to undo.' };
+
+    const player1 = this.players[last.player1];
+    const player2 = this.players[last.player2];
+    if (!player1 || !player2) {
+      return { ok: false, reason: 'One of those players no longer exists.' };
+    }
+
+    if (last.score !== 'Quit') {
+      const p1Won = last.pointChange1 > last.pointChange2;
+      revertMatch(player1, last.pointChange1, p1Won, this.settings.ACTIVITY_THRESHOLD);
+      revertMatch(player2, last.pointChange2, !p1Won, this.settings.ACTIVITY_THRESHOLD);
+    }
+
+    this.gameHistory = this.gameHistory.slice(0, -1);
+    this._emit();
+    this.scheduleSave();
+    return { ok: true, game: last };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Reads
+  // ---------------------------------------------------------------------------
+
+  getPlayerRank(playerName) {
+    const ranked = Object.values(this.players)
+      .filter((p) => p.active)
+      .sort((a, b) => b.score - a.score);
+    const index = ranked.findIndex((p) => p.name === playerName);
+    return index !== -1 ? index + 1 : 'Unranked';
+  }
+
+  getLeaderboard() {
+    const active = Object.values(this.players)
+      .filter((player) => player.active)
+      .sort((a, b) => b.score - a.score)
+      .map((player) => ({
+        name: player.name,
+        score: player.score.toFixed(2),
+        ratio: player.winLossRatio(),
+        currentStreak: player.currentStreak,
+        active: true,
+      }));
+
+    const inactive = Object.values(this.players)
+      .filter((player) => !player.active)
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((player) => ({
+        name: player.name,
+        score: this.settings.DEFAULT_RANK,
+        ratio: player.winLossRatio(),
+        currentStreak: player.currentStreak,
+        active: false,
+      }));
+
+    return [...active, ...inactive];
+  }
+
+  /** Most recent matches first is how they are stored; oldest first is how they read. */
+  getGameHistory(limit = this.settings.GAME_HISTORY_KEEP) {
+    if (!Number.isFinite(limit) || limit <= 0) return this.gameHistory;
+    return this.gameHistory.slice(-limit);
   }
 
   getSettings() {
     return this.settings;
   }
 
+  getPlayers() {
+    return Object.values(this.players);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Settings
+  // ---------------------------------------------------------------------------
+
   async updateSettings(newSettings) {
     this.settings = { ...this.settings, ...newSettings };
-    this.debouncedSave();
-    return true;
-  }
-
-  async saveGameHistory(gameResult) {
-
-      const response = await fetch(`${API_URL}/api/getData`);
-      const data = await response.json();
-
-      if (!data.users[this.currentUser]) {
-        console.error('User data not found');
-        return false;
-      }
-
-      // Add the new game to history
-      if (!data.users[this.currentUser].gameHistory) {
-        data.users[this.currentUser].gameHistory = [];
-      }
-      data.users[this.currentUser].gameHistory.push(gameResult);
-
-      // Save the updated data
-      const saveResponse = await fetch(`${API_URL}/api/saveData`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data)
-      });
-
-      if (!saveResponse.ok) {
-        throw new Error('Failed to save game history');
-      }
-
-      // Immediately reload the data to update the UI
-      await this.loadData();
-      
-      return true;
-
-  }
-
-  setCurrentUser(username) {
-    this.currentUser = username;
-    localStorage.setItem('currentUser', btoa(username));
-    return this.loadData();
-  }
-
-  async createUser(username) {
-    try {
-      if (!username) {
-        console.error('No username provided');
-        return { success: false, isFirstUser: false };
-      }
-
-      // First check if user exists
-      const response = await fetch(`${API_URL}/api/getData?userId=${encodeURIComponent(username)}`);
-      const data = await response.json();
-      
-      // If user exists, just return success
-      if (data && Object.keys(data).length > 0) {
-        this.currentUser = username;
-        return { success: true, isFirstUser: false };
-      }
-
-      // If user doesn't exist, create new user data
-      const userData = {
-        settings: { ...this.defaultSettings },
-        players: {},
-        gameHistory: []
-      };
-
-      const saveResponse = await fetch(`${API_URL}/api/saveData`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          currentUser: username,
-          ...userData
-        })
-      });
-
-      if (!saveResponse.ok) {
-        throw new Error('Failed to save new user data');
-      }
-
-      this.currentUser = username;
-      return { success: true, isFirstUser: true };
-    } catch (error) {
-      console.error('Error in createUser:', error);
-      return { success: false, isFirstUser: false };
-    }
+    this._recomputeActiveStatus();
+    this._emit();
+    return this.scheduleSave();
   }
 
   async setAdminPassword(password) {
-    try {
-      this.settings.ADMIN_PASSWORD = password;
-      await this.updateSettings(this.settings);
-      return true;
-    } catch (error) {
-      console.error('Error setting admin password:', error);
-      return false;
-    }
+    return this.updateSettings({ ADMIN_PASSWORD: password });
   }
 
-  async loginUser(username, password, isGoogleLogin = false) {
-    try {
-      const response = await fetch(`${API_URL}/api/login`, {
+  // ---------------------------------------------------------------------------
+  // Whole-account operations
+  // ---------------------------------------------------------------------------
+
+  /** Replace everything, e.g. from an uploaded backup. */
+  async importAccount(data) {
+    if (!data || !data.settings || !data.players || !data.gameHistory) {
+      throw new Error('Invalid save file format');
+    }
+    this._hydrate(data);
+    if (this.isLocalMode) return this.saveData();
+    return this.flushNow();
+  }
+
+  /** Save right now, bypassing the debounce. */
+  async flushNow() {
+    if (this._saveTimer) return this.flush();
+    return this.saveData();
+  }
+
+  /**
+   * Delete this account's data.
+   *
+   * The old implementation fetched the entire database into the browser, deleted
+   * one key and posted the whole thing back — which threw, and would have been a
+   * one-click wipe of every user on the platform if anyone had "fixed" it
+   * (docs/AUDIT.md D-05). Deletion is now scoped server-side to the caller's own
+   * authenticated account.
+   */
+  async eraseAccount() {
+    if (this._saveTimer) {
+      clearTimeout(this._saveTimer);
+      this._saveTimer = null;
+      this._pendingSave = null;
+    }
+
+    if (this.isLocalMode) {
+      localStorage.removeItem('localGameData');
+    } else {
+      const response = await fetch(`${API_URL}/api/deleteAccount`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          username, 
-          password,
-          isGoogleLogin 
-        })
+        headers: await this._authHeaders(),
       });
-      return response.ok;
-    } catch (error) {
-      console.error('Error logging in:', error);
-      return false;
+      if (!response.ok) throw new Error(`Failed to delete account (${response.status})`);
     }
+
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('isLocalMode');
+    this.clearCurrentUser();
+    return true;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Helpers
+// -----------------------------------------------------------------------------
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Read the stored identity.
+ *
+ * This used to be `atob(localStorage.getItem('currentUser'))` with no guard, at
+ * module scope. Both login paths write the raw value before anything re-encodes
+ * it, so an interrupted login left a value that atob throws on — during module
+ * evaluation, before React renders and outside any error boundary. The result was
+ * a white screen that survived reloads (docs/AUDIT.md D-06).
+ *
+ * The base64 is gone (it was never protecting anything — docs/AUDIT.md S-07) but
+ * we still decode legacy values so existing sessions survive the upgrade.
+ */
+function readStoredUser() {
+  const stored = localStorage.getItem('currentUser');
+  if (!stored) return null;
+
+  // Values written by the current code are stored as-is.
+  if (stored.includes('@') || stored === 'local_user') return stored;
+
+  try {
+    const decoded = atob(stored);
+    localStorage.setItem('currentUser', decoded);
+    return decoded;
+  } catch {
+    // Not base64 either — take it at face value rather than bricking the app.
+    return stored;
+  }
+}
+
+/** Undo one match's effect on one player. */
+function revertMatch(player, pointChange, won, activityThreshold) {
+  player.score -= pointChange;
+  player.gamesPlayed = Math.max(0, player.gamesPlayed - 1);
+  player.lifetimeGamesPlayed = Math.max(0, player.lifetimeGamesPlayed - 1);
+
+  if (Array.isArray(player.scoreHistory) && player.scoreHistory.length > 1) {
+    player.scoreHistory.pop();
+    player.lifetimeScore = player.scoreHistory[player.scoreHistory.length - 1];
   }
 
-  async testFirestoreConnection() {
-    try {
-      console.log('Testing Firestore connection...');
-      
-      const testData = {
-        users: {
-          admin: {
-            settings: this.settings,
-            players: {},
-            gameHistory: []
-          }
-        }
-      };
-      
-      console.log('Attempting to save test data...');
-      const saveResponse = await fetch(`${API_URL}/api/saveData`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(testData)
-      });
-
-      if (!saveResponse.ok) throw new Error('Failed to save test data');
-      console.log('Test data saved successfully');
-      
-      console.log('Attempting to read test data...');
-      const getResponse = await fetch(`${API_URL}/api/getData`);
-      if (!getResponse.ok) throw new Error('Failed to get test data');
-      
-      const data = await getResponse.json();
-      console.log('Firestore connection test result:', data);
-      return true;
-    } catch (error) {
-      console.error('Firestore connection test failed:', error);
-      return false;
-    }
+  if (won) {
+    player.wins = Math.max(0, player.wins - 1);
+    player.lifetimeWins = Math.max(0, player.lifetimeWins - 1);
+    player.currentStreak = Math.max(0, player.currentStreak - 1);
+  } else {
+    player.losses = Math.max(0, player.losses - 1);
+    player.lifetimeLosses = Math.max(0, player.lifetimeLosses - 1);
   }
 
-  // Add helper methods for encoding/decoding
-  encodeUser(username) {
-    return btoa(username);
-  }
-
-  decodeUser(encoded) {
-    try {
-      return encoded ? atob(encoded) : null;
-    } catch (e) {
-      console.error('Error decoding user:', e);
-      return null;
-    }
-  }
+  player.active = isActive(player.gamesPlayed, activityThreshold);
 }
 
 const dataService = new DataService();
 
+// A match recorded in the last second before the page goes away used to be lost.
+if (typeof window !== 'undefined') {
+  window.addEventListener('pagehide', () => {
+    if (dataService.hasPendingSave()) {
+      dataService.flush({ keepalive: true }).catch(() => {});
+    }
+  });
+}
+
 export default dataService;
-
-export const getPlayers = async () => {
-  await dataService.loadData();
-  return Object.values(dataService.players);
-};
-
-export const getSettings = async () => {
-  await dataService.loadData();
-  return dataService.settings;
-};
-
-export const editPlayerPassword = async (playerName, newPassword) => {
-  return await dataService.editPlayerPassword(playerName, newPassword);
-};
-
-export const editPlayerScore = async (playerName, newScore) => {
-  return await dataService.editPlayerScore(playerName, newScore);
-};
-
-export const deletePlayer = async (playerName) => {
-  return await dataService.deletePlayer(playerName);
-};
-
-export const resetAllScores = async () => {
-  return await dataService.resetAllScores();
-};
-
-export const updateSettings = async (newSettings) => {
-  return await dataService.updateSettings(newSettings);
-};
-
-export const getGameHistory = () => {
-  return dataService.gameHistory;
-};
-
-export const endGame = async (player1, player2, player1Score, player2Score) => {
-  try {
-    console.log('Ending game with scores:', player1Score, player2Score);
-    const result = dataService.recordGame(player1, player2, player1Score, player2Score);
-    
-    if (!result) {
-      console.error('Failed to record game');
-      return null;
-    }
-
-    // Save data if in local mode
-    if (dataService.isLocalMode) {
-      const localData = {
-        settings: dataService.settings,
-        players: dataService.players,
-        gameHistory: dataService.gameHistory
-      };
-      localStorage.setItem('localGameData', JSON.stringify(localData));
-    } else {
-      // Save to server
-      await dataService.debouncedSave();
-    }
-
-    return result;
-  } catch (error) {
-    console.error('Error ending game:', error);
-    return null;
-  }
-};
-
-export const quitGame = async (player1Name, player2Name) => {
-  try {
-    const gameResult = {
-      player1: player1Name,
-      player2: player2Name,
-      score: 'Quit',
-      pointChange1: 0,
-      pointChange2: 0,
-      date: new Date().toISOString()
-    };
-    await dataService.saveGameHistory(gameResult);
-    return gameResult;
-  } catch (error) {
-    console.error('Error quitting game:', error);
-    return null;
-  }
-};
-
+export { Player, DataService };

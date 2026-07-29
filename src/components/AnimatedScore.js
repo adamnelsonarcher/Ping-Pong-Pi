@@ -1,31 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './AnimatedScore.css';
 
-function AnimatedScore({ score, index }) {
-  const [animation, setAnimation] = useState('');
-  const [prevScore, setPrevScore] = useState(score);
+/**
+ * The score, with a pulse whenever it changes.
+ *
+ * Remounting on every change via `key` restarts the CSS animation cleanly. The
+ * previous approach cleared the class and set it again inside a 10ms setTimeout,
+ * which raced React's own batching.
+ */
+function AnimatedScore({ score }) {
+  const previous = useRef(score);
+  const [direction, setDirection] = useState('');
 
   useEffect(() => {
-    if (score !== prevScore) {
-      // Reset animation first to ensure it triggers again
-      setAnimation('');
-      setTimeout(() => {
-        setAnimation(score > prevScore ? 'score-increase' : 'score-decrease');
-      }, 10);
-      
-      const timer = setTimeout(() => setAnimation(''), 500);
-      setPrevScore(score);
-      return () => {
-        clearTimeout(timer);
-      };
-    }
-  }, [score, prevScore]);
+    if (score === previous.current) return;
+    setDirection(score > previous.current ? 'score-increase' : 'score-decrease');
+    previous.current = score;
+  }, [score]);
 
   return (
-    <div className={`score ${animation}`}>
+    <div key={score} className={`score ${direction}`}>
       {score}
     </div>
   );
 }
 
-export default AnimatedScore; 
+export default AnimatedScore;

@@ -1,34 +1,58 @@
 const admin = require('./firebase-admin');
+const { requireUser, userKey } = require('./_auth');
+
 const db = admin.firestore();
 
+/** Refuse absurd payloads rather than letting one account fill the document. */
+const MAX_PLAYERS = 500;
+const MAX_HISTORY = 1000;
+
+/**
+ * Overwrite the authenticated caller's account.
+ *
+ * The account key comes from the verified token, never from the body — the body
+ * used to carry `currentUser`, which meant anyone could overwrite anyone
+ * (docs/AUDIT.md S-03) and which is also how the write key drifted out of sync
+ * with the read key (docs/AUDIT.md D-01).
+ */
 module.exports = async (req, res) => {
+  const user = await requireUser(req, res);
+  if (!user) return;
+
+  const { settings, players, gameHistory } = req.body || {};
+
+  if (typeof settings !== 'object' || settings === null) {
+    return res.status(400).json({ error: 'settings must be an object' });
+  }
+  if (typeof players !== 'object' || players === null) {
+    return res.status(400).json({ error: 'players must be an object' });
+  }
+  if (!Array.isArray(gameHistory)) {
+    return res.status(400).json({ error: 'gameHistory must be an array' });
+  }
+  if (Object.keys(players).length > MAX_PLAYERS) {
+    return res.status(413).json({ error: `Too many players (max ${MAX_PLAYERS})` });
+  }
+  if (gameHistory.length > MAX_HISTORY) {
+    return res.status(413).json({ error: `Too much history (max ${MAX_HISTORY})` });
+  }
+
   try {
-    console.log('Received save request:', req.body);
-    
-    const encodedUser = req.body.currentUser.replace(/\./g, '_DOT_');
-    
-    const docRef = db.collection('pingpong').doc('data');
-    const doc = await docRef.get();
-    let currentData = doc.exists ? doc.data() : {};
-    
-    if (!currentData.users) {
-      currentData.users = {};
-    }
-    
-    await docRef.set({
-      users: {
-        ...currentData.users,
-        [encodedUser]: {
-          settings: req.body.settings,
-          players: req.body.players,
-          gameHistory: req.body.gameHistory
-        }
-      }
-    }, { merge: true });
-    
+    // Dotted-path update so we touch only this user's subtree, instead of
+    // read-modify-writing the whole document.
+    await db
+      .collection('pingpong')
+      .doc('data')
+      .set(
+        { users: { [userKey(user.email)]: { settings, players, gameHistory } } },
+        { merge: true }
+      );
+
     res.json({ message: 'Data saved successfully' });
   } catch (error) {
-    console.error('Error saving data:', error);
-    res.status(500).json({ error: error.message });
+    // Deliberately not logging req.body: it contains every player password and
+    // the admin password in plaintext (docs/AUDIT.md S-08).
+    console.error('Error saving data:', error.message);
+    res.status(500).json({ error: 'Could not save account data' });
   }
-}; 
+};

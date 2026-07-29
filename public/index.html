@@ -29,11 +29,15 @@
     <meta property="twitter:description" content="Track ping pong matches, player rankings, and game history in real-time. Perfect for offices and recreational spaces with TV display optimization.">
     <meta property="twitter:image" content="https://pingpongpi.com/images/pingpongpi_thumbnail.png">
 
-    <!-- Preconnect to important third-party origins -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://firebaseapp.com">
-    
+    <!--
+      Preconnect only to origins actually used. The two Google Fonts hints opened
+      connections that were never used: App.css asked for Roboto but nothing ever
+      loaded it, so every visitor fell back to a system font anyway
+      (docs/AUDIT.md Q-07). The font stack is now explicitly system fonts.
+    -->
+    <link rel="preconnect" href="https://identitytoolkit.googleapis.com">
+    <link rel="preconnect" href="https://securetoken.googleapis.com">
+
     <style>
       #initial-loader {
         position: fixed;
@@ -98,13 +102,12 @@
       </div>
     </div>
     <div id="root"></div>
-    <script>
-      window.addEventListener('load', function() {
-        // Remove the loader when React mounts
-        const loader = document.getElementById('initial-loader');
-        loader.style.display = 'none';
-      });
-    </script>
+    <!--
+      The loader is removed by src/index.js once React has actually rendered.
+      It used to hide itself on window 'load', which fires whether or not the app
+      mounted — so a startup crash produced a blank white page instead of the
+      error screen.
+    -->
     <!-- JSON-LD Schema -->
     <script type="application/ld+json">
     {
@@ -119,7 +122,7 @@
         "@type": "Person",
         "name": "Adam Nelson-Archer",
         "url": "https://nelsonarcher.com"
-      }
+      },
       "screenshot": {
         "@type": "ImageObject",
         "url": "https://pingpongpi.com/images/screenshot1.png",

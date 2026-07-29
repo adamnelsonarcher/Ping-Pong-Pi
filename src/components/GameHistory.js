@@ -1,78 +1,112 @@
 import React, { useEffect, useRef } from 'react';
 import './GameHistory.css';
 
-const formatGameResult = (game) => {
-  if (!game) {
-    return { message: 'Invalid game data: game is undefined', isSkunk: false, className: '' };
-  }
+/** A shutout at 7, or 11-1, counts as a skunk. */
+const SKUNK_SCORES = [
+  { winner: 7, loser: 0 },
+  { winner: 11, loser: 1 },
+];
 
-  // Calculate total length of player names
-  const totalNameLength = game.player1.length + game.player2.length;
-  let className = '';
-  
-  if (totalNameLength > 20) {
-    className = 'long-names';
-  }
-  if (totalNameLength > 30) {
-    className = 'very-long-names';
+const NAME_LENGTH_SMALL = 20;
+const NAME_LENGTH_SMALLER = 30;
+
+function sizeClass(game) {
+  const total = (game.player1 || '').length + (game.player2 || '').length;
+  if (total > NAME_LENGTH_SMALLER) return 'very-long-names';
+  if (total > NAME_LENGTH_SMALL) return 'long-names';
+  return '';
+}
+
+function formatChange(value) {
+  if (!Number.isFinite(value)) return '0.00';
+  return value > 0 ? `+${value.toFixed(2)}` : value.toFixed(2);
+}
+
+/**
+ * One line of match history.
+ *
+ * This returns JSX. It used to build an HTML string and hand it to
+ * dangerouslySetInnerHTML with player names interpolated raw, so a player called
+ * `<img src=x onerror=...>` executed script on every viewer's screen — and since
+ * the API had no auth, that name could be injected into someone else's account
+ * remotely (docs/AUDIT.md S-05).
+ */
+function GameHistoryItem({ game }) {
+  const className = sizeClass(game);
+
+  if (!game || !game.player1 || !game.player2) {
+    return <div className="game-history-item">Invalid game data</div>;
   }
 
   if (game.score === 'Quit') {
-    return { 
-      message: `Game between <b>${game.player1}</b> and <b>${game.player2}</b> was quit`,
-      isSkunk: false,
-      className 
-    };
+    return (
+      <div className={`game-history-item ${className}`}>
+        <span className="game-result">
+          Game between <b>{game.player1}</b> and <b>{game.player2}</b> was quit
+        </span>
+      </div>
+    );
   }
 
-  // Check if score is undefined or not a string
-  if (typeof game.score !== 'string') {
-    return { message: `Invalid game data for ${game.player1} vs ${game.player2}`, isSkunk: false, className };
+  const [score1, score2] =
+    typeof game.score === 'string' ? game.score.split(' - ').map(Number) : [NaN, NaN];
+
+  if (!Number.isFinite(score1) || !Number.isFinite(score2)) {
+    return (
+      <div className={`game-history-item ${className}`}>
+        <span className="game-result">
+          Invalid score for <b>{game.player1}</b> vs <b>{game.player2}</b>
+        </span>
+      </div>
+    );
   }
 
-  const [score1, score2] = game.score.split(' - ').map(Number);
-  
-  // Check if scores are valid numbers
-  if (isNaN(score1) || isNaN(score2)) {
-    return { message: `Invalid score data for ${game.player1} vs ${game.player2}: ${game.score}`, isSkunk: false, className };
-  }
-
-  // Handle tie games
+  // recordGame refuses to store a tie now, but old saves may contain one.
   if (score1 === score2) {
-    return {
-      message: `<b>${game.player1}</b> and <b>${game.player2}</b> tied <b>[${score1} - ${score2}]</b>`,
-      isSkunk: false,
-      className
-    };
+    return (
+      <div className={`game-history-item ${className}`}>
+        <span className="game-result">
+          <b>{game.player1}</b> and <b>{game.player2}</b> tied{' '}
+          <b>
+            [{score1} - {score2}]
+          </b>
+        </span>
+      </div>
+    );
   }
 
-  const winner = score1 > score2 ? game.player1 : game.player2;
-  const loser = score1 > score2 ? game.player2 : game.player1;
+  const p1Won = score1 > score2;
+  const winner = p1Won ? game.player1 : game.player2;
+  const loser = p1Won ? game.player2 : game.player1;
   const winnerScore = Math.max(score1, score2);
   const loserScore = Math.min(score1, score2);
-  
-  const winnerRank = score1 > score2 ? game.player1Rank : game.player2Rank;
-  const loserRank = score1 > score2 ? game.player2Rank : game.player1Rank;
-  void(winnerRank, loserRank);
 
-  const isSkunk = (winnerScore === 7 && loserScore === 0) || (winnerScore === 11 && loserScore === 1);
-  const actionWord = isSkunk ? "skunked" : "beat";
+  const isSkunk = SKUNK_SCORES.some(
+    (rule) => winnerScore === rule.winner && loserScore === rule.loser
+  );
 
-  let message = `<span class="game-result"><b>${winner}</b> ${actionWord} <b>${loser}</b> <b>[${winnerScore} - ${loserScore}]</b></span>`;
+  const isPlacement = game.player1Rank === 'Unranked' || game.player2Rank === 'Unranked';
+  const winnerChange = p1Won ? game.pointChange1 : game.pointChange2;
+  const loserChange = p1Won ? game.pointChange2 : game.pointChange1;
 
-  // Add score changes or placement match message
-  if (game.player1Rank === 'Unranked' || game.player2Rank === 'Unranked') {
-    message += `<br><span class="placement-match">placement match</span>`;
-  } else {
-    const winnerChange = score1 > score2 ? game.pointChange1 : game.pointChange2;
-    const loserChange = score1 > score2 ? game.pointChange2 : game.pointChange1;
-    const winnerChangeText = winnerChange > 0 ? `+${winnerChange.toFixed(2)}` : winnerChange.toFixed(2);
-    const loserChangeText = loserChange > 0 ? `+${loserChange.toFixed(2)}` : loserChange.toFixed(2);
-    message += `<br><span class="score-change">${winnerChangeText} / ${loserChangeText}</span>`;
-  }
-
-  return { message, isSkunk, className };
-};
+  return (
+    <div className={`game-history-item ${isSkunk ? 'skunk' : ''} ${className}`}>
+      <span className="game-result">
+        <b>{winner}</b> {isSkunk ? 'skunked' : 'beat'} <b>{loser}</b>{' '}
+        <b>
+          [{winnerScore} - {loserScore}]
+        </b>
+      </span>
+      {isPlacement ? (
+        <span className="placement-match">placement match</span>
+      ) : (
+        <span className="score-change">
+          {formatChange(winnerChange)} / {formatChange(loserChange)}
+        </span>
+      )}
+    </div>
+  );
+}
 
 function GameHistory({ gameHistory }) {
   const historyListRef = useRef(null);
@@ -88,17 +122,12 @@ function GameHistory({ gameHistory }) {
       <h2>Game History</h2>
       <div className="game-history-list" ref={historyListRef}>
         {gameHistory && gameHistory.length > 0 ? (
-          gameHistory.map((game, index) => {
-            const { message, isSkunk, className } = formatGameResult(game);
-            return (
-              <div
-                key={index}
-                className={`game-history-item ${isSkunk ? 'skunk' : ''} ${className}`}
-              >
-                <span dangerouslySetInnerHTML={{ __html: message }} />
-              </div>
-            );
-          })
+          gameHistory.map((game, index) => (
+            <GameHistoryItem
+              key={`${game.date || 'nodate'}-${game.player1}-${game.player2}-${index}`}
+              game={game}
+            />
+          ))
         ) : (
           <div>No game history available</div>
         )}

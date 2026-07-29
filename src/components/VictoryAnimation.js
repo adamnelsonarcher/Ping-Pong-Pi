@@ -1,22 +1,19 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import './VictoryAnimation.css';
 
-function VictoryAnimation({ winner, onAnimationEnd }) {
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      onAnimationEnd();
-    }, 3500);
-
-    return () => clearTimeout(timer);
-  }, [onAnimationEnd]);
-
+/**
+ * Celebration overlay shown when a game ends.
+ *
+ * The parent owns the timing — this used to run its own 3.5s timer *and* have
+ * the parent run two more, so three timers had to agree on when the animation
+ * was over.
+ */
+function VictoryAnimation({ winner }) {
   return (
-    <div className="victory-overlay">
-      <div className="victory-text">
-        {winner} wins!
-      </div>
+    <div className="victory-overlay" role="status" aria-live="polite">
+      <div className="victory-text">{winner} wins!</div>
     </div>
   );
 }
 
-export default VictoryAnimation; 
+export default VictoryAnimation;

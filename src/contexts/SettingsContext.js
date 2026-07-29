@@ -1,24 +1,34 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { getSettings } from '../services/dataService';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import dataService from '../services/dataService';
 
 const SettingsContext = createContext(null);
 
+/**
+ * Live view of the current account's settings.
+ *
+ * This used to fetch settings once on mount and never update them, so changing
+ * a setting in the admin panel appeared to do nothing until a full page reload —
+ * including DISABLE_WIN_ANIMATION, the escape hatch for the victory strobe
+ * (docs/AUDIT.md L-03). It also raced App's own load and could clobber it with
+ * an empty account (docs/AUDIT.md D-07).
+ *
+ * It now owns no data of its own: it mirrors dataService and re-renders when
+ * dataService says something changed.
+ */
 export function SettingsProvider({ children }) {
-  const [settings, setSettings] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [settings, setSettings] = useState(() => ({ ...dataService.settings }));
 
-  useEffect(() => {
-    const loadSettings = async () => {
-      console.log('Loading settings (once)...');
-      const loadedSettings = await getSettings();
-      setSettings(loadedSettings);
-      setIsLoading(false);
-    };
-    loadSettings();
+  useEffect(
+    () => dataService.subscribe(() => setSettings({ ...dataService.settings })),
+    []
+  );
+
+  const updateSettings = useCallback(async (next) => {
+    await dataService.updateSettings(next);
   }, []);
 
   return (
-    <SettingsContext.Provider value={{ settings, isLoading }}>
+    <SettingsContext.Provider value={{ settings, updateSettings }}>
       {children}
     </SettingsContext.Provider>
   );

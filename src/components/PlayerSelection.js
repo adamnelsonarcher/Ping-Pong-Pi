@@ -1,66 +1,54 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import './PlayerSelection.css';
-//import { useSettings } from '../contexts/SettingsContext';
 
+/**
+ * The two player dropdowns.
+ *
+ * These used to carry `onKeyDown={(e) => e.preventDefault()}` to stop the digit
+ * keys used as game controls from changing the selection. That also blocked
+ * Enter, Space, the arrow keys, Home/End and type-ahead — every standard way to
+ * operate a select — so keyboard and screen-reader users could not pick a player
+ * at all (docs/AUDIT.md A-01).
+ *
+ * It was never needed: the game's key handler only exists while the Scoreboard is
+ * mounted, and this component is only on screen when it is not.
+ *
+ * The component is also now fully controlled by `selectedPlayers`. It used to
+ * mirror that into its own state, so a failed password left the dropdown showing
+ * a player you had not authenticated as.
+ */
 function PlayerSelection({ players, selectedPlayers, onPlayerSelect }) {
-  const [selectedPlayer1, setSelectedPlayer1] = useState(selectedPlayers.player1 || '');
-  const [selectedPlayer2, setSelectedPlayer2] = useState(selectedPlayers.player2 || '');
-  //const { settings } = useSettings();
-
-  useEffect(() => {
-    setSelectedPlayer1(selectedPlayers.player1 || '');
-    setSelectedPlayer2(selectedPlayers.player2 || '');
-  }, [selectedPlayers]);
-
-  const handlePlayerSelect = (player, playerIndex) => {
-    if (playerIndex === 0) {
-      setSelectedPlayer1(player);
-    } else {
-      setSelectedPlayer2(player);
-    }
-    onPlayerSelect(player, playerIndex);
-  };
-
-  // Sort players alphabetically by name
-  const sortedPlayers = [...players].sort((a, b) => 
-    a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+  const sortedPlayers = useMemo(
+    () => [...players].sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase())),
+    [players]
   );
+
+  const renderSelect = (index) => {
+    const id = `player${index + 1}`;
+    return (
+      <div className="player-select">
+        <label htmlFor={id}>Player {index + 1}: </label>
+        <select
+          id={id}
+          value={selectedPlayers[id] || ''}
+          onChange={(e) => onPlayerSelect(e.target.value, index)}
+        >
+          <option value="">Select Player</option>
+          {sortedPlayers.map((player) => (
+            <option key={player.name} value={player.name}>
+              {player.name}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  };
 
   return (
     <div className="PlayerSelection">
       <div className="player-select-container">
-        <div className="player-select">
-          <label htmlFor="player1">Player 1: </label>
-          <select
-            id="player1"
-            value={selectedPlayer1}
-            onChange={(e) => handlePlayerSelect(e.target.value, 0)}
-            onKeyDown={(e) => e.preventDefault()} // Prevent keyboard input
-          >
-            <option value="">Select Player</option>
-            {sortedPlayers.map((player) => (
-              <option key={player.name} value={player.name}>
-                {player.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="player-select">
-          <label htmlFor="player2">Player 2: </label>
-          <select
-            id="player2"
-            value={selectedPlayer2}
-            onChange={(e) => handlePlayerSelect(e.target.value, 1)}
-            onKeyDown={(e) => e.preventDefault()} // Prevent keyboard input
-          >
-            <option value="">Select Player</option>
-            {sortedPlayers.map((player) => (
-              <option key={player.name} value={player.name}>
-                {player.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        {renderSelect(0)}
+        {renderSelect(1)}
       </div>
     </div>
   );

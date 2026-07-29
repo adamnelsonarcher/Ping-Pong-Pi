@@ -1,37 +1,59 @@
+/*
+ * The previous version alternated the whole viewport between pure white and pure
+ * black eight times in 3.5s — about 2.3 transitions per second at maximum
+ * contrast, full-screen. That sits just under WCAG 2.3.1's three-flashes-per-
+ * second threshold, so it was not a formal violation, but it was close to the
+ * line and genuinely unpleasant for photosensitive or migraine-prone viewers in
+ * a shared office (docs/AUDIT.md A-02).
+ *
+ * This keeps the celebratory feel with a slower, lower-contrast colour pulse,
+ * and stops entirely when the viewer has asked for reduced motion.
+ */
+
 .victory-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  animation: backgroundFlash 3.5s steps(1, end);
+  background: radial-gradient(circle at center, #1f3a5f 0%, #101820 100%);
+  animation: victoryPulse 1.15s ease-in-out infinite;
 }
 
 .victory-text {
   font-size: 15vh;
   font-weight: bold;
   text-align: center;
-  animation: textFlash 3.5s steps(1, end);
+  color: #ffd75e;
+  text-shadow: 0 0 2vh rgba(255, 215, 94, 0.55);
+  animation: victoryPop 0.5s cubic-bezier(0.2, 1.4, 0.4, 1);
 }
 
-@keyframes backgroundFlash {
-  0%, 25%, 50%, 75% {
-    background-color: white;
+@keyframes victoryPulse {
+  0%,
+  100% {
+    background: radial-gradient(circle at center, #1f3a5f 0%, #101820 100%);
   }
-  12.5%, 37.5%, 62.5%, 87.5% {
-    background-color: black;
+  50% {
+    background: radial-gradient(circle at center, #2e5b90 0%, #16222e 100%);
   }
 }
 
-@keyframes textFlash {
-  0%, 25%, 50%, 75% {
-    color: black;
+@keyframes victoryPop {
+  from {
+    transform: scale(0.7);
+    opacity: 0;
   }
-  12.5%, 37.5%, 62.5%, 87.5% {
-    color: white;
+  to {
+    transform: scale(1);
+    opacity: 1;
   }
-} 
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .victory-overlay,
+  .victory-text {
+    animation: none;
+  }
+}
