@@ -237,6 +237,34 @@ describe('cloud persistence round-trip', () => {
       expect(phone.lastMergeNotice).toBeTruthy();
       expect(phone.lastMergeNotice.replayed).toBe(1);
       expect(phone.lastMergeNotice.dropped).toBe(0);
+      // Carries a monotonic id so the UI can show each merge exactly once.
+      expect(phone.lastMergeNotice.id).toBeGreaterThan(0);
+    });
+
+    it('gives each successive merge a new notice id', async () => {
+      const server = createFakeServer();
+      const tv = cloudService(server);
+      await tv.addPlayer('Alice', '');
+      await tv.addPlayer('Bob', '');
+      await tv.flushNow();
+
+      const phone = cloudService(server);
+      await phone.loadData();
+
+      // First merge.
+      tv.recordGame('Alice', 'Bob', 11, 4);
+      await tv.flushNow();
+      phone.recordGame('Bob', 'Alice', 11, 9);
+      await phone.flushNow();
+      const firstId = phone.lastMergeNotice.id;
+
+      // Second merge: the TV moves ahead again, then the phone writes.
+      tv.recordGame('Alice', 'Bob', 11, 2);
+      await tv.flushNow();
+      phone.recordGame('Bob', 'Alice', 11, 6);
+      await phone.flushNow();
+
+      expect(phone.lastMergeNotice.id).toBeGreaterThan(firstId);
     });
 
     it('does not duplicate a game both devices already have', async () => {

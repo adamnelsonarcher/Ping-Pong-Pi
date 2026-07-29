@@ -126,6 +126,7 @@ class DataService {
 
     /** Set when a save was merged with a concurrent change from another device. */
     this.lastMergeNotice = null;
+    this._mergeSeq = 0;
 
     this._saveTimer = null;
     this._pendingSave = null;
@@ -465,14 +466,19 @@ class DataService {
       this._replaying = false;
     }
 
+    this._mergeSeq += 1;
     this.lastMergeNotice = {
+      // A monotonic id so the UI can tell a fresh notice from a re-render of an
+      // old one, and show it exactly once.
+      id: this._mergeSeq,
       replayed,
       dropped,
       message:
         dropped > 0
-          ? `Merged with a change from another device. ${replayed} game(s) kept, ${dropped} could not be replayed.`
-          : `Merged with a change from another device. ${replayed} game(s) kept.`,
+          ? `Synced with a change from another device. ${replayed} game(s) kept, ${dropped} could not be replayed.`
+          : `Synced with a change from another device. ${replayed} game(s) kept.`,
     };
+    this._emit();
   }
 
   /** Re-apply one historical match on top of the current state. */

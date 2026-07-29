@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useSyncExternalStore } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useSyncExternalStore } from 'react';
 import './App.css';
 import Leaderboard from './components/Leaderboard';
 import GameHistory from './components/GameHistory';
@@ -7,6 +7,7 @@ import PlayerSelection from './components/PlayerSelection';
 import AdminControls from './components/AdminControls';
 import InputModal from './components/InputModal';
 import Toast from './components/Toast';
+import SaveStatus from './components/SaveStatus';
 import dataService from './services/dataService';
 import { useSettings } from './contexts/SettingsContext';
 import LoginScreen from './components/LoginScreen';
@@ -39,6 +40,19 @@ function App() {
   const notify = useCallback((message, tone = 'info') => {
     setToast({ message, tone, id: Date.now() });
   }, []);
+
+  // Show a cross-device merge exactly once. _mergeRemote gives each notice a
+  // monotonic id and emits, so this fires on the render that follows a merge and
+  // not on subsequent re-renders. Without it, the merge machinery ran silently
+  // and the "server wins for settings" tradeoff was invisible (docs/AUDIT.md D-03).
+  const lastMergeId = useRef(0);
+  const mergeNotice = dataService.lastMergeNotice;
+  useEffect(() => {
+    if (mergeNotice && mergeNotice.id !== lastMergeId.current) {
+      lastMergeId.current = mergeNotice.id;
+      notify(mergeNotice.message, mergeNotice.dropped ? 'error' : 'info');
+    }
+  }, [mergeNotice, notify]);
 
   const handleLogout = useCallback(async () => {
     try {
@@ -221,6 +235,7 @@ function App() {
 
   return (
     <div className="App">
+      <SaveStatus />
       {currentScreen === 'main' && (
         <>
           <main className="App-main">
