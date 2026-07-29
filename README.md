@@ -26,7 +26,7 @@ Track matches, player rankings, and game history with a clean, modern interface.
 
 ## Tech Stack
 
-- React 18 (Create React App)
+- React 18, built with Vite (tests on Jest)
 - Firebase Authentication + Firestore, via a small Express API on Vercel
 - CSS custom properties for theming; no UI framework
 
@@ -61,11 +61,11 @@ In production these are Vercel project environment variables, not a file.
 | Command | Does |
 |---|---|
 | `npm run dev` | API + app together, for development |
-| `npm start` | App only |
+| `npm start` | App only (Vite dev server) |
 | `npm run server` | API only, on port 3001 |
-| `npm test` | Watch mode |
-| `npm run test:ci` | Single run |
-| `npm run build` | Production build into `build/` |
+| `npm test` | Run the Jest suite |
+| `npm run build` | Production build (Vite) into `build/` |
+| `npm run preview` | Serve the production build locally |
 
 ## Usage
 

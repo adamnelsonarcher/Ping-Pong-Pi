@@ -2,9 +2,12 @@
 
 Status of every finding in [AUDIT.md](AUDIT.md) after the remediation pass.
 
-**47 of 49 fixed. 2 partial.** Build compiles clean; **119 tests** pass across 7
-suites; the initial JS bundle went from 215 KB to 93 KB gzipped; runtime
-dependency vulnerabilities went from 23 (4 critical, 6 high) to 8 moderate.
+**All 49 findings addressed in code. Two — S-01 and S-02 — additionally need a
+manual step that cannot be done from the repo** (rotate the exposed key, purge git
+history). Build compiles clean; **123 tests** pass across 8 suites; the initial JS
+bundle went from 215 KB to ~93 KB gzipped; the shipped dependency tree has zero
+high or critical advisories; and the app is now on Vite instead of the retired
+Create React App.
 
 Committed in reviewable steps, authored as the repo owner. Nothing has been pushed.
 
@@ -44,7 +47,7 @@ the audit.
 | S-06 | ✅ Fixed | Credentials are hashed with PBKDF2-SHA-256 and a per-credential salt (`services/credentials.js`), with transparent upgrade of existing plaintext values on first correct use. Player passwords are optional and framed as anti-misclick. The gate is still a client-side check — inherent to a design that hands you all of your own data — and the module says so plainly rather than implying otherwise. |
 | S-07 | ✅ Fixed | Base64 "encoding" removed. `readStoredUser()` migrates existing base64 values transparently. |
 | S-08 | ✅ Fixed | `saveData` no longer logs `req.body`; errors log a message only. |
-| S-09 | ⚠ Partial | Server/dev dependencies split correctly, dead ones removed, lockfile refreshed: runtime tree now has **zero critical or high** advisories (was 4 and 6). The remaining 60-odd are all in the `react-scripts` dev tree — that needs the Vite migration in [ROADMAP.md §5](ROADMAP.md). |
+| S-09 | ✅ Fixed | Migrated off the retired `react-scripts` to Vite (build/dev) and standalone Jest (tests). Its ~850-package tree is gone. The shipped/runtime tree has **zero high or critical** advisories (8 moderate transitives in firebase/express, pre-existing). The audit findings that remain are all dev-tooling-only (jest/vite/esbuild dev server) and never reach production; clearing them would mean major-version jumps of the toolchain, not worth the risk for advisories that don't affect the app. See the Vite migration, formerly [ROADMAP.md §5](ROADMAP.md). |
 
 ## Data loss & persistence
 
@@ -84,14 +87,14 @@ the audit.
 | ID | Status | What changed |
 |---|---|---|
 | Q-01 | ✅ Fixed | `createRoot`. React 18 features are live. |
-| Q-02 | ✅ Fixed | CRA scaffold test deleted. 44 tests across `rating.test.js` and `dataService.test.js`, each of the worst bugs covered by a named regression test. |
+| Q-02 | ✅ Fixed | CRA scaffold test deleted; a real suite added and since grown to **123 tests across 8 files** (rating, credentials, stats, dataService, and the GameHistory/Scoreboard/Leaderboard/SaveStatus components). Each of the worst bugs has a named regression test. |
 | Q-03 | ✅ Fixed | Self-dependency, `framer-motion` and `web-vitals` removed; build tooling moved to `devDependencies`; lockfile regenerated and verified in sync. |
 | Q-04 | ✅ Fixed | Deleted: `settings1.js`, `logo.svg`, `reportWebVitals.js`, `UserAccount.{js,css}`, `context/ThemeContext.js`, `styles/InputModal.css`, `__pycache__/`, `.idea/`. |
 | Q-05 | ✅ Fixed | Removed `testServerConnection`, `testFirestoreConnection`, `loginUser`, `saveSettings`, `saveGameHistory`, `createUser`, `encodeUser`. |
 | Q-06 | ✅ Fixed | Dead selectors removed, duplicate `.btn:hover` and `transition` collapsed, hardcoded light-mode borders replaced with theme variables. |
 | Q-07 | ✅ Fixed | Explicit system font stack; the two unused Google Fonts preconnects replaced with the Firebase auth origins actually contacted. |
 | Q-08 | ✅ Fixed | Missing comma added; the JSON-LD block now parses. Sitemap `lastmod` refreshed. |
-| Q-09 | ✅ Fixed | `InfoButton` reads the version from `package.json` (now `3.2.0`). |
+| Q-09 | ✅ Fixed | `InfoButton` reads the version from `package.json` (now `3.3.0`). |
 | Q-10 | ✅ Fixed | `ErrorBoundary` at the root, with reload and reset-session recovery. |
 | Q-11 | ✅ Fixed | `LifetimeStatsDialog` is `React.lazy`. **Initial bundle 215 KB → 93 KB gzipped**; recharts moved to a chunk loaded on first double-click. |
 | Q-12 | ✅ Fixed | Unreachable JSX and the dead `'login'` screen state removed; the static loader is now removed by `index.js` on mount, so a startup crash shows the error screen instead of a blank page. |
@@ -110,20 +113,23 @@ the audit.
 
 ## What is left
 
-Only two findings remain partial, and both are the same thing: work that cannot
-be finished from inside the repo.
+One thing, and it cannot be finished from inside the repo:
 
 - **S-01 / S-02** — the files are untracked and deleted going forward, but the
-  values are still in git history on the public remote. Rotation and the history
-  purge are yours.
-- **S-09** — the dependencies that actually ship are clean. The remaining
-  advisories are all inside `react-scripts`, which is dev-only and unmaintained.
-  Clearing them means migrating to Vite ([ROADMAP.md §5](ROADMAP.md)).
+  values are still in git history on the public remote. Rotating the key and
+  purging history are yours.
+
+Everything else in the audit is resolved in code, including S-09: the app is off
+`react-scripts` and on Vite, and the shipped dependency tree has no high or
+critical advisories. The audit findings that npm still reports are all dev-tooling
+(jest/vite/esbuild) and never reach production.
 
 The structural items in the roadmap that are *not* audit findings remain open by
 choice: the per-entity Firestore layout and derived ratings
 ([ROADMAP.md §3](ROADMAP.md)). Optimistic concurrency closed the practical harm
-that motivated them, so they are now a design improvement rather than a bug fix.
+that motivated them (D-03), so they are now a design improvement rather than a bug
+fix — and they involve reshaping stored data, which is worth doing with you
+watching rather than autonomously.
 
 ## Things added that were not in the audit
 
@@ -162,8 +168,8 @@ that motivated them, so they are now a design improvement rather than a bug fix.
 ## Verification
 
 ```bash
-npm test          # 119 passing across 7 suites
-npm run build     # compiles clean
+npm test          # 123 passing across 8 suites (standalone Jest)
+npm run build     # Vite build, compiles clean
 ```
 
 The tests that matter most:
@@ -185,4 +191,6 @@ The tests that matter most:
 Beyond the tests, the whole flow was exercised in a real browser: legacy plaintext
 credentials accepted and upgraded with no plaintext left behind, head-to-head
 matching its fixture exactly, a season archiving correctly, and the app recovering
-to the login screen instead of white-screening on a corrupt session value.
+to the login screen instead of white-screening on a corrupt session value. After
+the Vite migration the same end-to-end flow was re-run on the Vite dev server,
+including the lazily-loaded stats dialog and chart.

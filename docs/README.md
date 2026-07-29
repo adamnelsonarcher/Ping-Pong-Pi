@@ -32,8 +32,10 @@ cannot be done from the code:
 
 ## How this was verified
 
-Not just read. The build and test suite were run (`react-scripts build` compiles
-clean; the single test fails), `npm audit` was run (71 vulnerabilities), the
+Not just read. At audit time the build and test suite were run (the build compiled
+clean; the one scaffold test failed), `npm audit` was run (71 vulnerabilities), the
 Firestore key mismatch in D-01 was reproduced, and the rating maths in L-02 was
 extracted into a standalone harness and executed to measure the actual inflation
-per match. Claims that were checked this way say so in the finding.
+per match. Claims that were checked this way say so in the finding. For the state
+*after* remediation — 123 passing tests, a clean Vite build — see
+[FIXES.md](FIXES.md).

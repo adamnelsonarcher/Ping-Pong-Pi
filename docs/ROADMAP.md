@@ -31,9 +31,11 @@ anything worth keeping in the console, then delete the orphans.
 
 ### Step 3 — Structural (the sections below)
 
-Data model, state ownership, toolchain. These are the remaining ⚠ markers in
-[ARCHITECTURE.md](ARCHITECTURE.md): same-account write concurrency (§3), the
-single-document Firestore layout (§3), and the CRA toolchain (§5).
+The toolchain (§5) is done — the app is on Vite. What remains is the data model:
+the single-document Firestore layout and, with it, derived ratings (§3). Optimistic
+concurrency (D-03) has since resolved the same-account write concurrency that was
+the urgent part, so this is now an improvement rather than a fix, and it reshapes
+stored data — best done with the owner present.
 
 ---
 
@@ -221,28 +223,33 @@ one adapter choice at startup.
 
 ---
 
-## 5. Toolchain
+## 5. Toolchain — ✅ done
 
-`react-scripts` 5.0.1 is a dead end: CRA was retired in February 2025, it's the
-source of most of the 71 `npm audit` findings (S-09), and its own build output tells
-you it's unmaintained.
+`react-scripts` 5.0.1 was a dead end: CRA was retired in February 2025, it was the
+source of most of the `npm audit` findings (S-09), and its own build output said so.
 
-**Migrate to Vite.** For an app this size it's a half-day:
+**Now on Vite** (dev/build) with **standalone Jest** (tests). What actually
+happened, versus the original sketch:
 
-1. `npm create vite@latest` in a scratch dir, copy the config over
-2. `index.html` moves from `public/` to the project root, with
-   `<script type="module" src="/src/index.js">`
-3. Rename any file containing JSX from `.js` to `.jsx`
-4. `process.env.REACT_APP_*` → `import.meta.env.VITE_*`
-5. `proxy` in `package.json` → `server.proxy` in `vite.config.js`
-6. Delete `react-scripts`, `@babel/*` leftovers
+- `vite.config.js` with `@vitejs/plugin-react`; output kept in `build/` so
+  `vercel.json` did not change; dev `server.proxy` replaces the `proxy` field.
+- JSX files renamed `.js` → `.jsx`; `index.html` moved to the project root.
+- **Env vars were *not* renamed.** The plan said
+  `process.env.REACT_APP_*` → `import.meta.env.VITE_*`, but that would have meant
+  renaming the Vercel variables *and* would have broken the source under Jest
+  (which has no `import.meta`). Instead Vite `define` substitutes the existing
+  `process.env.REACT_APP_*` reads at build time, so the code is unchanged and works
+  under both toolchains. The keys the app reads are defined unconditionally so no
+  `process.env` literal survives into the bundle.
+- Tests stayed on Jest (`jest.config.cjs`, babel-jest) rather than moving to
+  vitest, so all 123 tests were untouched — the lowest-risk path.
 
-Expected: cold start from ~20 s to under a second, HMR from seconds to instant, and
-most of the vulnerability list gone because the dependency tree shrinks by an order
-of magnitude.
+Result: dev start ~0.6 s (was ~20 s); `react-scripts` and its ~850-package tree
+gone; the shipped dependency tree has zero high or critical advisories. The audit
+findings npm still reports are all dev-tooling (jest/vite/esbuild) and never ship.
 
-While there, take Q-01 (`createRoot`) and Q-11 (`React.lazy` around
-`LifetimeStatsDialog`, which alone should cut a large slice of the 215 KB bundle).
+Q-01 (`createRoot`) and Q-11 (`React.lazy` around `LifetimeStatsDialog`) were done
+earlier, in the first remediation pass.
 
 ---
 
@@ -405,11 +412,13 @@ actually argue about, and it's a pure query over data you already have.
 | **0** | Key rotation, history purge, D-01 fix | ⚠ D-01 fixed; rotation and purge are yours |
 | **1** | Auth (§2), quit, atob guard, XSS, ELO snapshot, save flush | ✅ done |
 | **2** | `createRoot` + lazy chart, delete dead files/code | ✅ done (215 KB → 93 KB) |
-| **3** | Rating tests + persistence round-trip (§6) | ✅ done (44 tests) |
-| **3b** | Vite migration (§5) | ⬜ not started |
-| **4** | Data model migration (§3), derived ratings | ⬜ not started |
-| **5** | Live sync, seasons, workflow polish (§7) | ⬜ partly — undo landed |
+| **3** | Rating tests + persistence round-trip (§6) | ✅ done (123 tests) |
+| **3b** | Vite migration (§5) | ✅ done |
+| **3c** | Optimistic concurrency + merge (D-03), password hashing (S-06), seasons + head-to-head, save/merge banners | ✅ done |
+| **4** | Data model migration (§3), derived ratings | ⬜ not started — reshapes stored data; do with the owner present |
+| **5** | Live sync, seasons, workflow polish (§7) | ⬜ partly — seasons and undo landed |
 
 Phase 3 sat before phase 4 deliberately, and still does: the round-trip test is
 what makes the data-model migration safe to attempt. It exists now, so phase 4 is
-unblocked whenever you want it.
+unblocked whenever you want it — it is the one remaining large item, and because it
+reshapes stored Firestore data it is best done with you watching, not autonomously.

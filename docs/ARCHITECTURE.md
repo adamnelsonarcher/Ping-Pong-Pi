@@ -25,7 +25,7 @@ box: keys `7`/`8` and `4`/`5` adjust the two scores, `1` ends the game, `3` quit
 
 ```
                     ┌──────────────────────────────────────────┐
-   Browser / TV     │  React SPA (CRA 5, React 18)             │
+   Browser / TV     │  React SPA (Vite, React 18)             │
                     │                                          │
                     │  index.js                                │
                     │   └─ ErrorBoundary                       │
@@ -330,13 +330,18 @@ Properties worth knowing:
 
 ## 10. Build & deploy
 
-- `npm start` — CRA dev server on :3000, proxying `/api/*` to :3001.
+- `npm start` — Vite dev server on :3000, proxying `/api/*` to :3001 (~0.6 s start).
 - `npm run dev` — that plus `server.js`, which serves the same express app as
   production.
-- `npm test` — 44 tests. `npm run build` → `build/`, ~93 KB gzipped initial JS plus
-  a ~104 KB chart chunk loaded on demand.
+- `npm test` — 123 tests on standalone Jest (`jest.config.cjs`). `npm run build`
+  → `vite build` → `build/`, ~93 KB gzipped initial JS plus a ~106 KB chart chunk
+  loaded on demand.
+- The app reads Firebase config as `process.env.REACT_APP_*`; Vite substitutes
+  those at build time via `define` (`vite.config.js`), so the Vercel variables keep
+  their CRA-era names and the source still runs under Jest.
 - Vercel: `api/index.js` becomes a Node serverless function; everything else is
-  static, with a catch-all rewrite to `index.html`.
+  static (`vercel.json` runs `vite build`, output in `build/`), with a catch-all
+  rewrite to `index.html`.
 - Secrets come from Vercel project env vars in production and `.env.local` locally.
   See `.env.example`. ⚠ The previously committed key must still be rotated — see
   [FIXES.md](FIXES.md).
