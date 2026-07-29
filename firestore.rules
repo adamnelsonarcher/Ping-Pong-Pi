@@ -1,0 +1,28 @@
+rules_version = '2';
+
+// Defense-in-depth for Ping Pong Pi.
+//
+// Every legitimate read and write goes through the API (api/*.js), which uses
+// the Firebase Admin SDK. The Admin SDK bypasses these rules entirely, so
+// locking clients out here does NOT affect the app.
+//
+// What it does affect: the Firebase *web* config (apiKey, projectId, …) is
+// compiled into the public bundle, as it is meant to be. Without rules, anyone
+// who lifts that config could use the Firestore *client* SDK with their own
+// signed-in token to read or write pingpong/data directly, bypassing the
+// server-side authorization in api/_auth.js. These rules deny that.
+//
+// The app's browser code only uses Firebase Auth, never the Firestore client
+// SDK, so it never hits these rules in normal operation.
+//
+// Deploy with:  firebase deploy --only firestore:rules
+// (or paste into Firebase console → Firestore → Rules)
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Deny all direct client access. The server (Admin SDK) is unaffected.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

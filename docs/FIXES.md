@@ -150,6 +150,14 @@ that motivated them, so they are now a design improvement rather than a bug fix.
 - **`dispose()`** on the data service, so pending saves and subscribers can be
   cancelled. The singleton never needs it; tests do, and its absence was letting
   one test's debounced save fire during another.
+- **`firestore.rules`** (+ `firebase.json`) — a deny-all client rule as
+  defense-in-depth for S-03. All legitimate access goes through the Admin SDK,
+  which bypasses rules, so this is free to apply; it closes the theoretical path
+  where someone lifts the public web config and hits Firestore directly with the
+  client SDK. **You still need to deploy it:**
+  `firebase deploy --only firestore:rules`, or paste it into the Firebase console.
+- **Save-failure and merge banners** — `lastSaveError`/`lastMergeNotice` are now
+  shown (see `SaveStatus.js` and the merge toast in `App.js`), completing D-02/D-03.
 
 ## Verification
 

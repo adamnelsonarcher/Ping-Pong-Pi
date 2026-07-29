@@ -1,0 +1,6 @@
+{
+  "//": "Lets `firebase deploy --only firestore:rules` find firestore.rules. Hosting and functions are on Vercel, not Firebase, so only the rules live here.",
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}
