@@ -9,9 +9,13 @@ remediation status, and roadmap — read `docs/README.md` first.
 npm run dev     # API (:3001) + Vite app (:3000) together
 npm start       # Vite app only
 npm run server  # API only
-npm test        # Jest (123 tests)
+npm test        # Jest
+npm run lint    # ESLint (flat config in eslint.config.mjs)
 npm run build   # Vite production build → build/
 ```
+
+Run `npm run lint` before committing — it catches unused vars/imports and React
+hook-dependency bugs. The tree is kept lint-clean.
 
 ## What this is
 

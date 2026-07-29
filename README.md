@@ -64,6 +64,7 @@ In production these are Vercel project environment variables, not a file.
 | `npm start` | App only (Vite dev server) |
 | `npm run server` | API only, on port 3001 |
 | `npm test` | Run the Jest suite |
+| `npm run lint` | Run ESLint |
 | `npm run build` | Production build (Vite) into `build/` |
 | `npm run preview` | Serve the production build locally |
 
