@@ -27,3 +27,21 @@ if (!global.crypto?.subtle) {
     writable: true,
   });
 }
+
+/**
+ * recharts' ResponsiveContainer observes its parent to size the chart. jsdom has
+ * no layout engine and no ResizeObserver, so without this any test that renders
+ * the stats dialog dies with "ResizeObserver is not defined".
+ *
+ * A no-op is the right stub: there is nothing to measure in jsdom, and the tests
+ * that matter here assert on the surrounding content rather than chart geometry.
+ */
+if (typeof global.ResizeObserver === 'undefined') {
+  global.ResizeObserver = class ResizeObserver {
+    observe() {}
+
+    unobserve() {}
+
+    disconnect() {}
+  };
+}

@@ -25,7 +25,19 @@ function Leaderboard({ players }) {
     <tr
       key={player.name}
       className={className}
+      // Double-click was the only way in, so the stats dialog was unreachable
+      // from a keyboard (docs/AUDIT.md A-04). The row is now focusable and
+      // opens on Enter or Space as well.
+      tabIndex={0}
+      role="button"
+      aria-label={`Show stats for ${player.name}`}
       onDoubleClick={() => handlePlayerDoubleClick(player.name)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handlePlayerDoubleClick(player.name);
+        }
+      }}
     >
       <td>
         {player.name}
@@ -44,11 +56,14 @@ function Leaderboard({ players }) {
   return (
     <div className="Leaderboard">
       <table>
+        <caption className="visually-hidden">
+          Leaderboard. Select a player to see their stats.
+        </caption>
         <thead>
           <tr>
-            <th>Player Name</th>
-            <th>Score</th>
-            <th>W/L Ratio</th>
+            <th scope="col">Player Name</th>
+            <th scope="col">Score</th>
+            <th scope="col">W/L Ratio</th>
           </tr>
         </thead>
         <tbody>
