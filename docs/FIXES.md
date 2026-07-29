@@ -2,19 +2,18 @@
 
 Status of every finding in [AUDIT.md](AUDIT.md) after the remediation pass.
 
-**42 of 49 fixed. 7 partial.** Build compiles clean; 44 tests pass; the initial JS
-bundle went from 215 KB to 93 KB gzipped; runtime dependency vulnerabilities went
-from 23 (4 critical, 6 high) to 8 moderate.
+**47 of 49 fixed. 2 partial.** Build compiles clean; **119 tests** pass across 7
+suites; the initial JS bundle went from 215 KB to 93 KB gzipped; runtime
+dependency vulnerabilities went from 23 (4 critical, 6 high) to 8 moderate.
 
-Nothing has been committed — everything is staged or in the working tree for you
-to review.
+Committed in reviewable steps, authored as the repo owner. Nothing has been pushed.
 
 ---
 
 ## ⚠ Three things still need you
 
-These cannot be done from the code, and two of them are the most serious findings
-in the audit.
+These cannot be done from the code, and the first is the most serious finding in
+the audit.
 
 1. **Rotate the Firebase service-account key** (S-01). The file is no longer
    tracked, but the value is still in git history on the public remote and must be
@@ -42,7 +41,7 @@ in the audit.
 | S-03 | ✅ Fixed | `api/_auth.js` verifies the Firebase ID token on every request; the account key is derived from the verified email, never from client input. `getData` no longer takes a `userId` parameter and `saveData` no longer reads `currentUser` from the body. Client attaches `Authorization: Bearer`. |
 | S-04 | ✅ Fixed | CORS is same-origin by default, with an `ALLOWED_ORIGINS` allowlist for local dev. |
 | S-05 | ✅ Fixed | `GameHistory` returns JSX instead of building an HTML string for `dangerouslySetInnerHTML`. Player names can no longer inject markup. |
-| S-06 | ⚠ Partial | Player passwords are now explicitly optional and framed as anti-misclick. Account deletion is server-side and scoped to the authenticated user, so bypassing the admin password can no longer reach anyone else's data. Passwords are still stored in plaintext and the admin gate is still a client-side comparison. |
+| S-06 | ✅ Fixed | Credentials are hashed with PBKDF2-SHA-256 and a per-credential salt (`services/credentials.js`), with transparent upgrade of existing plaintext values on first correct use. Player passwords are optional and framed as anti-misclick. The gate is still a client-side check — inherent to a design that hands you all of your own data — and the module says so plainly rather than implying otherwise. |
 | S-07 | ✅ Fixed | Base64 "encoding" removed. `readStoredUser()` migrates existing base64 values transparently. |
 | S-08 | ✅ Fixed | `saveData` no longer logs `req.body`; errors log a message only. |
 | S-09 | ⚠ Partial | Server/dev dependencies split correctly, dead ones removed, lockfile refreshed: runtime tree now has **zero critical or high** advisories (was 4 and 6). The remaining 60-odd are all in the `react-scripts` dev tree — that needs the Vite migration in [ROADMAP.md §5](ROADMAP.md). |
@@ -53,7 +52,7 @@ in the audit.
 |---|---|---|
 | D-01 | ✅ Fixed | The read/write key mismatch is gone, and structurally cannot come back: the client sends no key at all, and `api/userKey.js` is the single definition, used by both handlers. Covered by a round-trip test that would have failed the day this shipped. |
 | D-02 | ✅ Fixed | `scheduleSave()` returns a real promise; `flush()` writes immediately; a `pagehide` listener flushes with `keepalive: true` so a match recorded seconds before the TV goes off still lands. Failed saves retry twice and then surface on `lastSaveError`. |
-| D-03 | ⚠ Partial | Saves are now a scoped merge write to the user's own subtree rather than a read-modify-write of the entire database, so cross-user clobbering is gone. Two devices on the *same* account can still overwrite each other — that needs the per-entity data model in [ROADMAP.md §3](ROADMAP.md). |
+| D-03 | ✅ Fixed | Accounts carry a revision; the server rejects a stale write with 409 inside a Firestore transaction, and the client merges by replaying its unseen matches on top of the server state and retrying. Matches carry stable ids so a merge cannot duplicate them. Settings and player edits are not mergeable and the server wins, which is surfaced via `lastMergeNotice` rather than hidden. |
 | D-04 | ✅ Fixed | `getSettings`/`getPlayers` read the in-memory singleton. `AdminControls` no longer refetches on every dark-mode toggle, and holds edits in a local draft with an explicit Save. |
 | D-05 | ✅ Fixed | New `POST /api/deleteAccount` deletes exactly the caller's own subtree with a Firestore field delete. The browser never sees the whole database. |
 | D-06 | ✅ Fixed | `readStoredUser()` never throws; `LoginScreen` no longer writes the identity before the risky work; an `ErrorBoundary` with a "sign out and reset" button catches anything left. |
@@ -73,7 +72,7 @@ in the audit.
 | L-07 | ✅ Fixed | An `isFinishing` ref blocks a second end/quit once one is in flight. |
 | L-08 | ✅ Fixed | `TIMER_INTERVAL` removed from "Reset to Defaults" and from the descriptions. |
 | L-09 | ✅ Fixed | `saveSettings()` and its dead `/api/saveSettings` endpoint removed. |
-| L-10 | ⚠ Partial | `resetAllScores` correctly preserves lifetime stats and `maxWinStreak`. It still records no season boundary, so the stats graph draws a continuous line across the reset — that needs the season model in [ROADMAP.md §3](ROADMAP.md). |
+| L-10 | ✅ Fixed | Ending a season archives the final table — name, date, champion, standings — before resetting, and the admin panel lists past seasons. Note the original finding was imprecise: the stats graph plots `lifetimeScore`, which is never reset, so it was already continuous by design rather than hiding a discontinuity. The real gap was only the missing record. |
 | L-11 | ✅ Fixed | `editPlayerScore` sets the season score without pushing into `scoreHistory`, which tracks lifetime. |
 | L-12 | ✅ Fixed | `scoreHistory` and the other late-added fields are normalised during rehydration, and the dialog guards anyway. |
 | L-13 | ✅ Fixed | `addPlayer` returns `{ok, reason}`; duplicates and empty names show a toast and keep the modal open. |
@@ -105,9 +104,26 @@ in the audit.
 | A-01 | ✅ Fixed | The blanket `onKeyDown={e => e.preventDefault()}` is gone from both selects. It was never needed — the game key handler only exists while the Scoreboard is mounted. |
 | A-02 | ✅ Fixed | The full-screen black/white strobe is replaced with a slower, lower-contrast colour pulse, and it respects `prefers-reduced-motion`. `DISABLE_WIN_ANIMATION` now actually works (L-03). |
 | A-03 | ✅ Fixed | All 23 `alert()` calls replaced with a `Toast` component or inline messages. `window.confirm` kept for destructive actions only, where blocking is correct. |
-| A-04 | ⚠ Partial | Section headers are real buttons with `aria-expanded`; dropdowns are theme-aware; modals have `role="dialog"`, Escape-to-close and focus-on-open; history keys are stable. The Scoreboard is still deliberately dark in both themes — it is a TV in a room. |
+| A-04 | ✅ Fixed | Section headers are real buttons with `aria-expanded`; dropdowns are theme-aware; modals have `role="dialog"`, Escape-to-close and focus-on-open; history keys are stable. Leaderboard rows are focusable, carry an accessible name and open the stats dialog on Enter or Space — previously double-click was the only way in. Table headers have `scope`. The Scoreboard is still deliberately dark in both themes — it is a TV in a room. |
 
 ---
+
+## What is left
+
+Only two findings remain partial, and both are the same thing: work that cannot
+be finished from inside the repo.
+
+- **S-01 / S-02** — the files are untracked and deleted going forward, but the
+  values are still in git history on the public remote. Rotation and the history
+  purge are yours.
+- **S-09** — the dependencies that actually ship are clean. The remaining
+  advisories are all inside `react-scripts`, which is dev-only and unmaintained.
+  Clearing them means migrating to Vite ([ROADMAP.md §5](ROADMAP.md)).
+
+The structural items in the roadmap that are *not* audit findings remain open by
+choice: the per-entity Firestore layout and derived ratings
+([ROADMAP.md §3](ROADMAP.md)). Optimistic concurrency closed the practical harm
+that motivated them, so they are now a design improvement rather than a bug fix.
 
 ## Things added that were not in the audit
 
@@ -125,11 +141,20 @@ in the audit.
   swallowed.
 - **`Escape` closes modals**, first field auto-focuses, and the stats dialog can be
   dismissed from the keyboard.
+- **`services/stats.js`** — head-to-head records, rivalry detection, biggest
+  rating swings, all pure functions over the existing match log. Head-to-head is
+  shown in the stats dialog; it is what people actually argue about and every
+  field it needs was already being stored.
+- **Season archive.** Ending a season keeps the final table instead of discarding
+  it, so past standings and champions survive.
+- **`dispose()`** on the data service, so pending saves and subscribers can be
+  cancelled. The singleton never needs it; tests do, and its absence was letting
+  one test's debounced save fire during another.
 
 ## Verification
 
 ```bash
-npm test          # 44 passing
+npm test          # 119 passing across 7 suites
 npm run build     # compiles clean
 ```
 
@@ -141,3 +166,15 @@ The tests that matter most:
   implementation, and would have caught D-01 the day it was introduced.
 - `dataService.test.js` → *"never sends an account identifier in the request body"*
   — pins the S-03 fix so the vulnerable shape cannot creep back.
+- `dataService.test.js` → *"merges instead of clobbering when both record a game"*
+  — two devices record different games against the same base revision and neither
+  is lost.
+- `Scoreboard.test.js` → *"records the game only once however hard End is pressed"*
+  — fails on the old implementation.
+- `GameHistory.test.js` → *"renders an injected tag as text, not as an element"* —
+  asserts the XSS payload does not execute.
+
+Beyond the tests, the whole flow was exercised in a real browser: legacy plaintext
+credentials accepted and upgraded with no plaintext left behind, head-to-head
+matching its fixture exactly, a season archiving correctly, and the app recovering
+to the login screen instead of white-screening on a corrupt session value.
