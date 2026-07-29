@@ -110,8 +110,21 @@ class DataService {
     /** Set when the most recent cloud save failed, so the UI can say so. */
     this.lastSaveError = null;
 
+    /**
+     * Revision of the account document this state was loaded from.
+     *
+     * The server rejects a write whose baseRevision no longer matches, which is
+     * what stops two devices signed into the same account from silently
+     * overwriting each other (docs/AUDIT.md D-03).
+     */
+    this.revision = 0;
+
+    /** Set when a save was merged with a concurrent change from another device. */
+    this.lastMergeNotice = null;
+
     this._saveTimer = null;
     this._pendingSave = null;
+    this._replaying = false;
     this._listeners = new Set();
 
     // Bumped on every change. useSyncExternalStore needs a snapshot value that
@@ -222,7 +235,12 @@ class DataService {
   /** Rebuild in-memory state from a stored document. */
   _hydrate(data) {
     this.settings = { ...this.defaultSettings, ...(data.settings || {}) };
-    this.gameHistory = Array.isArray(data.gameHistory) ? data.gameHistory : [];
+    this.gameHistory = (Array.isArray(data.gameHistory) ? data.gameHistory : []).map(
+      // Matches written before ids existed get a stable one derived from their
+      // contents, so conflict merging can tell them apart.
+      (game) => (game.id ? game : { ...game, id: derivedGameId(game) })
+    );
+    this.revision = Number.isFinite(data.revision) ? data.revision : 0;
     this.players = {};
 
     Object.entries(data.players || {}).forEach(([name, playerData]) => {
@@ -272,6 +290,10 @@ class DataService {
    * were not waiting for anything (docs/AUDIT.md D-02).
    */
   scheduleSave() {
+    // Replaying matches during a conflict merge goes through the normal record
+    // path, which would otherwise schedule a save from inside a save.
+    if (this._replaying) return Promise.resolve(true);
+
     if (this._saveTimer) clearTimeout(this._saveTimer);
 
     if (!this._pendingSave) {
@@ -324,14 +346,17 @@ class DataService {
     }
   }
 
-  async saveData({ keepalive = false, retries = SAVE_RETRY_DELAYS.length } = {}) {
+  async saveData({
+    keepalive = false,
+    retries = SAVE_RETRY_DELAYS.length,
+    allowMerge = true,
+  } = {}) {
     if (this.isLocalMode) {
       localStorage.setItem('localGameData', JSON.stringify(this._serialise()));
       this.lastSaveError = null;
       return true;
     }
 
-    const body = JSON.stringify(this._serialise());
     const headers = { 'Content-Type': 'application/json', ...(await this._authHeaders()) };
 
     for (let attempt = 0; ; attempt += 1) {
@@ -339,10 +364,34 @@ class DataService {
         const response = await fetch(`${API_URL}/api/saveData`, {
           method: 'POST',
           headers,
-          body,
+          // Rebuilt each attempt: a merge changes both the payload and the
+          // revision we are writing against.
+          //
+          // The unload flush omits baseRevision deliberately. The page is going
+          // away, so there is nobody left to handle a 409 and merge — losing the
+          // race is better than losing the write.
+          body: JSON.stringify({
+            ...this._serialise(),
+            ...(keepalive ? {} : { baseRevision: this.revision }),
+          }),
           keepalive,
         });
+
+        // Somebody else wrote to this account since we loaded it.
+        if (response.status === 409) {
+          if (!allowMerge) throw new Error('Save failed (409)');
+          const conflict = await response.json();
+          this._mergeRemote(conflict.current);
+          // One merge attempt only. If it conflicts again we are in a write
+          // storm and backing off is better than looping.
+          return this.saveData({ keepalive, retries, allowMerge: false });
+        }
+
         if (!response.ok) throw new Error(`Save failed (${response.status})`);
+
+        const result = await response.json().catch(() => ({}));
+        if (Number.isFinite(result.revision)) this.revision = result.revision;
+
         this.lastSaveError = null;
         this._emit();
         return true;
@@ -356,6 +405,68 @@ class DataService {
         await delay(SAVE_RETRY_DELAYS[attempt]);
       }
     }
+  }
+
+  /**
+   * Reconcile with a concurrent write from another device.
+   *
+   * Previously the loser of a race simply had their matches overwritten with no
+   * indication anything had happened (docs/AUDIT.md D-03). Matches are
+   * append-only and carry stable ids, so the common case — two people recording
+   * games on two devices — merges exactly: adopt the server's state, then replay
+   * whichever of our matches it has not seen. Replaying through recordGame means
+   * ratings are recomputed against the server's player state rather than being
+   * carried over from a stale base.
+   *
+   * Settings and player edits are not mergeable, so the server's copy wins for
+   * those. That is a deliberate, documented choice rather than a silent one:
+   * `lastMergeNotice` is set so the UI can say what happened.
+   */
+  _mergeRemote(serverDocument) {
+    const localHistory = this.gameHistory;
+    const serverIds = new Set((serverDocument?.gameHistory || []).map((g) => g.id));
+    const unseen = localHistory.filter((game) => !serverIds.has(game.id));
+
+    this._hydrate(serverDocument || { settings: {}, players: {}, gameHistory: [] });
+
+    let replayed = 0;
+    let dropped = 0;
+    this._replaying = true;
+    try {
+      unseen.forEach((game) => {
+        if (this._replayGame(game)) replayed += 1;
+        else dropped += 1;
+      });
+    } finally {
+      this._replaying = false;
+    }
+
+    this.lastMergeNotice = {
+      replayed,
+      dropped,
+      message:
+        dropped > 0
+          ? `Merged with a change from another device. ${replayed} game(s) kept, ${dropped} could not be replayed.`
+          : `Merged with a change from another device. ${replayed} game(s) kept.`,
+    };
+  }
+
+  /** Re-apply one historical match on top of the current state. */
+  _replayGame(game) {
+    if (!this.players[game.player1] || !this.players[game.player2]) return false;
+
+    if (game.score === 'Quit') {
+      this.quitGame(game.player1, game.player2, { id: game.id, date: game.date });
+      return true;
+    }
+
+    const [s1, s2] = String(game.score).split(' - ').map(Number);
+    if (!Number.isFinite(s1) || !Number.isFinite(s2)) return false;
+
+    return this.recordGame(game.player1, game.player2, s1, s2, {
+      id: game.id,
+      date: game.date,
+    }).ok;
   }
 
   // ---------------------------------------------------------------------------
@@ -436,7 +547,7 @@ class DataService {
   /**
    * @returns {{ok: false, reason: string} | {ok: true, game: object}}
    */
-  recordGame(player1Name, player2Name, player1Score, player2Score) {
+  recordGame(player1Name, player2Name, player1Score, player2Score, meta = {}) {
     if (!Number.isFinite(player1Score) || !Number.isFinite(player2Score)) {
       return { ok: false, reason: 'Scores must be numbers.' };
     }
@@ -477,6 +588,7 @@ class DataService {
     const pointChange2 = player2.applyMatch(deltas.p2, !p1Won, threshold);
 
     const game = {
+      id: meta.id || newGameId(),
       player1: player1Name,
       player2: player2Name,
       score: `${player1Score} - ${player2Score}`,
@@ -484,7 +596,7 @@ class DataService {
       player2Rank,
       pointChange1,
       pointChange2,
-      date: new Date().toISOString(),
+      date: meta.date || new Date().toISOString(),
     };
 
     this._appendToHistory(game);
@@ -494,8 +606,9 @@ class DataService {
   }
 
   /** Record an abandoned game. No rating effect. */
-  quitGame(player1Name, player2Name) {
+  quitGame(player1Name, player2Name, meta = {}) {
     const game = {
+      id: meta.id || newGameId(),
       player1: player1Name,
       player2: player2Name,
       score: 'Quit',
@@ -503,7 +616,7 @@ class DataService {
       player2Rank: this.getPlayerRank(player2Name),
       pointChange1: 0,
       pointChange2: 0,
-      date: new Date().toISOString(),
+      date: meta.date || new Date().toISOString(),
     };
 
     this._appendToHistory(game);
@@ -665,6 +778,22 @@ class DataService {
 
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Stable identity for a match, so a merge can tell two devices' games apart. */
+function newGameId() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return `g-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+/**
+ * Identity for a match recorded before ids existed.
+ *
+ * Derived from the fields that identify it rather than random, so the same old
+ * match gets the same id on every device and merging does not duplicate it.
+ */
+function derivedGameId(game) {
+  return `legacy-${game.date}-${game.player1}-${game.player2}-${game.score}`;
 }
 
 /**

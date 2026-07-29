@@ -37,9 +37,31 @@ function createFakeServer(email = EMAIL) {
       if (!options.headers?.Authorization) {
         return { ok: false, status: 401, json: async () => ({ error: 'unauthenticated' }) };
       }
-      const { settings, players, gameHistory } = JSON.parse(options.body);
-      documents[key] = JSON.parse(JSON.stringify({ settings, players, gameHistory }));
-      return { ok: true, status: 200, json: async () => ({ message: 'ok' }) };
+      const { settings, players, gameHistory, baseRevision } = JSON.parse(options.body);
+      const currentRevision = documents[key]?.revision ?? 0;
+
+      // Mirrors the transaction in api/saveData.js.
+      if (Number.isFinite(baseRevision) && baseRevision !== currentRevision) {
+        return {
+          ok: false,
+          status: 409,
+          json: async () => ({
+            error: 'conflict',
+            current: documents[key] || {
+              settings: {},
+              players: {},
+              gameHistory: [],
+              revision: currentRevision,
+            },
+          }),
+        };
+      }
+
+      const revision = currentRevision + 1;
+      documents[key] = JSON.parse(
+        JSON.stringify({ settings, players, gameHistory, revision })
+      );
+      return { ok: true, status: 200, json: async () => ({ message: 'ok', revision }) };
     }
 
     if (url.endsWith('/api/deleteAccount')) {
@@ -126,6 +148,132 @@ describe('cloud persistence round-trip', () => {
     expect(server.requests.length).toBeGreaterThan(0);
     server.requests.forEach((request) => {
       expect(request.options.headers.Authorization).toBe('Bearer fake-token');
+    });
+  });
+
+  /**
+   * Regression tests for docs/AUDIT.md D-03.
+   *
+   * Two devices signed into the same account used to overwrite each other with
+   * no error and no indication anything had been lost.
+   */
+  describe('concurrent devices', () => {
+    it('merges instead of clobbering when both record a game', async () => {
+      const server = createFakeServer();
+
+      const tv = cloudService(server);
+      tv.addPlayer('Alice', '');
+      tv.addPlayer('Bob', '');
+      await tv.flushNow();
+
+      // A second device loads the same account.
+      const phone = cloudService(server);
+      await phone.loadData();
+      expect(phone.revision).toBe(tv.revision);
+
+      // Both record a different game against the same base revision.
+      tv.recordGame('Alice', 'Bob', 11, 4);
+      await tv.flushNow();
+
+      phone.recordGame('Bob', 'Alice', 11, 9);
+      await phone.flushNow();
+
+      // Neither game was lost.
+      const stored = server.documents[userKey(EMAIL)];
+      expect(stored.gameHistory).toHaveLength(2);
+      expect(stored.gameHistory.map((g) => g.score).sort()).toEqual(['11 - 4', '11 - 9']);
+
+      // And both players' records reflect both games.
+      const reader = cloudService(server);
+      await reader.loadData();
+      expect(reader.players.Alice.gamesPlayed).toBe(2);
+      expect(reader.players.Bob.gamesPlayed).toBe(2);
+      expect(reader.players.Alice.wins + reader.players.Bob.wins).toBe(2);
+    });
+
+    it('tells the caller a merge happened', async () => {
+      const server = createFakeServer();
+      const tv = cloudService(server);
+      tv.addPlayer('Alice', '');
+      tv.addPlayer('Bob', '');
+      await tv.flushNow();
+
+      const phone = cloudService(server);
+      await phone.loadData();
+
+      tv.recordGame('Alice', 'Bob', 11, 4);
+      await tv.flushNow();
+
+      phone.recordGame('Bob', 'Alice', 11, 9);
+      await phone.flushNow();
+
+      expect(phone.lastMergeNotice).toBeTruthy();
+      expect(phone.lastMergeNotice.replayed).toBe(1);
+      expect(phone.lastMergeNotice.dropped).toBe(0);
+    });
+
+    it('does not duplicate a game both devices already have', async () => {
+      const server = createFakeServer();
+      const tv = cloudService(server);
+      tv.addPlayer('Alice', '');
+      tv.addPlayer('Bob', '');
+      tv.recordGame('Alice', 'Bob', 11, 4);
+      await tv.flushNow();
+
+      const phone = cloudService(server);
+      await phone.loadData();
+
+      // The TV writes again (a settings change, say) so the phone's base is stale,
+      // but the phone has nothing new of its own.
+      await tv.updateSettings({ GAME_HISTORY_KEEP: 15 });
+      await tv.flushNow();
+
+      await phone.updateSettings({ DEFAULT_RANK: 'Rookie' });
+      await phone.flushNow();
+
+      expect(server.documents[userKey(EMAIL)].gameHistory).toHaveLength(1);
+      expect(phone.lastMergeNotice.replayed).toBe(0);
+    });
+
+    it('assigns stable ids to matches recorded before ids existed', async () => {
+      const server = createFakeServer();
+      const key = userKey(EMAIL);
+      server.documents[key] = {
+        settings: {},
+        players: {},
+        gameHistory: [
+          { player1: 'A', player2: 'B', score: '11 - 3', date: '2025-01-01T00:00:00.000Z' },
+        ],
+        revision: 1,
+      };
+
+      const first = cloudService(server);
+      await first.loadData();
+      const second = cloudService(server);
+      await second.loadData();
+
+      expect(first.gameHistory[0].id).toBeTruthy();
+      expect(first.gameHistory[0].id).toBe(second.gameHistory[0].id);
+    });
+
+    it('skips the revision check on the unload flush', async () => {
+      const server = createFakeServer();
+      const service = cloudService(server);
+      service.addPlayer('Alice', '');
+      await service.flushNow();
+
+      // Pretend another device moved the revision on.
+      server.documents[userKey(EMAIL)].revision = 99;
+
+      service.addPlayer('Bob', '');
+      await service.flush({ keepalive: true });
+
+      const save = server.requests.filter((r) => r.url.endsWith('/api/saveData')).pop();
+      expect(JSON.parse(save.options.body)).not.toHaveProperty('baseRevision');
+      expect(Object.keys(server.documents[userKey(EMAIL)].players).sort()).toEqual([
+        'Alice',
+        'Bob',
+      ]);
     });
   });
 
