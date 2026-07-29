@@ -27,7 +27,7 @@ function AdminPasswordPrompt({ onSubmit, message }) {
           <h2>Set Admin Password</h2>
         </div>
         
-        <div className="info-section">
+        <div className="prompt-info">
           {message && <p className="prompt-message">{message}</p>}
           <div className="info-card">
             <h3>What is this for?</h3>
@@ -44,7 +44,7 @@ function AdminPasswordPrompt({ onSubmit, message }) {
 
         <form onSubmit={handleSubmit}>
           <div className="password-inputs">
-            <div className="input-group">
+            <div className="prompt-field">
               <label htmlFor="password">Password</label>
               <input
                 id="password"
@@ -55,7 +55,7 @@ function AdminPasswordPrompt({ onSubmit, message }) {
               />
             </div>
             
-            <div className="input-group">
+            <div className="prompt-field">
               <label htmlFor="confirmPassword">Confirm Password</label>
               <input
                 id="confirmPassword"
@@ -71,7 +71,7 @@ function AdminPasswordPrompt({ onSubmit, message }) {
           
           <div className="button-group">
             <button type="submit">
-              <span className="btn-icon">🔐</span>
+              <span className="prompt-btn-icon">🔐</span>
               Set Password
             </button>
           </div>

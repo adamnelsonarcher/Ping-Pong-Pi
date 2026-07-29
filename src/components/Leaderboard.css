@@ -31,20 +31,12 @@
   background-color: #f0f0f0;
 }
 
-[data-theme="light"] .Leaderboard tr.selected {
-  background-color: #e0e0e0;
-}
-
 [data-theme="dark"] .Leaderboard tr:nth-child(even) {
   background-color: #262626;
 }
 
 [data-theme="dark"] .Leaderboard tr:hover {
   background-color: #3d3d3d;
-}
-
-[data-theme="dark"] .Leaderboard tr.selected {
-  background-color: #404040;
 }
 
 .Leaderboard td:nth-child(2) {
