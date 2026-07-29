@@ -28,7 +28,7 @@ async function requireUser(req, res) {
       return null;
     }
     return decoded;
-  } catch (error) {
+  } catch {
     // Expired tokens are routine — the client refreshes and retries.
     res.status(401).json({ error: 'Invalid or expired token' });
     return null;

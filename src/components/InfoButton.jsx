@@ -53,7 +53,6 @@ function InfoButton({ currentUser, onLogout }) {
                   </a>
                 </p>
                 <p>Thanks to <strong>Evan Holfland</strong> for planting the seed of this idea in my mind</p>
-                <p> </p>
                 <div className="links-container">
                 <a 
                     href="https://nelsonarcher.com/demos" 
